@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { ActiveTab } from "@/types";
+import { handleWindowDragStart } from "@/lib/windowDrag";
 
 interface NavItem {
   id: ActiveTab;
@@ -291,7 +292,8 @@ export const Sidebar: React.FC = () => {
       <div className="flex flex-col flex-1 overflow-y-auto">
         <div
           data-tauri-drag-region
-          className={`h-11 flex items-center border-b border-sidebar-border/40 shrink-0 relative ${
+          onMouseDown={handleWindowDragStart}
+          className={`h-11 flex items-center border-b border-sidebar-border/40 shrink-0 relative select-none ${
             isFullscreen
               ? "justify-center px-2"
               : isCompact

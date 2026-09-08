@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { EngineSelector } from "@/components/EngineSelector";
+import { handleWindowDragStart } from "@/lib/windowDrag";
 
 export const Header: React.FC = () => {
   const {
@@ -33,7 +34,8 @@ export const Header: React.FC = () => {
   return (
     <header
       data-tauri-drag-region
-      className={`relative z-40 h-11 border-b border-border/80 bg-surface/80 backdrop-blur-xl flex items-center justify-between transition-all ${
+      onMouseDown={handleWindowDragStart}
+      className={`relative z-40 h-11 border-b border-border/80 bg-surface/80 backdrop-blur-xl flex items-center justify-between transition-all select-none ${
         !isSidebarOpen ? "pl-20 pr-3" : "px-3.5"
       }`}
     >

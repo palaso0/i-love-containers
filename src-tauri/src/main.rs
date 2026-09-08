@@ -19,6 +19,11 @@ fn check_fullscreen(window: tauri::Window) -> bool {
 }
 
 #[tauri::command]
+fn drag_window(window: tauri::Window) {
+    let _ = window.start_dragging();
+}
+
+#[tauri::command]
 async fn open_native_window(
     app: tauri::AppHandle,
     window_id: String,
@@ -264,7 +269,7 @@ fn find_server_script(app: &tauri::AppHandle) -> Option<PathBuf> {
 fn main() {
     let app = tauri::Builder::default()
         .manage(BackgroundServer(Mutex::new(None)))
-        .invoke_handler(tauri::generate_handler![open_native_window, detect_container_engines, broadcast_theme_settings, check_fullscreen])
+        .invoke_handler(tauri::generate_handler![open_native_window, detect_container_engines, broadcast_theme_settings, check_fullscreen, drag_window])
         .setup(|app| {
             let app_handle = app.handle().clone();
             if let Some(node_bin) = find_node_binary() {
