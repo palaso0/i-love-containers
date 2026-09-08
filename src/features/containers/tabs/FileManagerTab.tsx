@@ -267,9 +267,22 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
     if (item && !selectedPaths.has(item.path)) {
       setSelectedPaths(new Set([item.path]));
     }
-    const rect = containerRef.current?.getBoundingClientRect();
-    const x = e.clientX - (rect?.left || 0);
-    const y = e.clientY - (rect?.top || 0);
+    const menuWidth = 200;
+    const menuHeight = 220;
+    let x = e.clientX;
+    let y = e.clientY;
+    if (x + menuWidth > window.innerWidth) {
+      x = window.innerWidth - menuWidth;
+    }
+    if (x < 0) {
+      x = 0;
+    }
+    if (y + menuHeight > window.innerHeight) {
+      y = window.innerHeight - menuHeight;
+    }
+    if (y < 0) {
+      y = 0;
+    }
     setContextMenu({ x, y, item });
   };
 
@@ -920,7 +933,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
           ref={contextMenuRef}
           style={{ top: contextMenu.y, left: contextMenu.x }}
           onClick={(e) => e.stopPropagation()}
-          className="absolute z-50 min-w-[160px] bg-popover/95 backdrop-blur-md border border-border rounded-lg shadow-xl py-1 text-xs text-foreground font-sans animate-in fade-in zoom-in-95 duration-75"
+          className="fixed z-50 min-w-[160px] bg-popover/95 backdrop-blur-md border border-border rounded-lg shadow-xl py-1 text-xs text-foreground font-sans animate-in fade-in zoom-in-95 duration-75"
         >
           {contextMenu.item && (
             <button
