@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" type="image/png" href="/ilc-logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>I Love Containers</title>
+    <script>
+      (function() {
+        const savedTheme = localStorage.getItem("ilc-app-theme") || "transparent";
+        const savedAccent = localStorage.getItem("ilc-app-accent") || "blue";
+        const isDark = savedTheme !== "cupertino-light";
+        if (isDark) {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+        document.documentElement.classList.add("theme-" + savedTheme);
+        document.documentElement.classList.add("accent-" + savedAccent);
+      })();
+    </script>
+  </head>
+  <body class="bg-background text-foreground select-none overflow-hidden antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
