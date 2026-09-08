@@ -308,7 +308,6 @@ export const Sidebar: React.FC = () => {
                 alt="ILC"
                 className="h-7 w-auto object-contain shrink-0 drop-shadow-xs"
               />
-              {!isCompact && <span className="text-xs font-bold tracking-tight">ILC</span>}
             </div>
           )}
         </div>
@@ -372,6 +371,7 @@ export const Sidebar: React.FC = () => {
             )}
           </div>
         )}
+        <p className="text-sm font-bold text-foreground/60 text-center mt-2 select-none">I Love Containers</p>
       </div>
 
       <div
