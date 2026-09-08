@@ -151,7 +151,7 @@ export const ComposeView: React.FC = () => {
 
   if (composeProjects.length === 0) {
     return (
-      <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-background select-none max-w-4xl mx-auto">
+      <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-background max-w-4xl mx-auto">
         <div className="border-b border-border/70 pb-3">
           <h1 className="text-lg font-semibold text-foreground tracking-tight">{t.compose.title}</h1>
           <p className="text-xs text-muted-foreground mt-0.5">{t.compose.subtitle}</p>
@@ -189,7 +189,7 @@ export const ComposeView: React.FC = () => {
   const isInactive = runningCount === 0;
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-background select-none">
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-background ">
 
       <div className="px-5 py-3 border-b border-border/70 bg-surface/50 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0">
         <div className="flex items-center space-x-3 min-w-0">

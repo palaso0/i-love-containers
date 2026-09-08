@@ -171,7 +171,7 @@ export const UnifiedLogsViewer: React.FC<UnifiedLogsViewerProps> = ({ session, i
       }`}
       style={{ display: isActive ? "flex" : "none" }}
     >
-      <div className="h-9 px-3 bg-surface border-b border-border flex items-center justify-between gap-2 select-none shrink-0">
+      <div className="h-9 px-3 bg-surface border-b border-border flex items-center justify-between gap-2 shrink-0">
         <div className="flex items-center space-x-2 flex-1">
           <div className="relative flex-1 max-w-xs">
             <Search className="w-3 h-3 text-muted-foreground absolute left-2.5 top-2.5" />
@@ -247,7 +247,7 @@ export const UnifiedLogsViewer: React.FC<UnifiedLogsViewerProps> = ({ session, i
       </div>
 
       {availableServices.length > 1 && (
-        <div className="px-3 py-1.5 bg-surface/50 border-b border-border flex items-center space-x-2 select-none overflow-x-auto text-2xs font-mono shrink-0">
+        <div className="px-3 py-1.5 bg-surface/50 border-b border-border flex items-center space-x-2  overflow-x-auto text-2xs font-mono shrink-0">
           <div className="flex items-center space-x-1 text-muted-foreground">
             <Filter className="w-2.5 h-2.5" />
             <span>Filter:</span>
@@ -278,7 +278,7 @@ export const UnifiedLogsViewer: React.FC<UnifiedLogsViewerProps> = ({ session, i
       >
         {filteredLogs.length === 0 ? (
           <div
-            className={`h-full flex items-center justify-center select-none ${
+            className={`h-full flex items-center justify-center  ${
               isDark ? "text-slate-500" : "text-slate-400"
             }`}
           >
@@ -294,7 +294,7 @@ export const UnifiedLogsViewer: React.FC<UnifiedLogsViewerProps> = ({ session, i
             >
               {showTimestamps && (
                 <span
-                  className={`mr-2 select-none shrink-0 ${
+                  className={`mr-2  shrink-0 ${
                     isDark ? "text-slate-500" : "text-slate-400"
                   }`}
                 >
@@ -302,7 +302,7 @@ export const UnifiedLogsViewer: React.FC<UnifiedLogsViewerProps> = ({ session, i
                 </span>
               )}
               <span
-                className="font-semibold mr-2 shrink-0 select-none"
+                className="font-semibold mr-2 shrink-0 "
                 style={{ color: log.color }}
               >
                 [{log.source}]

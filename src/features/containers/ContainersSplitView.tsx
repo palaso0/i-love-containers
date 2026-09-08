@@ -379,7 +379,7 @@ export const ContainersSplitView: React.FC = () => {
   }
 
   return (
-    <div ref={splitViewRef} className="flex-1 flex h-full overflow-hidden bg-background select-none min-w-0">
+    <div ref={splitViewRef} className="flex-1 flex h-full overflow-hidden bg-background min-w-0">
       <div
         style={{ width: `${leftWidth}px` }}
         className="border-r border-border/80 flex flex-col h-full bg-surface/30 shrink-0 min-w-0 overflow-hidden"
@@ -501,7 +501,7 @@ export const ContainersSplitView: React.FC = () => {
                 {isCompose ? (
                   <div
                     onClick={() => toggleStackCollapse(groupName)}
-                    className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-primary-muted border border-primary/30 text-xs text-foreground cursor-pointer hover:border-primary/50 transition-colors select-none"
+                    className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-primary-muted border border-primary/30 text-xs text-foreground cursor-pointer hover:border-primary/50 transition-colors "
                   >
                     <div className="flex items-center space-x-1.5 min-w-0">
                       <button
@@ -787,7 +787,7 @@ export const ContainersSplitView: React.FC = () => {
 
       <div
         onMouseDown={handleMouseDown}
-        className="w-1.5 hover:w-2 -mx-0.5 cursor-col-resize group relative flex items-center justify-center shrink-0 z-20 transition-all hover:bg-primary/40 active:bg-primary select-none"
+        className="w-1.5 hover:w-2 -mx-0.5 cursor-col-resize group relative flex items-center justify-center shrink-0 z-20 transition-all hover:bg-primary/40 active:bg-primary "
         title="Arrastra para redimensionar columnas"
       >
         <div className="w-[1px] h-8 rounded-full bg-border group-hover:bg-primary/80 group-active:bg-primary transition-colors" />
@@ -996,7 +996,7 @@ export const ContainersSplitView: React.FC = () => {
       {containerToDelete &&
         createPortal(
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 select-none"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 "
             onClick={() => setContainerToDelete(null)}
           >
             <div
@@ -1038,7 +1038,7 @@ export const ContainersSplitView: React.FC = () => {
       {stackToDelete &&
         createPortal(
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 select-none"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 "
             onClick={() => setStackToDelete(null)}
           >
             <div
@@ -1084,7 +1084,7 @@ export const ContainersSplitView: React.FC = () => {
       {bulkToDelete &&
         createPortal(
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 select-none"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 "
             onClick={() => setBulkToDelete(null)}
           >
             <div

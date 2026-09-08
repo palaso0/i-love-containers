@@ -62,7 +62,7 @@ export const OverviewView: React.FC = () => {
 
   if (!isConnected) {
     return (
-      <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center justify-center select-none bg-background">
+      <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center justify-center bg-background">
         <div className="max-w-xl w-full space-y-5">
           <div className="text-center space-y-3">
             <div className="w-20 h-20 rounded-3xl bg-surface-secondary/80 border border-border/80 flex items-center justify-center mx-auto shadow-xs">
@@ -180,7 +180,7 @@ export const OverviewView: React.FC = () => {
   const stoppedContainers = containers.filter((c) => c.state === "stopped");
 
   return (
-    <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-background select-none">
+    <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-background ">
 
       <div className="bg-surface/80 backdrop-blur-sm border border-border/70 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
         <div className="flex items-center space-x-3">

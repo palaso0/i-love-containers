@@ -128,7 +128,7 @@ export const SettingsView: React.FC = () => {
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto p-5 space-y-4 max-w-3xl bg-background select-none">
+    <div className="flex-1 overflow-y-auto p-5 space-y-4 max-w-3xl bg-background">
       <div className="border-b border-border/70 pb-3">
         <h1 className="text-base font-semibold text-foreground tracking-tight">{t.settings.title}</h1>
       </div>

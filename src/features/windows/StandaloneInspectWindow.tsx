@@ -28,10 +28,10 @@ export const StandaloneInspectWindow: React.FC<StandaloneInspectWindowProps> = (
   }, [containerId, container]);
 
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden bg-background text-foreground font-sans select-none">
+    <div className="h-screen w-screen flex flex-col overflow-hidden bg-background text-foreground font-sans">
       <div
         data-tauri-drag-region
-        className="h-10 px-4 bg-surface/80 border-b border-border flex items-center justify-between font-mono text-2xs shrink-0 select-none"
+        className="h-10 px-4 bg-surface/80 border-b border-border flex items-center justify-between font-mono text-2xs shrink-0"
       >
         <div className="flex items-center space-x-2">
           <span className="w-2 h-2 rounded-full bg-status-running shadow-[0_0_6px_rgba(48,209,88,0.5)]" />

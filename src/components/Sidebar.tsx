@@ -223,7 +223,7 @@ export const Sidebar: React.FC = () => {
   const renderNavGroup = (title: string, items: NavItem[]) => (
     <div className="space-y-0.5">
       {!isCompact ? (
-        <div className="px-3 pt-3 pb-1 text-[11px] font-semibold tracking-wider text-muted-foreground/70 uppercase select-none">
+        <div className="px-3 pt-3 pb-1 text-[11px] font-semibold tracking-wider text-muted-foreground/70 uppercase">
           {title}
         </div>
       ) : (
@@ -284,7 +284,7 @@ export const Sidebar: React.FC = () => {
   return (
     <aside
       style={{ width: `${sidebarWidth}px` }}
-      className={`relative h-full border-r border-sidebar-border bg-sidebar backdrop-blur-xl flex flex-col justify-between select-none z-10 shrink-0 ${
+      className={`relative h-full border-r border-sidebar-border bg-sidebar backdrop-blur-xl flex flex-col justify-between  z-10 shrink-0 ${
         isDragging ? "transition-none" : "transition-[width] duration-150 ease-out"
       }`}
     >
@@ -375,7 +375,7 @@ export const Sidebar: React.FC = () => {
       <div
         onMouseDown={handleSidebarMouseDown}
         onDoubleClick={() => handleSetWidth(isCompact ? 175 : 64)}
-        className="w-1.5 hover:w-2 -mr-0.5 cursor-col-resize group absolute top-0 right-0 h-full flex items-center justify-center shrink-0 z-30 transition-all hover:bg-primary/40 active:bg-primary select-none"
+        className="w-1.5 hover:w-2 -mr-0.5 cursor-col-resize group absolute top-0 right-0 h-full flex items-center justify-center shrink-0 z-30 transition-all hover:bg-primary/40 active:bg-primary "
         title="Arrastra para redimensionar barra lateral (doble click para alternar compacto)"
       >
         <div className="w-[1px] h-8 rounded-full bg-border group-hover:bg-primary/80 group-active:bg-primary transition-colors" />

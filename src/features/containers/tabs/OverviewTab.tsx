@@ -16,7 +16,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
   };
 
   return (
-    <div className="space-y-4 select-none">
+    <div className="space-y-4">
       <div className="bg-surface/80 backdrop-blur-sm border border-border/70 rounded-xl p-4 shadow-xs">
         <h3 className="text-xs font-semibold text-muted-foreground/80 uppercase tracking-wider mb-3">
           Configuration & Metadata

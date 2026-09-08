@@ -84,7 +84,7 @@ export const ContainersList: React.FC = () => {
 
   return (
     <div
-      className="flex-1 overflow-y-auto p-5 space-y-4 bg-background select-none"
+      className="flex-1 overflow-y-auto p-5 space-y-4 bg-background"
       onClick={() => setActiveMenuContainerId(null)}
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/70 pb-3">
@@ -191,7 +191,7 @@ export const ContainersList: React.FC = () => {
         </div>
       ) : (
         <div className="bg-surface/80 backdrop-blur-sm border border-border/70 rounded-xl overflow-hidden shadow-xs">
-          <div className="grid grid-cols-12 px-4 py-2 border-b border-border/70 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 bg-surface-secondary/40 select-none">
+          <div className="grid grid-cols-12 px-4 py-2 border-b border-border/70 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 bg-surface-secondary/40 ">
             <div className="col-span-5 sm:col-span-4">Container & Service</div>
             <div className="col-span-3 sm:col-span-3">Image</div>
             <div className="col-span-2 hidden sm:block">CPU / Memory</div>

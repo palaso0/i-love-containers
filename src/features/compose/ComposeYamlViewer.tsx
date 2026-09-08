@@ -141,7 +141,7 @@ export const ComposeYamlViewer: React.FC<ComposeYamlViewerProps> = ({
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
-      <div className="px-4 py-2 bg-surface/90 backdrop-blur-md border border-border/80 rounded-xl mb-3 flex flex-wrap items-center justify-between gap-2 shadow-xs shrink-0 select-none">
+      <div className="px-4 py-2 bg-surface/90 backdrop-blur-md border border-border/80 rounded-xl mb-3 flex flex-wrap items-center justify-between gap-2 shadow-xs shrink-0">
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
             <Code2 className="w-4 h-4 text-primary" />
@@ -283,7 +283,7 @@ export const ComposeYamlViewer: React.FC<ComposeYamlViewerProps> = ({
             <div className="flex-1 overflow-auto p-4 font-mono text-xs bg-background">
               {isEditingRaw ? (
                 <div className="flex min-h-full font-mono text-xs">
-                  <div className="select-none text-right pr-4 text-muted-foreground/45 text-[11px] font-mono w-10 shrink-0 border-r border-border/40 mr-3 py-0.5">
+                  <div className=" text-right pr-4 text-muted-foreground/45 text-[11px] font-mono w-10 shrink-0 border-r border-border/40 mr-3 py-0.5">
                     {editedYaml.split("\n").map((_, idx) => (
                       <div key={idx} className="leading-[21px] text-[11px] h-[21px]">
                         {idx + 1}
@@ -315,7 +315,7 @@ export const ComposeYamlViewer: React.FC<ComposeYamlViewerProps> = ({
                 <div className="table w-full border-collapse select-text">
                   {lines.map((line, idx) => (
                     <div key={idx} className="table-row hover:bg-foreground/[0.04] transition-colors">
-                      <span className="table-cell select-none text-right pr-4 text-muted-foreground/45 text-[11px] font-mono w-10">
+                      <span className="table-cell  text-right pr-4 text-muted-foreground/45 text-[11px] font-mono w-10">
                         {idx + 1}
                       </span>
                       <span className="table-cell whitespace-pre font-mono text-[12px] leading-[21px] select-text cursor-text">

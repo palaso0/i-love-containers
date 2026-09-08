@@ -41,7 +41,7 @@ export const VolumesView: React.FC = () => {
   }, [volumes, searchQuery, sortBy]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-background select-none">
+    <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-background">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/70 pb-3">
         <div>
           <div className="flex items-center space-x-2">

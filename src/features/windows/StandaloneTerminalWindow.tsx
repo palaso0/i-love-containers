@@ -163,7 +163,7 @@ export const StandaloneTerminalWindow: React.FC<StandaloneTerminalWindowProps> =
     >
       <div
         data-tauri-drag-region
-        className="h-10 px-4 bg-surface border-b border-border flex items-center justify-between font-mono text-2xs shrink-0 select-none"
+        className="h-10 px-4 bg-surface border-b border-border flex items-center justify-between font-mono text-2xs shrink-0"
       >
         <div className="flex items-center space-x-2">
           <span className="w-2 h-2 rounded-full bg-status-running shadow-[0_0_6px_rgba(16,185,129,0.5)]" />

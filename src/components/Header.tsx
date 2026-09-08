@@ -33,7 +33,7 @@ export const Header: React.FC = () => {
   return (
     <header
       data-tauri-drag-region
-      className={`relative z-40 h-11 border-b border-border/80 bg-surface/80 backdrop-blur-xl flex items-center justify-between select-none transition-all ${
+      className={`relative z-40 h-11 border-b border-border/80 bg-surface/80 backdrop-blur-xl flex items-center justify-between transition-all ${
         !isSidebarOpen ? "pl-20 pr-3" : "px-3.5"
       }`}
     >

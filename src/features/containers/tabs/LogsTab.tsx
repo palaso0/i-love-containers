@@ -100,7 +100,7 @@ export const LogsTab: React.FC<LogsTabProps> = ({ containerId }) => {
         isDark ? "bg-[#090b10] text-slate-200" : "bg-white text-slate-800"
       }`}
     >
-      <div className="h-10 px-3 bg-surface border-b border-border flex items-center justify-between gap-2 select-none text-xs shrink-0">
+      <div className="h-10 px-3 bg-surface border-b border-border flex items-center justify-between gap-2 text-xs shrink-0">
         <div className="relative flex-1 max-w-xs min-w-[90px]">
           <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 top-2.5" />
           <input
@@ -204,7 +204,7 @@ export const LogsTab: React.FC<LogsTabProps> = ({ containerId }) => {
       >
         {filteredLogs.length === 0 ? (
           <div
-            className={`h-full flex items-center justify-center select-none ${
+            className={`h-full flex items-center justify-center  ${
               isDark ? "text-slate-500" : "text-slate-400"
             }`}
           >
@@ -225,7 +225,7 @@ export const LogsTab: React.FC<LogsTabProps> = ({ containerId }) => {
               >
                 {showTimestamps && (
                   <span
-                    className={`mr-2.5 select-none shrink-0 font-mono ${
+                    className={`mr-2.5  shrink-0 font-mono ${
                       isDark ? "text-slate-500" : "text-slate-400"
                     }`}
                   >

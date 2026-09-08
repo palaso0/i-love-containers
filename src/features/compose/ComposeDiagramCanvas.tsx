@@ -404,7 +404,7 @@ export const ComposeDiagramCanvas: React.FC<ComposeDiagramCanvasProps> = ({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className={`relative w-full h-full min-h-[560px] overflow-hidden select-none bg-background cursor-grab ${
+      className={`relative w-full h-full min-h-[560px] overflow-hidden bg-background cursor-grab ${
         isDragging ? "cursor-grabbing" : ""
       }`}
       style={{
@@ -541,7 +541,7 @@ export const ComposeDiagramCanvas: React.FC<ComposeDiagramCanvasProps> = ({
                   backgroundColor: "var(--surface)",
                   borderColor: isNetHovered ? net.color : isDark ? `${net.color}50` : `${net.color}75`,
                 }}
-                className="absolute px-2.5 py-0.5 rounded-md border flex items-center space-x-1.5 text-[10px] font-mono tracking-tight select-none shadow-xs z-10"
+                className="absolute px-2.5 py-0.5 rounded-md border flex items-center space-x-1.5 text-[10px] font-mono tracking-tight  shadow-xs z-10"
               >
                 <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: net.color }} />
                 <span className="font-semibold">{net.name}</span>
@@ -778,7 +778,7 @@ export const ComposeDiagramCanvas: React.FC<ComposeDiagramCanvasProps> = ({
                 width: svc.width,
                 minHeight: svc.height,
               }}
-              className={`absolute rounded-xl border p-3 flex flex-col justify-between transition-shadow canvas-interactive cursor-grab active:cursor-grabbing select-none ${
+              className={`absolute rounded-xl border p-3 flex flex-col justify-between transition-shadow canvas-interactive cursor-grab active:cursor-grabbing  ${
                 isSelected
                   ? "bg-surface/95 border-primary shadow-[0_0_22px_rgba(0,122,255,0.4)] ring-2 ring-primary/60"
                   : isHovered
@@ -858,7 +858,7 @@ export const ComposeDiagramCanvas: React.FC<ComposeDiagramCanvasProps> = ({
                 left: pos.x,
                 top: pos.y,
               }}
-              className="absolute bg-surface/80 backdrop-blur-md border border-sky-500/30 rounded-lg px-2.5 py-1.5 flex items-center space-x-2 text-xs font-mono shadow-xs canvas-interactive cursor-grab active:cursor-grabbing select-none"
+              className="absolute bg-surface/80 backdrop-blur-md border border-sky-500/30 rounded-lg px-2.5 py-1.5 flex items-center space-x-2 text-xs font-mono shadow-xs canvas-interactive cursor-grab active:cursor-grabbing "
             >
               <div className="w-5 h-5 rounded-md bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400">
                 <HardDrive className="w-3 h-3" />

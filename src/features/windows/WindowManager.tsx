@@ -52,7 +52,7 @@ export const WindowManager: React.FC = () => {
         <FloatingWindowItem key={w.id} windowData={w} />
       ))}
 
-      <div className="fixed bottom-3 right-4 pointer-events-auto flex items-center space-x-2 bg-surface/90 backdrop-blur-md border border-border rounded-xl px-2.5 py-1.5 shadow-2xl z-50 select-none font-mono text-2xs animate-in fade-in slide-in-from-bottom-2 duration-150">
+      <div className="fixed bottom-3 right-4 pointer-events-auto flex items-center space-x-2 bg-surface/90 backdrop-blur-md border border-border rounded-xl px-2.5 py-1.5 shadow-2xl z-50 font-mono text-2xs animate-in fade-in slide-in-from-bottom-2 duration-150">
         <div className="flex items-center space-x-1 border-r border-border pr-2">
           {windows.map((w) => {
             const Icon = w.type === "terminal" ? Terminal : FileText;

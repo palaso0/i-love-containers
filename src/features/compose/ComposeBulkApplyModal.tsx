@@ -88,7 +88,7 @@ export const ComposeBulkApplyModal: React.FC<ComposeBulkApplyModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-100 select-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-100">
       <div className="bg-popover border border-popover-border rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-100">
 
         <div className="px-5 py-4 border-b border-border/70 flex items-center justify-between bg-surface-secondary/50">

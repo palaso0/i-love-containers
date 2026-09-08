@@ -381,7 +381,7 @@ export const CommandPalette: React.FC = () => {
           )}
         </div>
 
-        <div className="px-4 py-2 border-t border-border/60 bg-surface-secondary/40 flex items-center justify-between text-xs text-muted-foreground select-none">
+        <div className="px-4 py-2 border-t border-border/60 bg-surface-secondary/40 flex items-center justify-between text-xs text-muted-foreground">
           <div className="flex items-center space-x-3">
             <span className="flex items-center gap-1">
               <kbd className="px-1.5 py-0.5 rounded bg-surface border border-border/70 text-[10px] font-mono shadow-2xs">

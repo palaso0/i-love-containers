@@ -512,7 +512,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
   return (
     <div
       ref={containerRef}
-      className="flex-1 flex flex-col h-full bg-background select-none overflow-hidden relative"
+      className="flex-1 flex flex-col h-full bg-background overflow-hidden relative"
       onClick={() => {
         setSelectedPaths(new Set());
         setContextMenu(null);
@@ -767,7 +767,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
           </div>
         ) : viewMode === "list" ? (
           <div className="min-w-[600px] text-xs font-mono">
-            <div className="grid grid-cols-12 gap-2 px-3 py-1.5 font-sans font-semibold text-2xs text-muted-foreground border-b border-border/60 select-none">
+            <div className="grid grid-cols-12 gap-2 px-3 py-1.5 font-sans font-semibold text-2xs text-muted-foreground border-b border-border/60 ">
               <div
                 onClick={(e) => {
                   e.stopPropagation();
@@ -918,7 +918,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
         )}
       </div>
 
-      <div className="flex items-center justify-between px-3 py-1 bg-surface/50 border-t border-border/70 text-2xs font-mono text-muted-foreground shrink-0 select-none">
+      <div className="flex items-center justify-between px-3 py-1 bg-surface/50 border-t border-border/70 text-2xs font-mono text-muted-foreground shrink-0 ">
         <div className="flex items-center space-x-2">
           <span>{fm.itemsCount.replace("{count}", String(files.length))}</span>
           {selectedPaths.size > 0 && (

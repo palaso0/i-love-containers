@@ -63,7 +63,7 @@ export const App: React.FC = () => {
 
   if (isInitialLoading) {
     return (
-      <div className="h-screen w-screen bg-background flex flex-col items-center justify-center select-none font-sans">
+      <div className="h-screen w-screen bg-background flex flex-col items-center justify-center font-sans">
         <div className="flex items-center space-x-2 text-primary animate-pulse mb-2">
           <span className="text-sm font-semibold tracking-tight text-foreground">
             I <span className="text-primary">♥</span> Containers
@@ -75,7 +75,7 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="h-screen w-screen flex bg-background text-foreground overflow-hidden font-sans select-none antialiased">
+    <div className="h-screen w-screen flex bg-background text-foreground overflow-hidden font-sans  antialiased">
       {isSidebarOpen && <Sidebar />}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         <Header />

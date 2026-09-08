@@ -178,7 +178,7 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
 
   return (
     <div
-      className={`h-screen w-screen flex flex-col select-none overflow-hidden ${
+      className={`h-screen w-screen flex flex-col overflow-hidden ${
         isDark ? "bg-[#090b10] text-slate-200" : "bg-background text-slate-800"
       }`}
     >
@@ -304,7 +304,7 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
       >
         {filteredLogs.length === 0 ? (
           <div
-            className={`h-full flex items-center justify-center select-none ${
+            className={`h-full flex items-center justify-center  ${
               isDark ? "text-slate-500" : "text-slate-400"
             }`}
           >
@@ -320,14 +320,14 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
             >
               {showTimestamps && (
                 <span
-                  className={`mr-2.5 select-none shrink-0 font-mono ${
+                  className={`mr-2.5  shrink-0 font-mono ${
                     isDark ? "text-slate-500" : "text-slate-400"
                   }`}
                 >
                   {log.timestamp}
                 </span>
               )}
-              <span className="font-semibold mr-2 shrink-0 select-none" style={{ color: log.color }}>
+              <span className="font-semibold mr-2 shrink-0 " style={{ color: log.color }}>
                 [{log.source}]
               </span>
               <span

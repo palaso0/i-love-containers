@@ -330,13 +330,13 @@ export const FloatingWindowItem: React.FC<FloatingWindowItemProps> = ({ windowDa
         height: `${windowData.height}px`,
         zIndex: windowData.zIndex,
       }}
-      className={`fixed top-0 left-0 flex flex-col bg-surface border border-border rounded-xl shadow-2xl overflow-hidden select-none pointer-events-auto transition-[box-shadow] ${
+      className={`fixed top-0 left-0 flex flex-col bg-surface border border-border rounded-xl shadow-2xl overflow-hidden pointer-events-auto transition-[box-shadow] ${
         windowData.isMaximized ? "rounded-none border-0" : ""
       }`}
     >
       <div
         onMouseDown={handleTitleMouseDown}
-        className="h-10 px-3 bg-surface-secondary/80 border-b border-border flex items-center justify-between cursor-move select-none shrink-0"
+        className="h-10 px-3 bg-surface-secondary/80 border-b border-border flex items-center justify-between cursor-move  shrink-0"
       >
         <div className="flex items-center space-x-2">
           <div className="flex items-center space-x-1.5 mr-1">
@@ -414,7 +414,7 @@ export const FloatingWindowItem: React.FC<FloatingWindowItemProps> = ({ windowDa
               isDark ? "text-slate-200" : "text-slate-800"
             }`}
           >
-            <div className="h-9 px-3 bg-surface border-b border-border flex items-center justify-between gap-2 select-none shrink-0">
+            <div className="h-9 px-3 bg-surface border-b border-border flex items-center justify-between gap-2  shrink-0">
               <div className="flex items-center space-x-2 flex-1">
                 <input
                   type="text"
@@ -477,7 +477,7 @@ export const FloatingWindowItem: React.FC<FloatingWindowItemProps> = ({ windowDa
             </div>
 
             {availableServices.length > 1 && (
-              <div className="px-3 py-1 bg-surface/50 border-b border-border flex items-center space-x-1.5 select-none overflow-x-auto text-2xs font-mono shrink-0">
+              <div className="px-3 py-1 bg-surface/50 border-b border-border flex items-center space-x-1.5  overflow-x-auto text-2xs font-mono shrink-0">
                 <Filter className="w-2.5 h-2.5 text-muted-foreground" />
                 {availableServices.map((serviceName) => {
                   const isSelected = activeFilters.includes(serviceName);
@@ -509,14 +509,14 @@ export const FloatingWindowItem: React.FC<FloatingWindowItemProps> = ({ windowDa
                 >
                   {showTimestamps && (
                     <span
-                      className={`mr-2 select-none shrink-0 ${
+                      className={`mr-2  shrink-0 ${
                         isDark ? "text-slate-500" : "text-slate-400"
                       }`}
                     >
                       {log.timestamp}
                     </span>
                   )}
-                  <span className="font-semibold mr-2 shrink-0 select-none" style={{ color: log.color }}>
+                  <span className="font-semibold mr-2 shrink-0 " style={{ color: log.color }}>
                     [{log.source}]
                   </span>
                   <span

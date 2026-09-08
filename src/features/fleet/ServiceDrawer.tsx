@@ -88,7 +88,7 @@ export const ServiceDrawer: React.FC<ServiceDrawerProps> = ({ container, onClose
         className="w-full max-w-4xl bg-surface border-t border-x border-border rounded-t-xl shadow-2xl overflow-hidden flex flex-col h-[600px] animate-in slide-in-from-bottom duration-150"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="h-12 px-4 bg-surface-secondary/70 border-b border-border flex items-center justify-between select-none">
+        <div className="h-12 px-4 bg-surface-secondary/70 border-b border-border flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <span
               className={`w-2 h-2 rounded-full shrink-0 ${

@@ -73,7 +73,7 @@ export const FleetView: React.FC = () => {
   const runningCount = containers.filter((c) => c.state === "running").length;
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-background flex flex-col items-center select-none">
+    <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-background flex flex-col items-center">
       <div className="w-full max-w-3xl space-y-5">
         <div className="flex items-center justify-between border-b border-border/70 pb-3">
           <div className="flex items-center space-x-3">
@@ -116,7 +116,7 @@ export const FleetView: React.FC = () => {
               key={project.name}
               className="bg-surface/80 backdrop-blur-sm border border-border/70 rounded-xl overflow-hidden shadow-xs"
             >
-              <div className="px-4 py-2.5 bg-surface-secondary/50 border-b border-border/70 flex items-center justify-between select-none">
+              <div className="px-4 py-2.5 bg-surface-secondary/50 border-b border-border/70 flex items-center justify-between ">
                 <div className="flex items-center space-x-2">
                   <FolderGit2 className="w-4 h-4 text-primary" />
                   <span className="text-xs font-semibold text-foreground font-mono">{project.name}</span>
@@ -282,7 +282,7 @@ export const FleetView: React.FC = () => {
 
         {standaloneContainers.length > 0 && (
           <div className="bg-surface border border-border rounded-lg overflow-hidden shadow-xs">
-            <div className="px-3.5 py-2 bg-surface-secondary/50 border-b border-border flex items-center justify-between select-none">
+            <div className="px-3.5 py-2 bg-surface-secondary/50 border-b border-border flex items-center justify-between ">
               <div className="flex items-center space-x-2 font-mono">
                 <Layers className="w-3.5 h-3.5 text-muted-foreground" />
                 <span className="text-xs font-bold text-foreground">Standalone Services</span>
@@ -405,7 +405,7 @@ export const FleetView: React.FC = () => {
         )}
       </div>
 
-        <div className="py-2 text-center select-none font-mono text-[11px] text-muted-foreground">
+        <div className="py-2 text-center  font-mono text-[11px] text-muted-foreground">
           Click any service row to inspect logs, interactive shell, and resource metrics
         </div>
       </div>

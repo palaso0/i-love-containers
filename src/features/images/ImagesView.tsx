@@ -30,7 +30,7 @@ export const ImagesView: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-background select-none">
+    <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-background">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/70 pb-3">
         <div>
           <div className="flex items-center space-x-2">
@@ -57,7 +57,7 @@ export const ImagesView: React.FC = () => {
       </div>
 
       <div className="bg-surface/80 backdrop-blur-sm border border-border/70 rounded-xl overflow-hidden shadow-xs">
-        <div className="grid grid-cols-12 px-4 py-2 border-b border-border/70 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 bg-surface-secondary/40 select-none">
+        <div className="grid grid-cols-12 px-4 py-2 border-b border-border/70 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 bg-surface-secondary/40 ">
           <div className="col-span-5 sm:col-span-4">{t.images.repoAndTag}</div>
           <div className="col-span-3">{t.images.imageId}</div>
           <div className="col-span-2">{t.images.size}</div>

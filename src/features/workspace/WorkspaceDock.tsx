@@ -93,7 +93,7 @@ export const WorkspaceDock: React.FC = () => {
 
   if (!dockOpen) {
     return (
-      <div className="border-t border-border bg-surface/95 backdrop-blur-md px-3 py-1.5 flex items-center justify-between z-30 select-none shadow-lg">
+      <div className="border-t border-border bg-surface/95 backdrop-blur-md px-3 py-1.5 flex items-center justify-between z-30 shadow-lg">
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setDockOpen(true)}
@@ -133,7 +133,7 @@ export const WorkspaceDock: React.FC = () => {
   return (
     <div
       style={{ height: computedHeight }}
-      className="border-t border-border bg-surface flex flex-col z-30 select-none overflow-hidden shadow-2xl transition-[height] duration-75 relative"
+      className="border-t border-border bg-surface flex flex-col z-30  overflow-hidden shadow-2xl transition-[height] duration-75 relative"
     >
       <div
         onMouseDown={() => setIsResizing(true)}
@@ -293,7 +293,7 @@ export const WorkspaceDock: React.FC = () => {
         {splitMode === "vertical" && secondarySession ? (
           <>
             <div className="flex-1 flex flex-col border-r border-border overflow-hidden">
-              <div className="h-6 px-3 bg-surface border-b border-border flex items-center justify-between text-2xs font-mono text-muted-foreground select-none">
+              <div className="h-6 px-3 bg-surface border-b border-border flex items-center justify-between text-2xs font-mono text-muted-foreground ">
                 <span>Pane 1: {activeSession?.title}</span>
               </div>
               <div className="flex-1 relative overflow-hidden">
@@ -316,7 +316,7 @@ export const WorkspaceDock: React.FC = () => {
             </div>
 
             <div className="flex-1 flex flex-col overflow-hidden">
-              <div className="h-6 px-3 bg-surface border-b border-border flex items-center justify-between text-2xs font-mono text-muted-foreground select-none">
+              <div className="h-6 px-3 bg-surface border-b border-border flex items-center justify-between text-2xs font-mono text-muted-foreground ">
                 <span>Pane 2: {secondarySession.title}</span>
                 <select
                   value={secondarySession.id}

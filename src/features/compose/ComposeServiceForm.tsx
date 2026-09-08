@@ -137,7 +137,7 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
   }
 
   return (
-    <div className="flex-1 min-w-0 w-full flex flex-col md:flex-row h-full overflow-hidden bg-surface/80 backdrop-blur-xl border border-border/80 rounded-2xl shadow-mac-segment select-none">
+    <div className="flex-1 min-w-0 w-full flex flex-col md:flex-row h-full overflow-hidden bg-surface/80 backdrop-blur-xl border border-border/80 rounded-2xl shadow-mac-segment">
 
       <div className="w-full md:w-52 border-r border-border/70 flex flex-col bg-surface-secondary/40 shrink-0">
         <div className="p-3 border-b border-border/70 flex items-center justify-between">

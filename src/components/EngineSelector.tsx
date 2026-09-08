@@ -77,7 +77,7 @@ export const EngineSelector: React.FC = () => {
     <div className="relative" ref={popoverRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center space-x-1.5 px-2 py-0.5 rounded-lg text-2xs font-mono transition-all border shadow-xs select-none ${
+        className={`flex items-center space-x-1.5 px-2 py-0.5 rounded-lg text-2xs font-mono transition-all border shadow-xs ${
           isConnected
             ? "bg-surface-secondary/80 border-border/70 hover:bg-surface-secondary text-foreground hover:border-border"
             : "bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/15 text-foreground"

@@ -162,7 +162,7 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
         isDark ? "bg-[#0d1117]" : "bg-white"
       }`}
     >
-      <div className="h-9 px-3 bg-surface-secondary border-b border-border flex items-center justify-between select-none">
+      <div className="h-9 px-3 bg-surface-secondary border-b border-border flex items-center justify-between">
         <div className="flex items-center space-x-2 text-2xs font-mono text-muted-foreground truncate min-w-0">
           <TerminalIcon className="w-3 h-3 text-primary shrink-0" />
           <span className="truncate">{isCompact ? "PTY" : "Interactive PTY (Docker Exec)"}</span>

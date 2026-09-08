@@ -135,7 +135,7 @@ export const DirectiveAutocompleteInput: React.FC<DirectiveAutocompleteInputProp
       />
 
       {isOpen && matches.length > 0 && !isExactSingleMatch && (
-        <div className="absolute left-0 top-full mt-1 z-50 w-64 max-h-48 overflow-y-auto bg-popover/95 backdrop-blur-md border border-popover-border rounded-lg shadow-xl p-1 space-y-0.5 text-xs select-none animate-in fade-in zoom-in-95 duration-75">
+        <div className="absolute left-0 top-full mt-1 z-50 w-64 max-h-48 overflow-y-auto bg-popover/95 backdrop-blur-md border border-popover-border rounded-lg shadow-xl p-1 space-y-0.5 text-xs animate-in fade-in zoom-in-95 duration-75">
           {matches.map((item, idx) => {
             const isSelected = idx === selectedIndex;
             return (
