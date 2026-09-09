@@ -7,6 +7,7 @@ import { executeContainerCommand } from "@/lib/api";
 import { useAppStore } from "@/stores/useAppStore";
 import { getTerminalTheme, formatTerminalPrompt } from "@/lib/terminalTheme";
 import { setupTerminalInput, TerminalController } from "@/lib/terminalInput";
+import { resolveContainerCompletion } from "@/lib/terminalCompletion";
 
 interface StandaloneTerminalWindowProps {
   containerId: string;
@@ -56,6 +57,18 @@ export const StandaloneTerminalWindow: React.FC<StandaloneTerminalWindowProps> =
     );
     term.writeln("");
 
+    // Initialize real container working directory
+    executeContainerCommand(containerId, "pwd").then((res) => {
+      if (res.exitCode === 0 && res.output) {
+        const lines = res.output.trim().split(/\r?\n/);
+        const lastLine = lines[lines.length - 1].trim();
+        if (lastLine.startsWith("/")) {
+          currentCwdRef.current = lastLine;
+          controllerRef.current?.redraw();
+        }
+      }
+    }).catch(() => {});
+
     const controller = setupTerminalInput({
       term,
       getPrompt: () => formatTerminalPrompt(containerName, containerId, currentCwdRef.current),
@@ -103,6 +116,9 @@ export const StandaloneTerminalWindow: React.FC<StandaloneTerminalWindowProps> =
             term.writeln(`\x1b[31merror: ${err.message}\x1b[0m`);
           }
         }
+      },
+      onComplete: async (buf, pos) => {
+        return resolveContainerCompletion(containerId, currentCwdRef.current, buf, pos);
       },
     });
 

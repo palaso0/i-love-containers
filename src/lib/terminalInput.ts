@@ -1,4 +1,5 @@
 import { Terminal as XTerm } from "@xterm/xterm";
+import { formatCompletionCandidates, CompletionResult } from "@/lib/terminalCompletion";
 
 export function getPrevWordIndex(buffer: string, cursorPos: number): number {
   if (cursorPos <= 0) return 0;
@@ -32,6 +33,7 @@ export interface TerminalControllerOptions {
   term: XTerm;
   getPrompt: () => string;
   onExecute: (command: string) => Promise<void>;
+  onComplete?: (buffer: string, cursorPos: number) => Promise<CompletionResult | null>;
   initialHistory?: string[];
 }
 
@@ -48,6 +50,7 @@ export function setupTerminalInput({
   term,
   getPrompt,
   onExecute,
+  onComplete,
   initialHistory = [],
 }: TerminalControllerOptions): TerminalController {
   let buffer = "";
@@ -55,6 +58,7 @@ export function setupTerminalInput({
   const history: string[] = [...initialHistory];
   let historyIdx = -1;
   let isExecuting = false;
+  let isCompleting = false;
 
   const redraw = () => {
     const prompt = getPrompt();
@@ -137,7 +141,47 @@ export function setupTerminalInput({
     return false;
   };
 
+  const triggerCompletion = async () => {
+    if (!onComplete || isExecuting || isCompleting) return;
+    isCompleting = true;
+
+    try {
+      const result = await onComplete(buffer, cursorPos);
+      if (!result) {
+        // No match found
+        return;
+      }
+
+      if (result.replacement !== undefined) {
+        buffer = result.replacement;
+        cursorPos = result.newCursorPos !== undefined ? result.newCursorPos : buffer.length;
+      }
+
+      if (result.candidates && result.candidates.length > 0) {
+        // Render candidates list below prompt
+        term.writeln("");
+        const formattedLines = formatCompletionCandidates(result.candidates, term.cols);
+        for (const line of formattedLines) {
+          term.writeln(line);
+        }
+      }
+
+      redraw();
+    } catch {
+      redraw();
+    } finally {
+      isCompleting = false;
+    }
+  };
+
   term.attachCustomKeyEventHandler((event: KeyboardEvent) => {
+    if (event.key === "Tab") {
+      event.preventDefault();
+      if (event.type === "keydown") {
+        triggerCompletion();
+      }
+      return false;
+    }
 
     const isNavKey =
       event.key === "ArrowLeft" ||
@@ -232,6 +276,11 @@ export function setupTerminalInput({
     }
 
     const code = data.charCodeAt(0);
+
+    if (code === 9 || data === "\t") {
+      triggerCompletion();
+      return;
+    }
 
     if (code === 13) {
       term.writeln("");
