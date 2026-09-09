@@ -1234,7 +1234,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
       </div>
 
       {isDraggingOver && (
-        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-primary/10 border-2 border-dashed border-primary pointer-events-none backdrop-blur-xs animate-in fade-in duration-150">
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-background/80 backdrop-blur-md border-2 border-dashed border-primary pointer-events-none animate-in fade-in duration-150">
           <Upload className="w-12 h-12 text-primary animate-bounce mb-2" />
           <p className="text-sm font-semibold text-primary">{fm.dragDropHint}</p>
         </div>
