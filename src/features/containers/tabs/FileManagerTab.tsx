@@ -28,6 +28,9 @@ import {
   Save,
   HardDrive,
   Link2,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { ContainerFileItem } from "@/types";
 import {
@@ -41,6 +44,7 @@ import {
   copyContainerFile,
   uploadContainerFile,
   downloadContainerFile,
+  copyHostFileToContainer,
 } from "@/lib/api";
 import { useAppStore } from "@/stores/useAppStore";
 
@@ -137,6 +141,16 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
   const [pathInput, setPathInput] = useState<string>("/");
   const [isDraggingOver, setIsDraggingOver] = useState<boolean>(false);
 
+  const [dropStatus, setDropStatus] = useState<{
+    type: "loading" | "success" | "error";
+    message: string;
+  } | null>(null);
+
+  const lastProcessedPathsRef = useRef<{ timestamp: number; key: string }>({
+    timestamp: 0,
+    key: "",
+  });
+
   const [clipboard, setClipboard] = useState<{
     action: "copy" | "cut";
     items: ContainerFileItem[];
@@ -169,6 +183,12 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
 
+  const currentPathRef = useRef(currentPath);
+  currentPathRef.current = currentPath;
+
+  const fmRef = useRef(fm);
+  fmRef.current = fm;
+
   const loadFiles = useCallback(
     async (path: string) => {
       setIsLoading(true);
@@ -190,6 +210,213 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
   useEffect(() => {
     loadFiles(currentPath);
   }, [loadFiles, currentPath]);
+
+  // Listen to native Tauri OS drag-drop events (from Finder/Desktop)
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    let isMounted = true;
+
+    async function handleTauriDrop(paths: string[]) {
+      if (!isMounted || !paths || paths.length === 0) return;
+      const dedupeKey = paths.slice().sort().join("|");
+      lastProcessedPathsRef.current = { timestamp: Date.now(), key: dedupeKey };
+
+      const targetDir = currentPathRef.current;
+      const count = paths.length;
+      setDropStatus({
+        type: "loading",
+        message: `${fmRef.current.uploading} (${count})`,
+      });
+
+      let anyError = "";
+      let successCount = 0;
+
+      for (const hostPath of paths) {
+        try {
+          // Try Tauri IPC command (docker cp via Rust)
+          const res = await copyHostFileToContainer(containerId, targetDir, hostPath);
+          if (res.ok) {
+            successCount++;
+          } else {
+            console.warn("[ILC DragDrop] docker cp failed for:", hostPath, "error:", res.error);
+            anyError = res.error || fmRef.current.uploadFailed;
+          }
+        } catch (e) {
+          console.error("[ILC DragDrop] Error copying file:", hostPath, e);
+          anyError = String(e);
+        }
+      }
+
+      await loadFiles(targetDir);
+
+      if (anyError && successCount === 0) {
+        setDropStatus({ type: "error", message: anyError });
+      } else if (anyError) {
+        setDropStatus({
+          type: "error",
+          message: `${fmRef.current.uploadSuccess} (${successCount}/${count}) - ${anyError}`,
+        });
+      } else {
+        setDropStatus({ type: "success", message: fmRef.current.uploadSuccess });
+      }
+
+      setTimeout(() => {
+        if (isMounted) setDropStatus(null);
+      }, 4000);
+    }
+
+    async function initTauriDragDrop() {
+      // Strategy 1: try getCurrentWebview().onDragDropEvent (scoped to this webview)
+      try {
+        const { getCurrentWebview } = await import("@tauri-apps/api/webview");
+        const currentWebview = getCurrentWebview();
+        console.log("[ILC DragDrop] Registering onDragDropEvent for webview:", currentWebview.label);
+        const unlistenFn = await currentWebview.onDragDropEvent(async (event) => {
+          if (!isMounted) return;
+          if (event.payload.type === "over" || event.payload.type === "enter") {
+            setIsDraggingOver(true);
+          } else if (event.payload.type === "drop") {
+            setIsDraggingOver(false);
+            console.log("[ILC DragDrop] Drop detected via onDragDropEvent, paths:", event.payload.paths);
+            await handleTauriDrop(event.payload.paths);
+          } else {
+            setIsDraggingOver(false);
+          }
+        });
+        if (isMounted) {
+          unlisten = unlistenFn;
+          console.log("[ILC DragDrop] ✓ onDragDropEvent listener registered successfully");
+        } else {
+          unlistenFn();
+        }
+        return; // success — don't try fallback
+      } catch (e) {
+        console.warn("[ILC DragDrop] onDragDropEvent failed, trying global listen fallback:", e);
+      }
+
+      // Strategy 2: global listen on tauri://drag-drop
+      try {
+        const { listen } = await import("@tauri-apps/api/event");
+        console.log("[ILC DragDrop] Registering global tauri://drag-drop listener");
+        const unlistenFn = await listen<any>("tauri://drag-drop", async (event) => {
+          if (!isMounted) return;
+          const payload = event.payload;
+          if (payload.type === "over" || payload.type === "enter") {
+            setIsDraggingOver(true);
+          } else if (payload.type === "drop") {
+            setIsDraggingOver(false);
+            console.log("[ILC DragDrop] Drop detected via global listen, paths:", payload.paths);
+            await handleTauriDrop(payload.paths);
+          } else {
+            setIsDraggingOver(false);
+          }
+        });
+        if (isMounted) {
+          unlisten = unlistenFn;
+          console.log("[ILC DragDrop] ✓ Global tauri://drag-drop listener registered");
+        } else {
+          unlistenFn();
+        }
+      } catch (e2) {
+        console.error("[ILC DragDrop] ✗ All Tauri drag-drop listeners failed:", e2);
+      }
+    }
+
+    initTauriDragDrop();
+
+    return () => {
+      isMounted = false;
+      if (unlisten) unlisten();
+    };
+  }, [containerId, loadFiles]);
+
+  // Fallback: native DOM drag listeners (works in Tauri WKWebView where React synthetic events don't fire for OS file drops)
+  useEffect(() => {
+    let dragEnterCount = 0;
+
+    const onDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = "copy";
+      }
+      setIsDraggingOver(true);
+    };
+
+    const onDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      dragEnterCount++;
+      setIsDraggingOver(true);
+    };
+
+    const onDragLeave = () => {
+      dragEnterCount--;
+      if (dragEnterCount <= 0) {
+        dragEnterCount = 0;
+        setIsDraggingOver(false);
+      }
+    };
+
+    const onDrop = async (e: DragEvent) => {
+      e.preventDefault();
+      dragEnterCount = 0;
+      setIsDraggingOver(false);
+
+      if (Date.now() - lastProcessedPathsRef.current.timestamp < 1500) {
+        console.log("[ILC DragDrop] DOM onDrop skipped (dedup)");
+        return;
+      }
+
+      const droppedFiles = e.dataTransfer?.files;
+      if (!droppedFiles || droppedFiles.length === 0) return;
+
+      console.log("[ILC DragDrop] DOM onDrop, files:", droppedFiles.length);
+
+      const filesList = Array.from(droppedFiles);
+      const targetDir = currentPathRef.current;
+      setDropStatus({ type: "loading", message: `${fmRef.current.uploading} (${filesList.length})` });
+      setIsLoading(true);
+
+      let anyError = false;
+      let successCount = 0;
+      for (const file of filesList) {
+        try {
+          const res = await uploadContainerFile(containerId, targetDir, file);
+          if (res.ok) successCount++;
+          else anyError = true;
+        } catch {
+          anyError = true;
+        }
+      }
+
+      await loadFiles(targetDir);
+      setIsLoading(false);
+
+      if (anyError && successCount === 0) {
+        setDropStatus({ type: "error", message: fmRef.current.uploadFailed });
+      } else if (anyError) {
+        setDropStatus({
+          type: "error",
+          message: `${fmRef.current.uploadSuccess} (${successCount}/${filesList.length}) - ${fmRef.current.uploadFailed}`,
+        });
+      } else {
+        setDropStatus({ type: "success", message: fmRef.current.uploadSuccess });
+      }
+
+      setTimeout(() => setDropStatus(null), 4000);
+    };
+
+    document.addEventListener("dragover", onDragOver);
+    document.addEventListener("dragenter", onDragEnter);
+    document.addEventListener("dragleave", onDragLeave);
+    document.addEventListener("drop", onDrop);
+
+    return () => {
+      document.removeEventListener("dragover", onDragOver);
+      document.removeEventListener("dragenter", onDragEnter);
+      document.removeEventListener("dragleave", onDragLeave);
+      document.removeEventListener("drop", onDrop);
+    };
+  }, [containerId, loadFiles]);
 
   const navigateTo = (newPath: string) => {
     if (newPath === currentPath) return;
@@ -369,30 +596,102 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingOver(false);
+
+    console.log("[ILC DragDrop] HTML5 onDrop fired, files:", e.dataTransfer.files?.length, "tauri dedup ts:", lastProcessedPathsRef.current.timestamp);
+
+    // If Tauri already handled this drop in the last 1.5 seconds, skip duplicate
+    if (Date.now() - lastProcessedPathsRef.current.timestamp < 1500) {
+      console.log("[ILC DragDrop] Skipping HTML5 drop (Tauri already handled it)");
+      return;
+    }
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const filesList = Array.from(e.dataTransfer.files);
+      const targetDir = currentPathRef.current;
+      setDropStatus({
+        type: "loading",
+        message: `${fm.uploading} (${filesList.length})`,
+      });
       setIsLoading(true);
-      for (let i = 0; i < e.dataTransfer.files.length; i++) {
-        const file = e.dataTransfer.files[i];
-        await uploadContainerFile(containerId, currentPath, file);
+
+      let anyError = false;
+      let successCount = 0;
+      for (const file of filesList) {
+        try {
+          const res = await uploadContainerFile(containerId, targetDir, file);
+          if (res.ok) {
+            successCount++;
+          } else {
+            anyError = true;
+          }
+        } catch {
+          anyError = true;
+        }
       }
-      await loadFiles(currentPath);
+
+      await loadFiles(targetDir);
       setIsLoading(false);
+
+      if (anyError && successCount === 0) {
+        setDropStatus({ type: "error", message: fm.uploadFailed });
+      } else if (anyError) {
+        setDropStatus({
+          type: "error",
+          message: `${fm.uploadSuccess} (${successCount}/${filesList.length}) - ${fm.uploadFailed}`,
+        });
+      } else {
+        setDropStatus({ type: "success", message: fm.uploadSuccess });
+      }
+
+      setTimeout(() => {
+        setDropStatus(null);
+      }, 4000);
     }
   };
 
   const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
     if (selectedFiles && selectedFiles.length > 0) {
+      const filesList = Array.from(selectedFiles);
+      const targetDir = currentPathRef.current;
+      setDropStatus({
+        type: "loading",
+        message: `${fm.uploading} (${filesList.length})`,
+      });
       setIsLoading(true);
+
+      let anyError = false;
+      let successCount = 0;
       try {
-        for (let i = 0; i < selectedFiles.length; i++) {
-          const file = selectedFiles[i];
-          await uploadContainerFile(containerId, currentPath, file);
+        for (const file of filesList) {
+          try {
+            const res = await uploadContainerFile(containerId, targetDir, file);
+            if (res.ok) {
+              successCount++;
+            } else {
+              anyError = true;
+            }
+          } catch {
+            anyError = true;
+          }
         }
-        await loadFiles(currentPath);
+        await loadFiles(targetDir);
+        if (anyError && successCount === 0) {
+          setDropStatus({ type: "error", message: fm.uploadFailed });
+        } else if (anyError) {
+          setDropStatus({
+            type: "error",
+            message: `${fm.uploadSuccess} (${successCount}/${filesList.length}) - ${fm.uploadFailed}`,
+          });
+        } else {
+          setDropStatus({ type: "success", message: fm.uploadSuccess });
+        }
       } finally {
         setIsLoading(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
+        setTimeout(() => {
+          setDropStatus(null);
+        }, 4000);
       }
     }
   };
@@ -753,10 +1052,26 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
           }
         }}
       >
-        {isDraggingOver && (
-          <div className="absolute inset-2 bg-primary/10 border-2 border-dashed border-primary rounded-xl z-30 flex flex-col items-center justify-center pointer-events-none backdrop-blur-xs animate-in fade-in duration-150">
-            <Upload className="w-12 h-12 text-primary animate-bounce mb-2" />
-            <p className="text-sm font-semibold text-primary">{fm.dragDropHint}</p>
+        {dropStatus && (
+          <div
+            className={`fixed bottom-6 right-6 z-50 flex items-center space-x-2.5 px-4 py-2.5 rounded-xl border shadow-xl backdrop-blur-md animate-in slide-in-from-bottom-3 duration-200 ${
+              dropStatus.type === "loading"
+                ? "bg-surface/90 border-border text-foreground"
+                : dropStatus.type === "success"
+                ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                : "bg-rose-500/15 border-rose-500/30 text-rose-600 dark:text-rose-400"
+            }`}
+          >
+            {dropStatus.type === "loading" && <Loader2 className="w-4 h-4 animate-spin shrink-0 text-primary" />}
+            {dropStatus.type === "success" && <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />}
+            {dropStatus.type === "error" && <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />}
+            <span className="text-xs font-medium">{dropStatus.message}</span>
+            <button
+              onClick={() => setDropStatus(null)}
+              className="ml-2 text-muted-foreground hover:text-foreground transition-colors p-0.5"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
 
@@ -917,6 +1232,13 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
           </div>
         )}
       </div>
+
+      {isDraggingOver && (
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-primary/10 border-2 border-dashed border-primary pointer-events-none backdrop-blur-xs animate-in fade-in duration-150">
+          <Upload className="w-12 h-12 text-primary animate-bounce mb-2" />
+          <p className="text-sm font-semibold text-primary">{fm.dragDropHint}</p>
+        </div>
+      )}
 
       <div className="flex items-center justify-between px-3 py-1 bg-surface/50 border-t border-border/70 text-2xs font-mono text-muted-foreground shrink-0 ">
         <div className="flex items-center space-x-2">

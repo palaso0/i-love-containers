@@ -48,6 +48,7 @@ async fn open_native_window(
         .min_inner_size(480.0, 320.0)
         .resizable(true)
         .decorations(true)
+        .disable_drag_drop_handler()
         .build()
         .map_err(|e| e.to_string())?;
 
@@ -58,6 +59,68 @@ async fn open_native_window(
 fn broadcast_theme_settings(app: tauri::AppHandle, js_code: String) {
     for (_, window) in app.webview_windows() {
         let _ = window.eval(&js_code);
+    }
+}
+
+#[tauri::command]
+async fn copy_host_file_to_container(
+    container_id: String,
+    dest_dir: String,
+    host_path: String,
+) -> Result<(), String> {
+    let host_p = std::path::Path::new(&host_path);
+    if !host_p.exists() {
+        return Err("Host file not found".into());
+    }
+
+    let file_name = match host_p.file_name() {
+        Some(name) => name.to_string_lossy().to_string(),
+        None => "file".to_string(),
+    };
+
+    let target_dest = if dest_dir == "/" {
+        format!("/{}", file_name)
+    } else {
+        format!("{}/{}", dest_dir.trim_end_matches('/'), file_name)
+    };
+
+    let home = std::env::var("HOME").unwrap_or_else(|_| "/Users".to_string());
+    let default_paths = format!(
+        "/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin:{}/.docker/bin:{}/.orbstack/bin:{}/.local/bin",
+        home, home, home
+    );
+    let current_path = std::env::var("PATH").unwrap_or_default();
+    let full_path = format!("{}:{}", default_paths, current_path);
+
+    let docker_candidates = [
+        "/usr/local/bin/docker",
+        "/opt/homebrew/bin/docker",
+        "/usr/bin/docker",
+        "docker",
+    ];
+    let docker_bin = docker_candidates
+        .iter()
+        .find(|&&p| std::path::Path::new(p).exists())
+        .copied()
+        .unwrap_or("docker");
+
+    let output = Command::new(docker_bin)
+        .env("PATH", &full_path)
+        .args(["cp", &host_path, &format!("{}:{}", container_id, target_dest)])
+        .output();
+
+    match output {
+        Ok(out) if out.status.success() => Ok(()),
+        Ok(out) => {
+            let err_msg = String::from_utf8_lossy(&out.stderr).trim().to_string();
+            let msg = if !err_msg.is_empty() {
+                err_msg
+            } else {
+                format!("Docker cp exited with code: {:?}", out.status.code())
+            };
+            Err(msg)
+        }
+        Err(e) => Err(format!("Failed to run docker cp: {}", e)),
     }
 }
 
@@ -269,7 +332,14 @@ fn find_server_script(app: &tauri::AppHandle) -> Option<PathBuf> {
 fn main() {
     let app = tauri::Builder::default()
         .manage(BackgroundServer(Mutex::new(None)))
-        .invoke_handler(tauri::generate_handler![open_native_window, detect_container_engines, broadcast_theme_settings, check_fullscreen, drag_window])
+        .invoke_handler(tauri::generate_handler![
+            open_native_window,
+            detect_container_engines,
+            broadcast_theme_settings,
+            check_fullscreen,
+            drag_window,
+            copy_host_file_to_container
+        ])
         .setup(|app| {
             let app_handle = app.handle().clone();
             if let Some(node_bin) = find_node_binary() {

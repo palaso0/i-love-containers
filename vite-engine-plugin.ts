@@ -990,23 +990,28 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
                     const destPath = `${targetDir}/${filename}`;
                     const tempFile = path.join(os.tmpdir(), `ilc-up-${Date.now()}-${Math.random().toString(36).slice(2)}`);
                     fs.writeFileSync(tempFile, Buffer.from(base64Data, "base64"));
-                    exec(`docker cp ${JSON.stringify(tempFile)} ${containerId}:${JSON.stringify(destPath)}`, (cpErr, _stdout, cpStderr) => {
-                      try { fs.unlinkSync(tempFile); } catch {}
-                      if (!cpErr) {
-                        res.setHeader("Content-Type", "application/json");
-                        res.end(JSON.stringify({ ok: true, output: "", exitCode: 0 }));
-                      } else {
-                        execInContainer(socketPath, containerId, `echo '${base64Data.replace(/'/g, "'\\''")}' | base64 -d > '${destPath.replace(/'/g, "'\\''")}'`)
-                          .then((fallbackRes) => {
-                            res.setHeader("Content-Type", "application/json");
-                            res.end(JSON.stringify({ ok: fallbackRes.exitCode === 0, output: fallbackRes.output || cpStderr, exitCode: fallbackRes.exitCode }));
-                          })
-                          .catch((e) => {
-                            res.setHeader("Content-Type", "application/json");
-                            res.end(JSON.stringify({ ok: false, error: e.message }));
-                          });
+                    const extendedPath = `/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin:${home}/.docker/bin:${home}/.orbstack/bin:${home}/.local/bin:${process.env.PATH || ""}`;
+                    exec(
+                      `docker cp ${JSON.stringify(tempFile)} ${containerId}:${JSON.stringify(destPath)}`,
+                      { env: { ...process.env, PATH: extendedPath } },
+                      (cpErr, _stdout, cpStderr) => {
+                        try { fs.unlinkSync(tempFile); } catch {}
+                        if (!cpErr) {
+                          res.setHeader("Content-Type", "application/json");
+                          res.end(JSON.stringify({ ok: true, output: "", exitCode: 0 }));
+                        } else {
+                          execInContainer(socketPath, containerId, `echo '${base64Data.replace(/'/g, "'\\''")}' | base64 -d > '${destPath.replace(/'/g, "'\\''")}'`)
+                            .then((fallbackRes) => {
+                              res.setHeader("Content-Type", "application/json");
+                              res.end(JSON.stringify({ ok: fallbackRes.exitCode === 0, output: fallbackRes.output || cpStderr, exitCode: fallbackRes.exitCode }));
+                            })
+                            .catch((e) => {
+                              res.setHeader("Content-Type", "application/json");
+                              res.end(JSON.stringify({ ok: false, error: e.message }));
+                            });
+                        }
                       }
-                    });
+                    );
                     return;
                   } else {
                     res.statusCode = 400;

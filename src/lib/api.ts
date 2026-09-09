@@ -1000,3 +1000,21 @@ export async function uploadContainerFile(
   });
   return { ok: true };
 }
+
+export async function copyHostFileToContainer(
+  containerId: string,
+  destDir: string,
+  hostPath: string
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const { invoke } = await import("@tauri-apps/api/core");
+    await invoke("copy_host_file_to_container", {
+      containerId,
+      destDir,
+      hostPath,
+    });
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || String(err) };
+  }
+}
