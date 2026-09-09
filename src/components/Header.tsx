@@ -4,6 +4,7 @@ import {
   Search,
   PanelLeftOpen,
   ChevronRight,
+  ChevronLeft,
 } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { EngineSelector } from "@/components/EngineSelector";
@@ -23,9 +24,17 @@ export const Header: React.FC = () => {
     selectedContainerId,
     containers,
     setSelectedContainerId,
+    selectedImageId,
+    setSelectedImageId,
+    images,
+    canGoBack,
+    canGoForward,
+    goBack,
+    goForward,
   } = useAppStore();
 
   const selectedContainer = containers.find((c) => c.id === selectedContainerId);
+  const selectedImage = images.find((img) => img.id === selectedImageId);
 
   const activeTabTitle =
     (t.nav as Record<string, string>)[activeTab] ||
@@ -35,39 +44,101 @@ export const Header: React.FC = () => {
     <header
       data-tauri-drag-region
       onMouseDown={handleWindowDragStart}
-      className={`relative z-40 h-11 border-b border-border/80 bg-surface/80 backdrop-blur-xl flex items-center justify-between transition-all select-none ${
+      className={`relative z-40 h-11 border-b border-border/80 bg-surface/80 backdrop-blur-xl flex items-center justify-between transition-all ${
         !isSidebarOpen ? "pl-20 pr-3" : "px-3.5"
       }`}
     >
-      <div className="flex items-center space-x-2.5 min-w-0">
+      <div className="flex items-center space-x-2 min-w-0">
         {!isSidebarOpen && (
           <button
             onClick={toggleSidebar}
-            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-secondary border border-border/50 transition-colors"
+            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-secondary border border-border/50 transition-colors shrink-0"
             title={t.nav.toggleSidebar}
           >
             <PanelLeftOpen className="w-3.5 h-3.5" />
           </button>
         )}
 
-        <div className="flex items-center space-x-1.5 text-xs">
-          <span className="font-semibold text-foreground tracking-tight">
+        {/* macOS Finder / Safari Style Back & Forward buttons */}
+        <div className="flex items-center bg-surface-secondary/70 border border-border/60 rounded-lg p-0.5 shrink-0 shadow-2xs">
+          <button
+            onClick={goBack}
+            disabled={!canGoBack}
+            className={`p-1 rounded text-muted-foreground transition-colors ${
+              canGoBack
+                ? "hover:text-foreground hover:bg-surface active:scale-95 cursor-pointer"
+                : "opacity-30 cursor-default pointer-events-none"
+            }`}
+            title={t.header.backTooltip}
+            aria-label={t.header.back}
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+          <div className="w-[1px] h-3 bg-border/60 mx-0.5" />
+          <button
+            onClick={goForward}
+            disabled={!canGoForward}
+            className={`p-1 rounded text-muted-foreground transition-colors ${
+              canGoForward
+                ? "hover:text-foreground hover:bg-surface active:scale-95 cursor-pointer"
+                : "opacity-30 cursor-default pointer-events-none"
+            }`}
+            title={t.header.forwardTooltip}
+            aria-label={t.header.forward}
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <div className="flex items-center space-x-1.5 text-xs truncate">
+          <button
+            onClick={() => {
+              if (activeTab === "images" && selectedImageId) {
+                setSelectedImageId(null);
+              } else if (activeTab === "containers" && selectedContainerId) {
+                setSelectedContainerId(null);
+              }
+            }}
+            className={`font-semibold tracking-tight transition-colors ${
+              (activeTab === "containers" && selectedContainer) ||
+              (activeTab === "images" && selectedImageId)
+                ? "text-muted-foreground hover:text-foreground cursor-pointer"
+                : "text-foreground"
+            }`}
+          >
             {activeTabTitle}
-          </span>
+          </button>
+
           {activeTab === "containers" && selectedContainer && (
             <>
               <ChevronRight className="w-3 h-3 text-muted-foreground/60 shrink-0" />
               <button
                 onClick={() => setSelectedContainerId(null)}
-                className="text-muted-foreground hover:text-foreground transition-colors truncate max-w-[140px] font-mono text-2xs"
+                className="text-foreground hover:text-primary transition-colors truncate max-w-[180px] font-mono text-2xs"
+                title={selectedContainer.name}
               >
                 {selectedContainer.name}
               </button>
             </>
           )}
+
+          {activeTab === "images" && selectedImageId && (
+            <>
+              <ChevronRight className="w-3 h-3 text-muted-foreground/60 shrink-0" />
+              <button
+                onClick={() => setSelectedImageId(null)}
+                className="text-foreground hover:text-primary transition-colors truncate max-w-[180px] font-mono text-2xs"
+                title={selectedImage ? `${selectedImage.repository}:${selectedImage.tag}` : selectedImageId}
+              >
+                {selectedImage
+                  ? `${selectedImage.repository}:${selectedImage.tag}`
+                  : selectedImageId.replace("sha256:", "").substring(0, 12)}
+              </button>
+            </>
+          )}
         </div>
 
-        <div className="h-3 w-[1px] bg-border/80 mx-1 hidden sm:block" />
+        <div className="h-3 w-[1px] bg-border/80 mx-0.5 hidden sm:block shrink-0" />
 
         <EngineSelector />
       </div>

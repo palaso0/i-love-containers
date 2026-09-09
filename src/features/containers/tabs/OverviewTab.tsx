@@ -1,18 +1,33 @@
 import React from "react";
 import { ContainerDetail } from "@/types";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Layers } from "lucide-react";
+import { useAppStore } from "@/stores/useAppStore";
 
 interface OverviewTabProps {
   container: ContainerDetail;
 }
 
 export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
+  const { images, setActiveTab, setSelectedImageId } = useAppStore();
   const [copiedKey, setCopiedKey] = React.useState<string | null>(null);
 
   const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
     setTimeout(() => setCopiedKey(null), 1500);
+  };
+
+  const handleGoToImage = () => {
+    const targetImg = images.find(
+      (img) =>
+        img.id === container.imageId ||
+        `${img.repository}:${img.tag}` === container.image ||
+        img.repository === container.image.split(":")[0]
+    );
+    setActiveTab("images");
+    if (targetImg) {
+      setSelectedImageId(targetImg.id);
+    }
   };
 
   return (
@@ -36,7 +51,17 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
           </div>
 
           <div className="bg-surface-secondary/50 p-2.5 rounded-lg border border-border/60">
-            <span className="text-muted-foreground block text-[11px] font-sans font-medium uppercase">Image Hash</span>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground block text-[11px] font-sans font-medium uppercase">Image Hash</span>
+              <button
+                onClick={handleGoToImage}
+                className="text-primary hover:underline text-[11px] font-sans font-medium flex items-center space-x-1"
+                title="Inspeccionar imagen y capas"
+              >
+                <Layers className="w-3 h-3 text-sky-400" />
+                <span>Ver imagen</span>
+              </button>
+            </div>
             <div className="flex items-center justify-between mt-1 text-foreground">
               <span className="truncate text-xs">{container.imageId}</span>
               <button

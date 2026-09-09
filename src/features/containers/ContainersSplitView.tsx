@@ -19,6 +19,7 @@ import {
   ChevronDown,
   ChevronRight,
   Folder,
+  Layers,
 } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { ContainerDetail, ContainerState } from "@/types";
@@ -93,6 +94,9 @@ export const ContainersSplitView: React.FC = () => {
     removeComposeProject,
     composeProjects,
     isActionInProgress,
+    images,
+    setActiveTab,
+    setSelectedImageId,
   } = useAppStore();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -127,28 +131,6 @@ export const ContainersSplitView: React.FC = () => {
     });
   };
 
-  const areAllStacksCollapsed = () => {
-    const composeProjectNames = Object.keys(composeGroups).filter((g) => g !== "__standalone__");
-    if (composeProjectNames.length === 0) return false;
-    return composeProjectNames.every((name) => collapsedStacks.has(name));
-  };
-
-  const toggleCollapseAll = () => {
-    const composeProjectNames = Object.keys(composeGroups).filter((g) => g !== "__standalone__");
-    if (areAllStacksCollapsed()) {
-      setCollapsedStacks(new Set());
-      try {
-        localStorage.setItem("ilc_collapsed_stacks", JSON.stringify([]));
-      } catch {}
-    } else {
-      const all = new Set(composeProjectNames);
-      setCollapsedStacks(all);
-      try {
-        localStorage.setItem("ilc_collapsed_stacks", JSON.stringify(Array.from(all)));
-      } catch {}
-    }
-  };
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -167,7 +149,7 @@ export const ContainersSplitView: React.FC = () => {
     try {
       const saved = localStorage.getItem("ilc_containers_split_width");
       const parsed = saved ? parseInt(saved, 10) : 410;
-      return parsed <= 330 ? 410 : Math.max(330, Math.min(650, parsed));
+      return parsed <= 280 ? 410 : Math.max(280, Math.min(650, parsed));
     } catch {
       return 410;
     }
@@ -183,7 +165,7 @@ export const ContainersSplitView: React.FC = () => {
       if (!isDraggingRef.current || !splitViewRef.current) return;
       const rect = splitViewRef.current.getBoundingClientRect();
       const maxW = Math.max(360, rect.width - 320);
-      const newWidth = Math.max(330, Math.min(maxW, ev.clientX - rect.left));
+      const newWidth = Math.max(280, Math.min(maxW, ev.clientX - rect.left));
       setLeftWidth(newWidth);
     };
 
@@ -196,7 +178,7 @@ export const ContainersSplitView: React.FC = () => {
       if (splitViewRef.current) {
         const rect = splitViewRef.current.getBoundingClientRect();
         const maxW = Math.max(360, rect.width - 320);
-        const finalWidth = Math.max(330, Math.min(maxW, ev.clientX - rect.left));
+        const finalWidth = Math.max(280, Math.min(maxW, ev.clientX - rect.left));
         try {
           localStorage.setItem("ilc_containers_split_width", String(finalWidth));
         } catch {}
@@ -413,25 +395,6 @@ export const ContainersSplitView: React.FC = () => {
               ))}
             </div>
             <div className="flex items-center space-x-1.5 shrink-0">
-              {Object.keys(composeGroups).some((g) => g !== "__standalone__") && (
-                <button
-                  onClick={toggleCollapseAll}
-                  className="flex items-center space-x-1 px-1.5 py-0.5 rounded text-2xs font-mono text-muted-foreground hover:text-foreground bg-surface border border-border/60 transition-colors shrink-0"
-                  title={areAllStacksCollapsed() ? "Expand all stacks" : "Collapse all stacks"}
-                >
-                  {areAllStacksCollapsed() ? (
-                    <>
-                      <ChevronRight className="w-3 h-3 text-primary" />
-                      <span>Stacks</span>
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="w-3 h-3 text-primary" />
-                      <span>Stacks</span>
-                    </>
-                  )}
-                </button>
-              )}
               <span className="text-[11px] font-mono text-muted-foreground whitespace-nowrap shrink-0">
                 {filteredContainers.filter((c) => c.state === "running").length}/{filteredContainers.length} {t.containers.active}
               </span>
@@ -654,7 +617,7 @@ export const ContainersSplitView: React.FC = () => {
                                   if (publicPorts.length > 0) {
                                     return (
                                       <span
-                                        className="text-[10px] font-mono text-primary font-medium bg-primary/10 border border-primary/25 px-1.5 py-0.2 rounded shrink-0"
+                                        className="text-[10px] font-mono text-primary font-medium bg-primary/10 border border-primary/25 px-1.5 py-0.2 rounded"
                                         title={`Host port: ${publicPorts.map((p) => `:${p}`).join(", ")}`}
                                       >
                                         {publicPorts.slice(0, 2).map((p) => `:${p}`).join(" ")}
@@ -803,14 +766,14 @@ export const ContainersSplitView: React.FC = () => {
                 <TechIcon image={activeContainer.image} name={activeContainer.name} className="w-5 h-5 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center flex-wrap gap-1.5 min-w-0">
-                    <h1 className="text-sm sm:text-base font-semibold text-foreground tracking-tight truncate max-w-[180px] sm:max-w-xs" title={activeContainer.name}>
+                    <h1 className="text-sm sm:text-base font-semibold text-foreground tracking-tight truncate min-w-0 flex-1" title={activeContainer.name}>
                       {activeContainer.name}
                     </h1>
                     <span className="text-[10px] font-mono text-muted-foreground bg-surface-secondary px-1.5 py-0.5 rounded border border-border/60 shrink-0">
                       {activeContainer.id.substring(0, isUltraCompact ? 6 : 12)}
                     </span>
                     {!isUltraCompact && activeContainer.composeProject && (
-                      <span className="text-[10px] font-medium text-primary bg-primary-muted px-2 py-0.5 rounded-full border border-primary/30 truncate max-w-[140px] shrink-0" title={activeContainer.composeProject}>
+                      <span className="text-[10px] font-medium text-primary bg-primary-muted px-2 py-0.5 rounded-full border border-primary/30 truncate max-w-[140px]" title={activeContainer.composeProject}>
                         {activeContainer.composeProject}
                       </span>
                     )}
@@ -821,9 +784,29 @@ export const ContainersSplitView: React.FC = () => {
                     )}
                   </div>
                   {!isUltraCompact && (
-                    <p className="text-2xs text-muted-foreground font-mono mt-0.5 truncate">
-                      {activeContainer.image} • {activeContainer.status}
-                    </p>
+                    <div className="flex items-center space-x-1.5 text-2xs text-muted-foreground font-mono mt-0.5 truncate">
+                      <button
+                        onClick={() => {
+                          const targetImg = images.find(
+                            (img) =>
+                              img.id === activeContainer.imageId ||
+                              `${img.repository}:${img.tag}` === activeContainer.image ||
+                              img.repository === activeContainer.image.split(":")[0]
+                          );
+                          setActiveTab("images");
+                          if (targetImg) {
+                            setSelectedImageId(targetImg.id);
+                          }
+                        }}
+                        className="text-primary hover:underline flex items-center space-x-1 transition-colors group/img shrink-0"
+                        title="Ir a la imagen y sus capas"
+                      >
+                        <Layers className="w-2.5 h-2.5 text-sky-400 group-hover/img:scale-110 transition-transform" />
+                        <span className="truncate max-w-[200px]">{activeContainer.image}</span>
+                      </button>
+                      <span>•</span>
+                      <span className="truncate">{activeContainer.status}</span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -923,11 +906,11 @@ export const ContainersSplitView: React.FC = () => {
                         containerName: activeContainer.name,
                       });
                     }}
-                    className="flex items-center space-x-1 px-2.5 py-0.5 rounded-md text-2xs font-mono bg-surface border border-border/70 text-foreground hover:text-primary hover:border-primary/40 transition-colors shadow-xs shrink-0"
+                    className="flex items-center space-x-1 px-2.5 py-0.5 rounded-md text-2xs font-mono bg-surface border border-border/70 text-foreground hover:text-primary hover:border-primary/40 transition-colors shadow-xs shrink-0 truncate max-w-[180px]"
                     title="Pop out into real native OS window"
                   >
-                    <AppWindow className="w-3 h-3 text-primary" />
-                    <span>Pop out ({tabs.find((t) => t.id === containerDetailTab)?.label})</span>
+                    <AppWindow className="w-3 h-3 text-primary shrink-0" />
+                    <span className="truncate">Pop out ({tabs.find((t) => t.id === containerDetailTab)?.label})</span>
                   </button>
                 </div>
               </div>

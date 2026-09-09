@@ -188,3 +188,57 @@ export type AppTheme =
 export type AccentColor = "blue" | "sky" | "mint" | "orange" | "pink" | "purple" | "graphite";
 
 export type ColorMode = "light" | "dark" | "system";
+
+export type LayerFileChangeType = "added" | "modified" | "deleted";
+
+export interface ImageLayerFileItem {
+  path: string;
+  size: number;
+  type: "file" | "dir" | "symlink";
+  changeType: LayerFileChangeType;
+}
+
+export interface ImageLayerDetail {
+  id: string;
+  index: number;
+  command: string;
+  rawCommand: string;
+  instructionType: string;
+  size: number;
+  sizePercent: number;
+  created: string;
+  emptyLayer: boolean;
+  isBloat?: boolean;
+  bloatReason?: string;
+  files?: ImageLayerFileItem[];
+}
+
+export interface ImageOptimizationAdvice {
+  title: string;
+  description: string;
+  severity: "low" | "medium" | "high";
+  layerIndex?: number;
+  potentialSavings?: number;
+}
+
+export interface ImageAnalysis {
+  imageId: string;
+  repository: string;
+  tag: string;
+  totalSize: number;
+  wastedSize: number;
+  efficiencyScore: number;
+  layerCount: number;
+  architecture?: string;
+  os?: string;
+  author?: string;
+  layers: ImageLayerDetail[];
+  recommendations: ImageOptimizationAdvice[];
+}
+
+export interface NavigationEntry {
+  activeTab: ActiveTab;
+  selectedContainerId: string | null;
+  containerDetailTab: "overview" | "logs" | "terminal" | "stats" | "inspect" | "files";
+  selectedImageId: string | null;
+}

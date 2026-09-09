@@ -1,32 +1,101 @@
-import React, { useState } from "react";
-import { Layers, Trash2, Search, Check, Copy } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { Layers, Trash2, Search, Check, Copy, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { formatBytes } from "@/lib/utils";
 import { DockerImage } from "@/types";
 import { DockerDisconnected } from "@/components/DockerDisconnected";
+import { ImageLayerInspector } from "./ImageLayerInspector";
+
+type ImageSortField = "name" | "id" | "size" | "status";
+type SortDirection = "asc" | "desc";
 
 export const ImagesView: React.FC = () => {
-  const { t, images, systemOverview, removeImage } = useAppStore();
+  const {
+    t,
+    images,
+    systemOverview,
+    removeImage,
+    selectedImageId,
+    setSelectedImageId,
+  } = useAppStore();
   const isConnected = systemOverview?.dockerConnected ?? false;
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [imageToDelete, setImageToDelete] = useState<DockerImage | null>(null);
+  const [sortField, setSortField] = useState<ImageSortField>("name");
+  const [sortOrder, setSortOrder] = useState<SortDirection>("asc");
 
-  if (!isConnected) {
-    return <DockerDisconnected icon={Layers} />;
+  const handleSort = (field: ImageSortField) => {
+    if (sortField === field) {
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortOrder(field === "size" ? "desc" : "asc");
+    }
+  };
+
+  const sortedImages = useMemo(() => {
+    const list = images.filter(
+      (image) =>
+        image.repository.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        image.tag.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        image.id.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    return list.sort((a, b) => {
+      let comparison = 0;
+      switch (sortField) {
+        case "name": {
+          const nameA = `${a.repository}:${a.tag}`.toLowerCase();
+          const nameB = `${b.repository}:${b.tag}`.toLowerCase();
+          comparison = nameA.localeCompare(nameB);
+          break;
+        }
+        case "id": {
+          comparison = a.id.localeCompare(b.id);
+          break;
+        }
+        case "size": {
+          comparison = a.size - b.size;
+          break;
+        }
+        case "status": {
+          comparison = (a.inUse === b.inUse) ? 0 : a.inUse ? -1 : 1;
+          break;
+        }
+      }
+      return sortOrder === "asc" ? comparison : -comparison;
+    });
+  }, [images, searchQuery, sortField, sortOrder]);
+
+  if (selectedImageId) {
+    return (
+      <ImageLayerInspector
+        imageId={selectedImageId}
+        onBack={() => setSelectedImageId(null)}
+      />
+    );
   }
 
-  const filteredImages = images.filter(
-    (image) =>
-      image.repository.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      image.tag.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      image.id.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  if (!isConnected && images.length === 0) {
+    return <DockerDisconnected icon={Layers} />;
+  }
 
   const handleCopyId = (id: string) => {
     navigator.clipboard.writeText(id);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 1500);
+  };
+
+  const renderSortIndicator = (field: ImageSortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="w-3 h-3 opacity-30 group-hover:opacity-70 transition-opacity" />;
+    }
+    return sortOrder === "asc" ? (
+      <ArrowUp className="w-3 h-3 text-primary transition-transform" />
+    ) : (
+      <ArrowDown className="w-3 h-3 text-primary transition-transform" />
+    );
   };
 
   return (
@@ -57,24 +126,49 @@ export const ImagesView: React.FC = () => {
       </div>
 
       <div className="bg-surface/80 backdrop-blur-sm border border-border/70 rounded-xl overflow-hidden shadow-xs">
-        <div className="grid grid-cols-12 px-4 py-2 border-b border-border/70 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 bg-surface-secondary/40 ">
-          <div className="col-span-5 sm:col-span-4">{t.images.repoAndTag}</div>
-          <div className="col-span-3">{t.images.imageId}</div>
-          <div className="col-span-2">{t.images.size}</div>
-          <div className="col-span-1 hidden sm:block">{t.images.status}</div>
+        <div className="grid grid-cols-12 px-4 py-2.5 border-b border-border/70 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 bg-surface-secondary/40 select-none">
+          <button
+            onClick={() => handleSort("name")}
+            className="col-span-5 sm:col-span-4 flex items-center space-x-1.5 hover:text-foreground text-left transition-colors group"
+          >
+            <span>{t.images.repoAndTag}</span>
+            {renderSortIndicator("name")}
+          </button>
+          <button
+            onClick={() => handleSort("id")}
+            className="col-span-3 flex items-center space-x-1.5 hover:text-foreground text-left transition-colors group"
+          >
+            <span>{t.images.imageId}</span>
+            {renderSortIndicator("id")}
+          </button>
+          <button
+            onClick={() => handleSort("size")}
+            className="col-span-2 flex items-center space-x-1.5 hover:text-foreground text-left transition-colors group"
+          >
+            <span>{t.images.size}</span>
+            {renderSortIndicator("size")}
+          </button>
+          <button
+            onClick={() => handleSort("status")}
+            className="col-span-1 hidden sm:flex items-center space-x-1.5 hover:text-foreground text-left transition-colors group"
+          >
+            <span>{t.images.status}</span>
+            {renderSortIndicator("status")}
+          </button>
           <div className="col-span-2 sm:col-span-2 text-right">{t.images.actions}</div>
         </div>
 
         <div className="divide-y divide-border/60 text-xs">
-          {filteredImages.map((image) => (
+          {sortedImages.map((image) => (
             <div
               key={image.id}
-              className="grid grid-cols-12 px-4 py-2.5 items-center hover:bg-surface-hover transition-colors group"
+              onClick={() => setSelectedImageId(image.id)}
+              className="grid grid-cols-12 px-4 py-2.5 items-center hover:bg-surface-hover transition-colors group cursor-pointer"
             >
               <div className="col-span-5 sm:col-span-4 flex items-center space-x-2.5 truncate pr-2">
-                <Layers className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                <Layers className="w-3.5 h-3.5 text-sky-500 shrink-0 group-hover:scale-110 transition-transform" />
                 <div className="truncate">
-                  <span className="font-semibold text-foreground text-xs truncate block">
+                  <span className="font-semibold text-foreground text-xs truncate block group-hover:text-primary transition-colors">
                     {image.repository}
                   </span>
                   <span className="text-[10px] font-mono text-muted-foreground truncate block">
@@ -86,7 +180,10 @@ export const ImagesView: React.FC = () => {
               <div className="col-span-3 text-2xs font-mono text-muted-foreground flex items-center space-x-1">
                 <span className="truncate">{image.id.replace("sha256:", "").substring(0, 12)}</span>
                 <button
-                  onClick={() => handleCopyId(image.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCopyId(image.id);
+                  }}
                   className="hover:text-foreground p-0.5 text-muted-foreground rounded hover:bg-surface-secondary transition-colors"
                   title="Copy full hash"
                 >
@@ -114,9 +211,12 @@ export const ImagesView: React.FC = () => {
                 )}
               </div>
 
-              <div className="col-span-2 sm:col-span-2 flex items-center justify-end">
+              <div className="col-span-2 sm:col-span-2 flex items-center justify-end space-x-1">
                 <button
-                  onClick={() => setImageToDelete(image)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setImageToDelete(image);
+                  }}
                   className="p-1.5 rounded-md text-muted-foreground hover:text-status-danger hover:bg-status-danger/10 transition-colors"
                   title={t.images.deleteImage}
                 >

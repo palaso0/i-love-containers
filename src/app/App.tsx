@@ -23,6 +23,8 @@ export const App: React.FC = () => {
     toggleViewMode,
     isSidebarOpen,
     toggleSidebar,
+    goBack,
+    goForward,
   } = useAppStore();
 
   useEffect(() => {
@@ -36,7 +38,19 @@ export const App: React.FC = () => {
         return;
       }
 
-      if (event.key.toLowerCase() === "b" && (event.metaKey || event.ctrlKey)) {
+      if (
+        (event.key === "[" && (event.metaKey || event.ctrlKey)) ||
+        (event.key === "ArrowLeft" && event.altKey)
+      ) {
+        event.preventDefault();
+        goBack();
+      } else if (
+        (event.key === "]" && (event.metaKey || event.ctrlKey)) ||
+        (event.key === "ArrowRight" && event.altKey)
+      ) {
+        event.preventDefault();
+        goForward();
+      } else if (event.key.toLowerCase() === "b" && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
         toggleSidebar();
       } else if (event.key.toLowerCase() === "r" && !event.metaKey && !event.ctrlKey) {
@@ -59,7 +73,15 @@ export const App: React.FC = () => {
 
     window.addEventListener("keydown", handleGlobalShortcuts);
     return () => window.removeEventListener("keydown", handleGlobalShortcuts);
-  }, [selectedContainerId, setContainerDetailTab, refreshData, toggleViewMode, toggleSidebar]);
+  }, [
+    selectedContainerId,
+    setContainerDetailTab,
+    refreshData,
+    toggleViewMode,
+    toggleSidebar,
+    goBack,
+    goForward,
+  ]);
 
   if (isInitialLoading) {
     return (

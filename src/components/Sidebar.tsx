@@ -293,7 +293,7 @@ export const Sidebar: React.FC = () => {
         <div
           data-tauri-drag-region
           onMouseDown={handleWindowDragStart}
-          className={`h-11 flex items-center border-b border-sidebar-border/40 shrink-0 relative select-none ${
+          className={`h-11 flex items-center border-b border-sidebar-border/40 shrink-0 relative ${
             isFullscreen
               ? "justify-center px-2"
               : isCompact
@@ -371,7 +371,7 @@ export const Sidebar: React.FC = () => {
             )}
           </div>
         )}
-        <p className="text-sm font-bold text-foreground/60 text-center mt-2 select-none">I Love Containers</p>
+        <p className="text-sm font-bold text-foreground/60 text-center mt-2 truncate px-1">{isCompact ? "ILC" : "I Love Containers"}</p>
       </div>
 
       <div

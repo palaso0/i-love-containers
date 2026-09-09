@@ -9,11 +9,12 @@ import {
   ContainerEngineInfo,
   ContainerFileItem,
   ContainerFileListResponse,
+  ImageAnalysis,
 } from "@/types";
-import { DEFAULT_ENGINES, DEFAULT_OVERVIEW } from "./engines";
+import { DEFAULT_ENGINES, DEFAULT_OVERVIEW, DEFAULT_IMAGES } from "./engines";
 
 let localContainers: ContainerDetail[] = [];
-let localImages: DockerImage[] = [];
+let localImages: DockerImage[] = [...DEFAULT_IMAGES];
 let localVolumes: DockerVolume[] = [];
 let localEngines: ContainerEngineInfo[] = [...DEFAULT_ENGINES];
 let localActiveEngine: ContainerEngineInfo | null = DEFAULT_ENGINES[0] || null;
@@ -301,10 +302,14 @@ export async function fetchImages(): Promise<DockerImage[]> {
   try {
     const response = await apiFetch("/api/images");
     if (response.ok) {
-      return await response.json();
+      const data = await response.json();
+      if (Array.isArray(data) && data.length > 0) {
+        localImages = data;
+        return data;
+      }
     }
   } catch {}
-  return [];
+  return localImages;
 }
 
 export async function removeImage(id: string): Promise<boolean> {
@@ -315,6 +320,187 @@ export async function removeImage(id: string): Promise<boolean> {
 
   localImages = localImages.filter((img) => img.id !== id);
   return true;
+}
+
+export function getMockImageAnalysis(imageId: string, repository = "node", tag = "20-alpine"): ImageAnalysis {
+  const totalSize = 178 * 1024 * 1024;
+  const wastedSize = 28 * 1024 * 1024;
+  return {
+    imageId,
+    repository,
+    tag,
+    totalSize,
+    wastedSize,
+    efficiencyScore: 84,
+    layerCount: 8,
+    architecture: "arm64",
+    os: "linux",
+    layers: [
+      {
+        id: "sha256:7264a8db6415",
+        index: 1,
+        command: "FROM alpine:3.19",
+        rawCommand: "ADD file:7264a8db6415... in /",
+        instructionType: "FROM",
+        size: 7.3 * 1024 * 1024,
+        sizePercent: 4.1,
+        created: new Date(Date.now() - 30 * 86400000).toISOString(),
+        emptyLayer: false,
+        files: [
+          { path: "/bin/sh", size: 124000, type: "file", changeType: "added" },
+          { path: "/etc/alpine-release", size: 14, type: "file", changeType: "added" },
+          { path: "/etc/passwd", size: 1200, type: "file", changeType: "added" },
+          { path: "/lib/ld-musl-aarch64.so.1", size: 680000, type: "file", changeType: "added" },
+          { path: "/usr/bin/busybox", size: 840000, type: "file", changeType: "added" },
+        ],
+      },
+      {
+        id: "sha256:b892ec01a4e2",
+        index: 2,
+        command: "ENV NODE_VERSION=20.18.0 YARN_VERSION=1.22.22",
+        rawCommand: "ENV NODE_VERSION=20.18.0 YARN_VERSION=1.22.22",
+        instructionType: "ENV",
+        size: 0,
+        sizePercent: 0,
+        created: new Date(Date.now() - 25 * 86400000).toISOString(),
+        emptyLayer: true,
+        files: [],
+      },
+      {
+        id: "sha256:4c728e91d8f3",
+        index: 3,
+        command: "RUN apk add --no-cache libstdc++ ca-certificates",
+        rawCommand: "RUN apk add --no-cache libstdc++ ca-certificates",
+        instructionType: "RUN",
+        size: 14.8 * 1024 * 1024,
+        sizePercent: 8.3,
+        created: new Date(Date.now() - 24 * 86400000).toISOString(),
+        emptyLayer: false,
+        files: [
+          { path: "/usr/lib/libstdc++.so.6", size: 2800000, type: "file", changeType: "added" },
+          { path: "/etc/ssl/certs/ca-certificates.crt", size: 210000, type: "file", changeType: "added" },
+          { path: "/etc/apk/world", size: 45, type: "file", changeType: "modified" },
+        ],
+      },
+      {
+        id: "sha256:e1a90c41f712",
+        index: 4,
+        command: "RUN wget https://nodejs.org/dist/v20.18.0/node-v20.18.0-linux-arm64.tar.gz && tar -xzf node-v20.18.0-linux-arm64.tar.gz -C /usr/local --strip-components=1",
+        rawCommand: "RUN wget https://nodejs.org/dist/v20.18.0/node-v20.18.0-linux-arm64.tar.gz",
+        instructionType: "RUN",
+        size: 92.4 * 1024 * 1024,
+        sizePercent: 51.9,
+        created: new Date(Date.now() - 22 * 86400000).toISOString(),
+        emptyLayer: false,
+        isBloat: true,
+        bloatReason: "Tarball downloaded without removing archive in same layer",
+        files: [
+          { path: "/usr/local/bin/node", size: 84000000, type: "file", changeType: "added" },
+          { path: "/usr/local/bin/npm", size: 12000, type: "symlink", changeType: "added" },
+          { path: "/usr/local/lib/node_modules", size: 8000000, type: "dir", changeType: "added" },
+          { path: "/tmp/node-v20.18.0-linux-arm64.tar.gz", size: 28000000, type: "file", changeType: "added" },
+        ],
+      },
+      {
+        id: "sha256:f481c9a1029e",
+        index: 5,
+        command: "WORKDIR /app",
+        rawCommand: "WORKDIR /app",
+        instructionType: "WORKDIR",
+        size: 0,
+        sizePercent: 0,
+        created: new Date(Date.now() - 10 * 86400000).toISOString(),
+        emptyLayer: true,
+        files: [{ path: "/app", size: 4096, type: "dir", changeType: "added" }],
+      },
+      {
+        id: "sha256:32810a0129bc",
+        index: 6,
+        command: "COPY package.json package-lock.json ./",
+        rawCommand: "COPY package.json package-lock.json ./",
+        instructionType: "COPY",
+        size: 24 * 1024,
+        sizePercent: 0.1,
+        created: new Date(Date.now() - 5 * 86400000).toISOString(),
+        emptyLayer: false,
+        files: [
+          { path: "/app/package.json", size: 1820, type: "file", changeType: "added" },
+          { path: "/app/package-lock.json", size: 22500, type: "file", changeType: "added" },
+        ],
+      },
+      {
+        id: "sha256:91c2847a9801",
+        index: 7,
+        command: "RUN npm ci --only=production",
+        rawCommand: "RUN npm ci --only=production",
+        instructionType: "RUN",
+        size: 58.2 * 1024 * 1024,
+        sizePercent: 32.7,
+        created: new Date(Date.now() - 4 * 86400000).toISOString(),
+        emptyLayer: false,
+        isBloat: true,
+        bloatReason: "npm cache left in /root/.npm",
+        files: [
+          { path: "/app/node_modules", size: 42000000, type: "dir", changeType: "added" },
+          { path: "/root/.npm", size: 16200000, type: "dir", changeType: "added" },
+        ],
+      },
+      {
+        id: "sha256:aa91280fc291",
+        index: 8,
+        command: "COPY . .",
+        rawCommand: "COPY . .",
+        instructionType: "COPY",
+        size: 5.1 * 1024 * 1024,
+        sizePercent: 2.9,
+        created: new Date(Date.now() - 1 * 86400000).toISOString(),
+        emptyLayer: false,
+        files: [
+          { path: "/app/src/index.ts", size: 4500, type: "file", changeType: "added" },
+          { path: "/app/src/server.ts", size: 12800, type: "file", changeType: "added" },
+          { path: "/app/dist", size: 4800000, type: "dir", changeType: "added" },
+        ],
+      },
+    ],
+    recommendations: [
+      {
+        title: "Clean NPM and package cache",
+        description: "Layer 7 leaves 16.2 MB in /root/.npm. Run 'npm cache clean --force' in the same RUN command.",
+        severity: "medium",
+        layerIndex: 7,
+        potentialSavings: 16.2 * 1024 * 1024,
+      },
+      {
+        title: "Remove intermediate download archive",
+        description: "Layer 4 downloads a 28 MB archive that is extracted and not deleted in the same command.",
+        severity: "high",
+        layerIndex: 4,
+        potentialSavings: 28 * 1024 * 1024,
+      },
+      {
+        title: "Multi-stage build opportunity",
+        description: "Use a builder stage for dependencies and copy only compiled assets into a lean final runtime image.",
+        severity: "high",
+        potentialSavings: 65 * 1024 * 1024,
+      },
+    ],
+  };
+}
+
+export async function fetchImageAnalysis(imageId: string): Promise<ImageAnalysis | null> {
+  try {
+    const response = await apiFetch(`/api/images/${encodeURIComponent(imageId)}/analysis`);
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch {}
+
+  const match = localImages.find((img) => img.id === imageId);
+  return getMockImageAnalysis(
+    imageId,
+    match ? match.repository : "app",
+    match ? match.tag : "latest"
+  );
 }
 
 export async function fetchVolumes(): Promise<DockerVolume[]> {

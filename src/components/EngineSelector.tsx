@@ -121,7 +121,7 @@ export const EngineSelector: React.FC = () => {
           />
 
           <div
-            className="absolute left-0 top-full mt-2 w-[360px] rounded-xl p-3 z-50 animate-in fade-in zoom-in-95 duration-100 font-sans text-xs bg-white dark:bg-[#151923] border border-border/80 dark:border-white/15 shadow-2xl"
+            className="absolute left-0 top-full mt-2 w-[360px] max-w-[90vw] rounded-xl p-3 z-50 animate-in fade-in zoom-in-95 duration-100 font-sans text-xs bg-white dark:bg-[#151923] border border-border/80 dark:border-white/15 shadow-2xl"
           >
             <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-border/70">
               <div>

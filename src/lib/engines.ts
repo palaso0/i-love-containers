@@ -83,3 +83,42 @@ export const DEFAULT_OVERVIEW: SystemOverview = {
   activeEngine: DEFAULT_ENGINES[0],
   detectedEngines: DEFAULT_ENGINES,
 };
+
+export const DEFAULT_IMAGES = [
+  {
+    id: "sha256:7264a8db6415f01e",
+    repository: "node",
+    tag: "20-alpine",
+    size: 178 * 1024 * 1024,
+    created: new Date(Date.now() - 5 * 86400000).toISOString(),
+    inUse: true,
+    containerCount: 1,
+  },
+  {
+    id: "sha256:4c728e91d8f3a92b",
+    repository: "redis",
+    tag: "7-alpine",
+    size: 34 * 1024 * 1024,
+    created: new Date(Date.now() - 14 * 86400000).toISOString(),
+    inUse: true,
+    containerCount: 1,
+  },
+  {
+    id: "sha256:e1a90c41f71290bb",
+    repository: "postgres",
+    tag: "16-alpine",
+    size: 245 * 1024 * 1024,
+    created: new Date(Date.now() - 20 * 86400000).toISOString(),
+    inUse: false,
+    containerCount: 0,
+  },
+  {
+    id: "sha256:aa91280fc29168aa",
+    repository: "nginx",
+    tag: "alpine",
+    size: 42 * 1024 * 1024,
+    created: new Date(Date.now() - 28 * 86400000).toISOString(),
+    inUse: false,
+    containerCount: 0,
+  },
+];

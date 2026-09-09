@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   ActiveTab,
   AppTheme,
@@ -12,6 +12,7 @@ import {
   DockerVolume,
   SystemOverview,
   ContainerEngineInfo,
+  NavigationEntry,
 } from "@/types";
 import * as api from "@/lib/api";
 import { translations } from "@/lib/i18n";
@@ -36,6 +37,11 @@ interface AppState {
   activeTab: ActiveTab;
   selectedContainerId: string | null;
   containerDetailTab: "overview" | "logs" | "terminal" | "stats" | "inspect" | "files";
+  selectedImageId: string | null;
+  canGoBack: boolean;
+  canGoForward: boolean;
+  goBack: () => void;
+  goForward: () => void;
   systemOverview: SystemOverview | null;
   detectedEngines: ContainerEngineInfo[];
   activeEngine: ContainerEngineInfo | null;
@@ -55,6 +61,7 @@ interface AppState {
   setActiveTab: (tab: ActiveTab) => void;
   setSelectedContainerId: (id: string | null) => void;
   setContainerDetailTab: (tab: "overview" | "logs" | "terminal" | "stats" | "inspect" | "files") => void;
+  setSelectedImageId: (id: string | null) => void;
   setIsCommandPaletteOpen: (open: boolean) => void;
   setSearchFilter: (query: string) => void;
   setSelectedHost: (host: string) => void;
@@ -325,6 +332,130 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [containerDetailTab, setContainerDetailTab] = useState<
     "overview" | "logs" | "terminal" | "stats" | "inspect" | "files"
   >("overview");
+  const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
+
+  const [navigationHistory, setNavigationHistory] = useState<NavigationEntry[]>([
+    {
+      activeTab: "containers",
+      selectedContainerId: null,
+      containerDetailTab: "overview",
+      selectedImageId: null,
+    },
+  ]);
+  const [historyIndex, setHistoryIndex] = useState<number>(0);
+  const isNavigatingHistoryRef = useRef(false);
+
+  const pushHistory = useCallback(
+    (newEntry: Partial<NavigationEntry>) => {
+      if (isNavigatingHistoryRef.current) return;
+      setNavigationHistory((prev) => {
+        const current = prev[historyIndex] || {
+          activeTab: "containers",
+          selectedContainerId: null,
+          containerDetailTab: "overview",
+          selectedImageId: null,
+        };
+        const nextEntry: NavigationEntry = {
+          activeTab: newEntry.activeTab ?? current.activeTab,
+          selectedContainerId:
+            newEntry.selectedContainerId !== undefined
+              ? newEntry.selectedContainerId
+              : current.selectedContainerId,
+          containerDetailTab:
+            newEntry.containerDetailTab ?? current.containerDetailTab,
+          selectedImageId:
+            newEntry.selectedImageId !== undefined
+              ? newEntry.selectedImageId
+              : current.selectedImageId,
+        };
+
+        if (
+          nextEntry.activeTab === current.activeTab &&
+          nextEntry.selectedContainerId === current.selectedContainerId &&
+          nextEntry.containerDetailTab === current.containerDetailTab &&
+          nextEntry.selectedImageId === current.selectedImageId
+        ) {
+          return prev;
+        }
+
+        const sliced = prev.slice(0, historyIndex + 1);
+        sliced.push(nextEntry);
+        setHistoryIndex(sliced.length - 1);
+        return sliced;
+      });
+    },
+    [historyIndex]
+  );
+
+  const handleSetActiveTab = useCallback(
+    (tab: ActiveTab) => {
+      setActiveTab(tab);
+      pushHistory({ activeTab: tab });
+    },
+    [pushHistory]
+  );
+
+  const handleSetSelectedContainerId = useCallback(
+    (id: string | null) => {
+      setSelectedContainerId(id);
+      pushHistory({ selectedContainerId: id });
+    },
+    [pushHistory]
+  );
+
+  const handleSetContainerDetailTab = useCallback(
+    (tab: "overview" | "logs" | "terminal" | "stats" | "inspect" | "files") => {
+      setContainerDetailTab(tab);
+      pushHistory({ containerDetailTab: tab });
+    },
+    [pushHistory]
+  );
+
+  const handleSetSelectedImageId = useCallback(
+    (id: string | null) => {
+      setSelectedImageId(id);
+      pushHistory({ selectedImageId: id });
+    },
+    [pushHistory]
+  );
+
+  const canGoBack = historyIndex > 0;
+  const canGoForward = historyIndex < navigationHistory.length - 1;
+
+  const goBack = useCallback(() => {
+    if (historyIndex <= 0) return;
+    const prevIdx = historyIndex - 1;
+    const target = navigationHistory[prevIdx];
+    if (!target) return;
+
+    isNavigatingHistoryRef.current = true;
+    setHistoryIndex(prevIdx);
+    setActiveTab(target.activeTab);
+    setSelectedContainerId(target.selectedContainerId);
+    setContainerDetailTab(target.containerDetailTab);
+    setSelectedImageId(target.selectedImageId);
+    setTimeout(() => {
+      isNavigatingHistoryRef.current = false;
+    }, 60);
+  }, [historyIndex, navigationHistory]);
+
+  const goForward = useCallback(() => {
+    if (historyIndex >= navigationHistory.length - 1) return;
+    const nextIdx = historyIndex + 1;
+    const target = navigationHistory[nextIdx];
+    if (!target) return;
+
+    isNavigatingHistoryRef.current = true;
+    setHistoryIndex(nextIdx);
+    setActiveTab(target.activeTab);
+    setSelectedContainerId(target.selectedContainerId);
+    setContainerDetailTab(target.containerDetailTab);
+    setSelectedImageId(target.selectedImageId);
+    setTimeout(() => {
+      isNavigatingHistoryRef.current = false;
+    }, 60);
+  }, [historyIndex, navigationHistory]);
+
   const [systemOverview, setSystemOverview] = useState<SystemOverview | null>(null);
   const [detectedEngines, setDetectedEngines] = useState<ContainerEngineInfo[]>([]);
   const [activeEngine, setActiveEngine] = useState<ContainerEngineInfo | null>(null);
@@ -510,6 +641,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         activeTab,
         selectedContainerId,
         containerDetailTab,
+        selectedImageId,
+        canGoBack,
+        canGoForward,
+        goBack,
+        goForward,
         systemOverview,
         detectedEngines,
         activeEngine,
@@ -526,9 +662,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isActionInProgress,
         statusMessage,
         selectedHost,
-        setActiveTab,
-        setSelectedContainerId,
-        setContainerDetailTab,
+        setActiveTab: handleSetActiveTab,
+        setSelectedContainerId: handleSetSelectedContainerId,
+        setContainerDetailTab: handleSetContainerDetailTab,
+        setSelectedImageId: handleSetSelectedImageId,
         setIsCommandPaletteOpen,
         setSearchFilter,
         setSelectedHost,
