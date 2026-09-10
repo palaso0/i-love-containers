@@ -687,8 +687,9 @@ const mockFilesystem: Record<string, MockFsNode[]> = {
 };
 
 function normalizePath(p: string): string {
-  if (!p || p === "/") return "/";
-  const segments = p.split("/").filter(Boolean);
+  const clean = (p || "").replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
+  if (!clean || clean === "/") return "/";
+  const segments = clean.split("/").filter(Boolean);
   return "/" + segments.join("/");
 }
 
@@ -702,11 +703,13 @@ function getParentPath(p: string): string | null {
 
 export async function fetchContainerFiles(
   containerId: string,
-  dirPath = "/"
+  dirPath?: string
 ): Promise<ContainerFileListResponse> {
-  const normalized = normalizePath(dirPath);
+  const hasExplicitPath = Boolean(dirPath && dirPath.trim());
+  const normalized = hasExplicitPath ? normalizePath(dirPath!) : "";
+  const query = normalized ? `?path=${encodeURIComponent(normalized)}` : "";
   try {
-    const res = await apiFetch(`/api/containers/${containerId}/files?path=${encodeURIComponent(normalized)}`);
+    const res = await apiFetch(`/api/containers/${containerId}/files${query}`);
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data.entries)) {
@@ -715,10 +718,11 @@ export async function fetchContainerFiles(
     }
   } catch {}
 
-  const nodes = mockFilesystem[normalized] || [];
+  const fallbackPath = normalized || "/";
+  const nodes = mockFilesystem[fallbackPath] || [];
   const entries: ContainerFileItem[] = nodes.map((n) => ({
     name: n.name,
-    path: normalized === "/" ? `/${n.name}` : `${normalized}/${n.name}`,
+    path: fallbackPath === "/" ? `/${n.name}` : `${fallbackPath}/${n.name}`,
     isDirectory: n.isDirectory,
     isSymlink: false,
     size: n.size,
@@ -729,9 +733,10 @@ export async function fetchContainerFiles(
   }));
 
   return {
-    currentPath: normalized,
-    parentPath: getParentPath(normalized),
+    currentPath: fallbackPath,
+    parentPath: getParentPath(fallbackPath),
     entries,
+    defaultWorkingDir: fallbackPath,
   };
 }
 

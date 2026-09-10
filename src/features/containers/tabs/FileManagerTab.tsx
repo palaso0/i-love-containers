@@ -128,6 +128,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
   const fm = t.containers.fileManager;
 
   const [currentPath, setCurrentPath] = useState<string>("/");
+  const [defaultPath, setDefaultPath] = useState<string>("/");
   const [history, setHistory] = useState<string[]>(["/"]);
   const [historyIdx, setHistoryIdx] = useState<number>(0);
   const [files, setFiles] = useState<ContainerFileItem[]>([]);
@@ -193,16 +194,22 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
   fmRef.current = fm;
 
   const loadFiles = useCallback(
-    async (path: string) => {
+    async (path?: string) => {
       setIsLoading(true);
       try {
         const res = await fetchContainerFiles(containerId, path);
+        const resolvedPath = res.currentPath || path || "/";
         setFiles(res.entries || []);
-        setCurrentPath(res.currentPath || path);
-        setPathInput(res.currentPath || path);
+        setCurrentPath(resolvedPath);
+        setPathInput(resolvedPath);
+        if (res.defaultWorkingDir) {
+          setDefaultPath(res.defaultWorkingDir);
+        }
         setSelectedPaths(new Set());
+        return resolvedPath;
       } catch {
         setFiles([]);
+        return path || "/";
       } finally {
         setIsLoading(false);
       }
@@ -211,8 +218,18 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
   );
 
   useEffect(() => {
-    loadFiles(currentPath);
-  }, [loadFiles, currentPath]);
+    let isMounted = true;
+    (async () => {
+      const initialPath = await loadFiles();
+      if (isMounted && initialPath) {
+        setHistory([initialPath]);
+        setHistoryIdx(0);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, [containerId, loadFiles]);
 
   // Listen to native Tauri OS drag-drop events (from Finder/Desktop)
   useEffect(() => {
@@ -409,19 +426,20 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
   }, [containerId, loadFiles]);
 
   const navigateTo = (newPath: string) => {
-    if (newPath === currentPath) return;
+    const clean = newPath.trim() || "/";
+    if (clean === currentPath) return;
     const newHistory = history.slice(0, historyIdx + 1);
-    newHistory.push(newPath);
+    newHistory.push(clean);
     setHistory(newHistory);
     setHistoryIdx(newHistory.length - 1);
-    setCurrentPath(newPath);
+    loadFiles(clean);
   };
 
   const handleBack = () => {
     if (historyIdx > 0) {
       const prev = history[historyIdx - 1];
       setHistoryIdx(historyIdx - 1);
-      setCurrentPath(prev);
+      loadFiles(prev);
     }
   };
 
@@ -429,7 +447,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
     if (historyIdx < history.length - 1) {
       const next = history[historyIdx + 1];
       setHistoryIdx(historyIdx + 1);
-      setCurrentPath(next);
+      loadFiles(next);
     }
   };
 
@@ -934,10 +952,10 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
             <ArrowUp className="w-4 h-4" />
           </button>
           <button
-            onClick={() => navigateTo("/")}
-            disabled={currentPath === "/"}
+            onClick={() => navigateTo(defaultPath || "/")}
+            disabled={currentPath === (defaultPath || "/")}
             className="p-1.5 rounded-md hover:bg-surface text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent transition-colors shadow-xs"
-            title={fm.rootDirectory}
+            title={defaultPath && defaultPath !== "/" ? `Working directory (${defaultPath})` : fm.rootDirectory}
           >
             <Home className="w-4 h-4" />
           </button>

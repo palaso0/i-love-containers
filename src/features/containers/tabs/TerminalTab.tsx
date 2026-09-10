@@ -2,9 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
-import { Terminal as TerminalIcon, AppWindow, Trash2 } from "lucide-react";
+import { Terminal as TerminalIcon, Trash2 } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
-import { openRealNativeWindow } from "@/lib/nativeWindow";
 import { executeContainerCommand } from "@/lib/api";
 import { getTerminalTheme, formatTerminalPrompt } from "@/lib/terminalTheme";
 import { setupTerminalInput, TerminalController } from "@/lib/terminalInput";
@@ -184,22 +183,6 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
           <span className="truncate">{isCompact ? "PTY" : "Interactive PTY (Docker Exec)"}</span>
         </div>
         <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
-          <button
-            onClick={() =>
-              openRealNativeWindow({
-                id: `term-${containerId}-${Date.now()}`,
-                title: `${containerName} — Terminal`,
-                type: "terminal",
-                containerId,
-                containerName,
-              })
-            }
-            className="flex items-center space-x-1 px-1.5 sm:px-2 py-0.5 text-2xs font-mono text-primary hover:text-primary-hover rounded bg-surface border border-border transition-colors"
-            title="Open in separate native OS window"
-          >
-            <AppWindow className="w-2.5 h-2.5" />
-            {!isCompact && <span>New Window</span>}
-          </button>
           <button
             onClick={handleClear}
             className="flex items-center space-x-1 px-1.5 sm:px-2 py-0.5 text-2xs font-mono text-muted-foreground hover:text-foreground rounded bg-surface border border-border transition-colors"

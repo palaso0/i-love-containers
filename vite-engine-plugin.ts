@@ -168,7 +168,7 @@ function requestUnixSocket(
   requestPath: string,
   method = "GET",
   bodyData?: any
-): Promise<{ status: number; data: any }> {
+): Promise<{ status: number; data: any; rawBuffer?: Buffer }> {
   return new Promise((resolve, reject) => {
     const options: http.RequestOptions = {
       socketPath,
@@ -181,15 +181,16 @@ function requestUnixSocket(
     };
 
     const req = http.request(options, (res) => {
-      let rawData = "";
-      res.setEncoding("utf8");
-      res.on("data", (chunk) => (rawData += chunk));
+      const chunks: Buffer[] = [];
+      res.on("data", (chunk) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
       res.on("end", () => {
+        const fullBuf = Buffer.concat(chunks);
+        const rawData = fullBuf.toString("utf8");
         try {
           const parsed = rawData ? JSON.parse(rawData) : null;
-          resolve({ status: res.statusCode || 200, data: parsed });
+          resolve({ status: res.statusCode || 200, data: parsed, rawBuffer: fullBuf });
         } catch {
-          resolve({ status: res.statusCode || 200, data: rawData });
+          resolve({ status: res.statusCode || 200, data: rawData, rawBuffer: fullBuf });
         }
       });
     });
@@ -205,6 +206,48 @@ function requestUnixSocket(
     }
     req.end();
   });
+}
+
+function demuxDockerStream(buffer: Buffer): { stdout: string; stderr: string; combined: string } {
+  let offset = 0;
+  let stdout = "";
+  let stderr = "";
+  let combined = "";
+
+  while (offset + 8 <= buffer.length) {
+    const type = buffer[offset];
+    const b1 = buffer[offset + 1];
+    const b2 = buffer[offset + 2];
+    const b3 = buffer[offset + 3];
+
+    // Docker multiplex stream: byte 0 is 1 (stdout), 2 (stderr), or 0 (stdin); bytes 1-3 are 0
+    if ((type === 1 || type === 2 || type === 0) && b1 === 0 && b2 === 0 && b3 === 0) {
+      const frameSize = buffer.readUInt32BE(offset + 4);
+      const frameStart = offset + 8;
+      const frameEnd = Math.min(frameStart + frameSize, buffer.length);
+      const payload = buffer.toString("utf8", frameStart, frameEnd);
+      if (type === 1) {
+        stdout += payload;
+      } else if (type === 2) {
+        stderr += payload;
+      }
+      combined += payload;
+      offset = frameStart + frameSize;
+    } else {
+      const rest = buffer.toString("utf8", offset);
+      stdout += rest;
+      combined += rest;
+      break;
+    }
+  }
+
+  if (offset === 0 && buffer.length < 8) {
+    const rest = buffer.toString("utf8");
+    stdout += rest;
+    combined += rest;
+  }
+
+  return { stdout, stderr, combined };
 }
 
 async function execInContainer(
@@ -237,16 +280,12 @@ async function execInContainer(
           Tty: false,
         }
       );
-      const rawOutput = typeof startRes.data === "string" ? startRes.data : "";
-      let output = rawOutput;
-      if (
-        output.length >= 8 &&
-        (output.charCodeAt(0) === 1 || output.charCodeAt(0) === 2) &&
-        output.charCodeAt(1) === 0 &&
-        output.charCodeAt(2) === 0 &&
-        output.charCodeAt(3) === 0
-      ) {
-        output = output.slice(8);
+      let output = "";
+      if (startRes.rawBuffer && startRes.rawBuffer.length > 0) {
+        const demuxed = demuxDockerStream(startRes.rawBuffer);
+        output = demuxed.stdout || demuxed.combined;
+      } else if (typeof startRes.data === "string") {
+        output = startRes.data;
       }
       return { output, exitCode: 0 };
     }
@@ -810,12 +849,22 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
             if (subRoute === "files") {
               const urlObj = new URL(req.url || "", "http://localhost");
               const isContent = parts[2] === "content";
-              const targetPath = urlObj.searchParams.get("path") || (isContent ? "" : "/");
-              const safePath = targetPath.replace(/'/g, "'\\''");
+              let targetPath = urlObj.searchParams.get("path");
+
+              let defaultWorkingDir = "/";
+              try {
+                const inspectRes = await requestUnixSocket(socketPath, `/containers/${containerId}/json`);
+                const inspectedWorkingDir = inspectRes.data?.Config?.WorkingDir;
+                if (inspectedWorkingDir && typeof inspectedWorkingDir === "string" && inspectedWorkingDir.trim() !== "") {
+                  defaultWorkingDir = path.posix.normalize(inspectedWorkingDir.trim());
+                }
+              } catch {}
 
               if (isContent) {
+                const targetFilePath = targetPath || "/";
+                const safePath = targetFilePath.replace(/'/g, "'\\''");
                 const isDownload = urlObj.searchParams.get("download") === "true";
-                const fileName = path.posix.basename(targetPath) || "file";
+                const fileName = path.posix.basename(targetFilePath) || "file";
                 const resCmd = await execInContainer(socketPath, containerId, `base64 '${safePath}'`);
                 if (resCmd.exitCode !== 0) {
                   res.statusCode = 404;
@@ -823,7 +872,7 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
                   res.end(JSON.stringify({ error: "File not found or unreadable" }));
                   return;
                 }
-                const cleanBase64 = resCmd.output.replace(/\s+/g, "");
+                const cleanBase64 = resCmd.output.replace(/[^A-Za-z0-9+/=]/g, "");
                 const buf = Buffer.from(cleanBase64, "base64");
                 if (isDownload) {
                   res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(fileName)}"`);
@@ -843,21 +892,27 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
                 return;
               }
 
+              if (!targetPath || targetPath === "" || targetPath === "DEFAULT" || targetPath === "~") {
+                targetPath = defaultWorkingDir;
+              }
+              const safePath = targetPath.replace(/'/g, "'\\''");
+
               const resCmd = await execInContainer(
                 socketPath,
                 containerId,
-                `cd '${safePath}' 2>/dev/null && pwd && echo '---FILES_DELIMITER---' && ls -lan`
+                `cd '${safePath}' 2>/dev/null || cd / ; pwd ; echo '---FILES_DELIMITER---' ; ls -lan`
               );
               if (resCmd.exitCode !== 0 || !resCmd.output.includes("---FILES_DELIMITER---")) {
                 res.statusCode = 400;
                 res.setHeader("Content-Type", "application/json");
-                res.end(JSON.stringify({ error: resCmd.output || "Failed to list directory", entries: [] }));
+                res.end(JSON.stringify({ error: resCmd.output || "Failed to list directory", entries: [], defaultWorkingDir }));
                 return;
               }
-              const [canonicalPwd, rawListing] = resCmd.output.split("---FILES_DELIMITER---");
-              const currentPath = canonicalPwd.trim() || "/";
+              const [canonicalPwdRaw, rawListing] = resCmd.output.split("---FILES_DELIMITER---");
+              const cleanPwd = (canonicalPwdRaw || "").replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
+              const currentPath = path.posix.normalize(cleanPwd || "/");
               const parentPath = currentPath === "/" ? null : path.posix.dirname(currentPath);
-              const lines = rawListing.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+              const lines = (rawListing || "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
               const entries: any[] = [];
               for (const line of lines) {
                 if (line.startsWith("total ")) continue;
@@ -874,6 +929,10 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
                   const symParts = name.split(" -> ");
                   name = symParts[0];
                   linkTarget = symParts[1];
+                }
+                name = name.replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
+                if (linkTarget) {
+                  linkTarget = linkTarget.replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
                 }
                 if (name === "." || name === "..") continue;
                 entries.push({
@@ -895,7 +954,7 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
                 return a.name.localeCompare(b.name);
               });
               res.setHeader("Content-Type", "application/json");
-              res.end(JSON.stringify({ currentPath, parentPath, entries }));
+              res.end(JSON.stringify({ currentPath, defaultWorkingDir, parentPath, entries }));
               return;
             }
 

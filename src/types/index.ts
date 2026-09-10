@@ -60,6 +60,7 @@ export interface ContainerFileListResponse {
   currentPath: string;
   parentPath: string | null;
   entries: ContainerFileItem[];
+  defaultWorkingDir?: string;
 }
 
 export interface ContainerStats {

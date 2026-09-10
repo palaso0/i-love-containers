@@ -436,59 +436,144 @@ export function parseComposeYaml(
     });
   });
 
-  const layers: ComposeServiceNode[][] = [[], [], [], []];
+  // 1. Group services into architectural tiers
+  // 0: Gateways & Reverse Proxies (nginx, traefik, envoy, gateway)
+  // 1: Frontends & Web UIs (web, ui, client, front)
+  // 2: Application Services & Core APIs (api, server, app, backend)
+  // 3: Workers & Auxiliary Tools (worker, queue, mailhog, tools)
+  // 4: Databases & Storage (postgres, mysql, mariadb, mongo)
+  // 5: Caches & In-Memory Stores (redis, memcached, valkey)
+  const tiers: ComposeServiceNode[][] = [[], [], [], [], [], []];
 
   rawServices.forEach((svc) => {
-    if (svc.role === "gateway") {
-      layers[0].push(svc);
-    } else if (svc.role === "frontend") {
-      layers[1].push(svc);
-    } else if (svc.role === "backend" || svc.role === "worker" || svc.role === "service") {
-      layers[2].push(svc);
-    } else {
-      layers[3].push(svc);
+    switch (svc.role) {
+      case "gateway":
+        tiers[0].push(svc);
+        break;
+      case "frontend":
+        tiers[1].push(svc);
+        break;
+      case "backend":
+        tiers[2].push(svc);
+        break;
+      case "worker":
+        tiers[3].push(svc);
+        break;
+      case "database":
+        tiers[4].push(svc);
+        break;
+      case "cache":
+        tiers[5].push(svc);
+        break;
+      default:
+        if (svc.ports && svc.ports.length > 0) {
+          tiers[2].push(svc);
+        } else {
+          tiers[3].push(svc);
+        }
+        break;
     }
   });
 
-  const activeLayers = layers.filter((l) => l.length > 0);
-  if (activeLayers.length === 0) {
-    activeLayers.push(rawServices);
-  }
-
-  const canvasWidth = 960;
-  const layerYPositions = [80, 250, 420, 590, 760];
   const nodeWidth = 230;
   const nodeHeight = 96;
+  const horizontalGap = 44;
+  const verticalGap = 84;
+  const maxPerRow = 3; // Maximum nodes per row to prevent horizontal runaway
 
-  activeLayers.forEach((layer, layerIdx) => {
-    const count = layer.length;
-    const totalRowWidth = count * nodeWidth + (count - 1) * 44;
-    const startX = Math.max(50, (canvasWidth - totalRowWidth) / 2);
-    const y = layerYPositions[Math.min(layerIdx, layerYPositions.length - 1)];
+  interface LayoutRow {
+    items: ComposeServiceNode[];
+    tierIndex: number;
+  }
 
-    layer.forEach((svc, idx) => {
-      svc.x = startX + idx * (nodeWidth + 44);
-      svc.y = y;
+  const rows: LayoutRow[] = [];
+
+  tiers.forEach((tier, tierIdx) => {
+    if (tier.length === 0) return;
+
+    // Stable sort by service name
+    const sorted = [...tier].sort((a, b) => a.name.localeCompare(b.name));
+
+    // Chunk into rows of at most maxPerRow (or 2x2 if 4 items)
+    const perRow = sorted.length === 4 ? 2 : maxPerRow;
+    for (let i = 0; i < sorted.length; i += perRow) {
+      rows.push({
+        items: sorted.slice(i, i + perRow),
+        tierIndex: tierIdx,
+      });
+    }
+  });
+
+  if (rows.length === 0 && rawServices.length > 0) {
+    for (let i = 0; i < rawServices.length; i += maxPerRow) {
+      rows.push({
+        items: rawServices.slice(i, i + maxPerRow),
+        tierIndex: 0,
+      });
+    }
+  }
+
+  // Calculate required canvas width
+  let maxRowWidth = 0;
+  rows.forEach((row) => {
+    const w = row.items.length * nodeWidth + (row.items.length - 1) * horizontalGap;
+    if (w > maxRowWidth) maxRowWidth = w;
+  });
+
+  const canvasWidth = Math.max(1040, maxRowWidth + 140);
+  let currentY = 70;
+  let prevTier = -1;
+
+  rows.forEach((row) => {
+    // Add extra tier spacing when switching tiers
+    if (prevTier !== -1 && row.tierIndex !== prevTier) {
+      currentY += 16;
+    }
+    prevTier = row.tierIndex;
+
+    const count = row.items.length;
+    const rowWidth = count * nodeWidth + (count - 1) * horizontalGap;
+    const startX = Math.max(50, (canvasWidth - rowWidth) / 2);
+
+    row.items.forEach((svc, idx) => {
+      svc.x = Math.round(startX + idx * (nodeWidth + horizontalGap));
+      svc.y = Math.round(currentY);
       svc.width = nodeWidth;
       svc.height = nodeHeight;
     });
+
+    currentY += nodeHeight + verticalGap;
   });
 
-  const volY = layerYPositions[Math.min(activeLayers.length, layerYPositions.length - 1)] + 140;
-  volumes.forEach((vol, idx) => {
-    const parent = rawServices.find((s) => vol.services.includes(s.id));
-    if (parent) {
-      vol.x = parent.x + 30;
-      vol.y = parent.y + nodeHeight + 48;
-    } else {
-      vol.x = 100 + idx * 190;
-      vol.y = volY;
+  // Position volumes cleanly in a dedicated storage tier at the bottom
+  // Guaranteed zero overlap with any service card!
+  if (volumes.length > 0) {
+    currentY += 24;
+    const volWidth = 140;
+    const volHeight = 44;
+    const volGap = 28;
+    const volPerRow = Math.min(4, Math.max(2, Math.ceil(volumes.length / 2)));
+    const sortedVolumes = [...volumes].sort((a, b) => a.name.localeCompare(b.name));
+
+    for (let i = 0; i < sortedVolumes.length; i += volPerRow) {
+      const chunk = sortedVolumes.slice(i, i + volPerRow);
+      const rowW = chunk.length * volWidth + (chunk.length - 1) * volGap;
+      const startX = Math.max(50, (canvasWidth - rowW) / 2);
+
+      chunk.forEach((vol, idx) => {
+        vol.x = Math.round(startX + idx * (volWidth + volGap));
+        vol.y = Math.round(currentY);
+      });
+
+      currentY += volHeight + 28;
     }
-  });
+  }
 
+  const canvasHeight = Math.max(760, currentY + 60);
+
+  // Generate clean edges (only real explicit depends_on and volume mounts)
   const edges: ComposeEdge[] = [];
   rawServices.forEach((svc) => {
-
     svc.dependsOn.forEach((dep) => {
       const target = rawServices.find((s) => s.id === dep);
       if (target) {
@@ -502,22 +587,6 @@ export function parseComposeYaml(
         });
       }
     });
-
-    if (svc.dependsOn.length === 0) {
-      if (svc.role === "gateway") {
-        const frontends = rawServices.filter((s) => s.role === "frontend");
-        frontends.forEach((f) => {
-          edges.push({
-            id: `flow-${svc.id}-${f.id}`,
-            from: svc.id,
-            to: f.id,
-            type: "network",
-            label: "routes to",
-            active: svc.state === "running",
-          });
-        });
-      }
-    }
   });
 
   volumes.forEach((vol) => {
@@ -532,8 +601,6 @@ export function parseComposeYaml(
       });
     });
   });
-
-  const canvasHeight = Math.max(820, volY + 120);
 
   return {
     services: rawServices,

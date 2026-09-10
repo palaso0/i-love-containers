@@ -12,6 +12,7 @@ import {
   ExternalLink,
   X,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import {
   ComposeTopology,
@@ -149,9 +150,13 @@ export const ComposeDiagramCanvas: React.FC<ComposeDiagramCanvasProps> = ({
         initializedProjectRef.current = projectName;
         setNodePositions({});
         nodePositionsRef.current = {};
-        const initialX = Math.max(20, (clientWidth - topology.canvasWidth) / 2);
-        const initialY = Math.max(20, (clientHeight - topology.canvasHeight) / 4);
-        updateView({ x: initialX, y: initialY, zoom: 1 });
+        const pad = 44;
+        const scaleX = (clientWidth - pad * 2) / topology.canvasWidth;
+        const scaleY = (clientHeight - pad * 2) / topology.canvasHeight;
+        const fitZoom = Math.min(1, Math.max(0.42, Math.min(scaleX, scaleY)));
+        const initialX = Math.max(20, (clientWidth - topology.canvasWidth * fitZoom) / 2);
+        const initialY = Math.max(20, (clientHeight - topology.canvasHeight * fitZoom) / 2);
+        updateView({ x: initialX, y: initialY, zoom: fitZoom });
       }
     }
   }, [projectName, topology.canvasWidth, topology.canvasHeight]);
@@ -391,9 +396,13 @@ export const ComposeDiagramCanvas: React.FC<ComposeDiagramCanvasProps> = ({
     nodePositionsRef.current = {};
     if (containerRef.current) {
       const { clientWidth, clientHeight } = containerRef.current;
-      const initialX = Math.max(20, (clientWidth - topology.canvasWidth) / 2);
-      const initialY = Math.max(20, (clientHeight - topology.canvasHeight) / 4);
-      updateView({ x: initialX, y: initialY, zoom: 1 });
+      const pad = 44;
+      const scaleX = (clientWidth - pad * 2) / topology.canvasWidth;
+      const scaleY = (clientHeight - pad * 2) / topology.canvasHeight;
+      const fitZoom = Math.min(1, Math.max(0.42, Math.min(scaleX, scaleY)));
+      const initialX = Math.max(20, (clientWidth - topology.canvasWidth * fitZoom) / 2);
+      const initialY = Math.max(20, (clientHeight - topology.canvasHeight * fitZoom) / 2);
+      updateView({ x: initialX, y: initialY, zoom: fitZoom });
     }
   };
 
@@ -416,7 +425,16 @@ export const ComposeDiagramCanvas: React.FC<ComposeDiagramCanvasProps> = ({
       }}
     >
 
-      <div className="absolute top-3 right-3 z-20 flex items-center space-x-1.5 bg-surface/90 backdrop-blur-xl border border-border/80 p-1 rounded-xl shadow-mac-segment canvas-interactive">
+      <div className="absolute top-3 right-3 z-20 flex items-center space-x-1 bg-surface/90 backdrop-blur-xl border border-border/80 p-1 rounded-xl shadow-mac-segment canvas-interactive">
+        <button
+          onClick={handleResetView}
+          className="flex items-center space-x-1 px-2 py-1 rounded-lg text-xs text-primary font-medium hover:bg-primary/10 transition-colors"
+          title={t.compose.autoArrange}
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span className="text-[11px] font-sans font-semibold">{t.compose.autoArrange}</span>
+        </button>
+        <div className="w-[1px] h-3.5 bg-border/80" />
         <button
           onClick={() => handleZoomStep(1.2)}
           className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-secondary transition-colors"
@@ -424,7 +442,7 @@ export const ComposeDiagramCanvas: React.FC<ComposeDiagramCanvasProps> = ({
         >
           <ZoomIn className="w-3.5 h-3.5" />
         </button>
-        <span className="text-[11px] font-mono text-muted-foreground px-1 min-w-[42px] text-center">
+        <span className="text-[11px] font-mono text-muted-foreground px-1 min-w-[38px] text-center">
           {Math.round(view.zoom * 100)}%
         </span>
         <button
@@ -708,6 +726,15 @@ export const ComposeDiagramCanvas: React.FC<ComposeDiagramCanvasProps> = ({
               selectedService?.id === edge.from ||
               selectedService?.id === edge.to;
 
+            const hasActiveFocus = !!(hoveredNodeId || selectedService);
+            const edgeOpacity = isHighlighted
+              ? 1
+              : hasActiveFocus
+              ? 0.08
+              : isVolume
+              ? 0.7
+              : 0.42;
+
             const markerId = isVolume
               ? "arrowhead-volume"
               : isRunning
@@ -723,7 +750,7 @@ export const ComposeDiagramCanvas: React.FC<ComposeDiagramCanvasProps> = ({
                     fill="none"
                     stroke={isVolume ? "#38bdf8" : isRunning ? "#30d158" : isDark ? "#a855f7" : "#8b5cf6"}
                     strokeWidth="5"
-                    opacity="0.35"
+                    opacity="0.4"
                     filter="url(#glow)"
                   />
                 )}
@@ -742,15 +769,21 @@ export const ComposeDiagramCanvas: React.FC<ComposeDiagramCanvasProps> = ({
                       ? "#4b4b53"
                       : "#94a3b8"
                   }
-                  strokeWidth={isHighlighted ? 2.5 : isVolume ? 1.8 : 2}
+                  strokeWidth={isHighlighted ? 2.6 : isVolume ? 1.4 : 1.6}
                   strokeDasharray={isVolume ? "4 3" : undefined}
-                  opacity={isHighlighted ? 1 : isVolume ? 0.85 : 0.75}
+                  opacity={edgeOpacity}
                   markerEnd={`url(#${markerId})`}
+                  className="transition-opacity duration-200"
                 />
 
-                {isRunning && !isVolume && (
+                {isRunning && !isVolume && !hasActiveFocus && (
                   <circle r="2.5" fill="#30d158">
                     <animateMotion dur="2.8s" repeatCount="indefinite" path={pathD} />
+                  </circle>
+                )}
+                {isRunning && !isVolume && isHighlighted && (
+                  <circle r="3" fill="#30d158">
+                    <animateMotion dur="2s" repeatCount="indefinite" path={pathD} />
                   </circle>
                 )}
               </g>
