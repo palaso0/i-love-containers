@@ -86,8 +86,8 @@ async fn copy_host_file_to_container(
 
     let home = std::env::var("HOME").unwrap_or_else(|_| "/Users".to_string());
     let default_paths = format!(
-        "/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin:{}/.docker/bin:{}/.orbstack/bin:{}/.local/bin",
-        home, home, home
+        "/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin:{}/.docker/bin:{}/.orbstack/bin:{}/.rd/bin:{}/.local/bin",
+        home, home, home, home
     );
     let current_path = std::env::var("PATH").unwrap_or_default();
     let full_path = format!("{}:{}", default_paths, current_path);
@@ -144,9 +144,9 @@ fn detect_container_engines() -> Vec<NativeEngineInfo> {
 
     let docker_socket = format!("{}/.docker/run/docker.sock", home);
     let docker_app = "/Applications/Docker.app";
-    let docker_socket_exists = Path::new(&docker_socket).exists() || Path::new("/var/run/docker.sock").exists();
     let docker_app_exists = Path::new(docker_app).exists();
-    let docker_status = if docker_socket_exists {
+    let docker_socket_exists = Path::new(&docker_socket).exists() || (docker_app_exists && Path::new("/var/run/docker.sock").exists());
+    let docker_status = if docker_app_exists && docker_socket_exists {
         "running"
     } else if docker_app_exists {
         "stopped"
@@ -183,12 +183,25 @@ fn detect_container_engines() -> Vec<NativeEngineInfo> {
     });
 
     let rancher_socket = format!("{}/.rd/docker.sock", home);
+    let rancher_socket_v2 = format!("{}/.rd2/docker.sock", home);
     let rancher_app = "/Applications/Rancher Desktop.app";
+    let rancher_config = format!("{}/.rd", home);
+    let rancher_config_v2 = format!("{}/.rd2", home);
     let rancher_socket_exists = Path::new(&rancher_socket).exists();
+    let rancher_socket_v2_exists = Path::new(&rancher_socket_v2).exists();
     let rancher_app_exists = Path::new(rancher_app).exists();
-    let rancher_status = if rancher_socket_exists {
+    let rancher_config_exists = Path::new(&rancher_config).exists();
+    let rancher_config_v2_exists = Path::new(&rancher_config_v2).exists();
+    let resolved_rancher_socket = if rancher_socket_exists {
+        rancher_socket.clone()
+    } else if rancher_socket_v2_exists {
+        rancher_socket_v2.clone()
+    } else {
+        rancher_socket.clone()
+    };
+    let rancher_status = if rancher_socket_exists || rancher_socket_v2_exists {
         "running"
-    } else if rancher_app_exists {
+    } else if rancher_app_exists || rancher_config_exists || rancher_config_v2_exists {
         "stopped"
     } else {
         "not_installed"
@@ -196,7 +209,7 @@ fn detect_container_engines() -> Vec<NativeEngineInfo> {
     engines.push(NativeEngineInfo {
         id: "rancher".into(),
         name: "Rancher Desktop".into(),
-        socket_path: rancher_socket,
+        socket_path: resolved_rancher_socket,
         app_path: if rancher_app_exists { Some(rancher_app.into()) } else { None },
         status: rancher_status.into(),
         is_default: false,
@@ -243,8 +256,16 @@ use std::sync::Mutex;
 struct BackgroundServer(Mutex<Option<Child>>);
 
 fn find_node_binary() -> Option<PathBuf> {
-
     if let Ok(output) = Command::new("which").arg("node").output() {
+        if output.status.success() {
+            let path_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if !path_str.is_empty() && Path::new(&path_str).exists() {
+                return Some(PathBuf::from(path_str));
+            }
+        }
+    }
+
+    if let Ok(output) = Command::new("/bin/zsh").args(["-lic", "which node"]).output() {
         if output.status.success() {
             let path_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
             if !path_str.is_empty() && Path::new(&path_str).exists() {
@@ -276,10 +297,25 @@ fn find_node_binary() -> Option<PathBuf> {
         }
     }
 
+    let custom_paths = [
+        format!("{}/.fnm/current/bin/node", home),
+        format!("{}/.local/share/fnm/current/bin/node", home),
+        format!("{}/.volta/bin/node", home),
+        format!("{}/.asdf/shims/node", home),
+        format!("{}/.n/bin/node", home),
+    ];
+    for p_str in &custom_paths {
+        let p = Path::new(p_str);
+        if p.is_file() && p.exists() {
+            return Some(p.to_path_buf());
+        }
+    }
+
     let candidates = [
         "/opt/homebrew/bin/node",
         "/usr/local/bin/node",
         "/usr/bin/node",
+        "/opt/local/bin/node",
     ];
     for c in &candidates {
         let p = Path::new(c);
@@ -292,7 +328,6 @@ fn find_node_binary() -> Option<PathBuf> {
 }
 
 fn find_server_script(app: &tauri::AppHandle) -> Option<PathBuf> {
-
     if let Ok(res_dir) = app.path().resource_dir() {
         let candidates = [
             res_dir.join("server.mjs"),
@@ -342,16 +377,40 @@ fn main() {
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();
+            let home = std::env::var("HOME").unwrap_or_else(|_| "/Users".to_string());
             if let Some(node_bin) = find_node_binary() {
                 if let Some(script) = find_server_script(&app_handle) {
                     println!("[Tauri] Starting background server with {:?} and {:?}", node_bin, script);
-                    match Command::new(&node_bin)
-                        .arg(&script)
-                        .stdin(Stdio::piped())
-                        .stdout(Stdio::inherit())
-                        .stderr(Stdio::inherit())
-                        .spawn()
-                    {
+                    
+                    let node_dir = node_bin.parent().map(|p| p.to_string_lossy().to_string()).unwrap_or_default();
+                    let default_paths = format!(
+                        "{}:/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin:{}/.docker/bin:{}/.orbstack/bin:{}/.rd/bin:{}/.local/bin",
+                        node_dir, home, home, home, home
+                    );
+                    let current_path = std::env::var("PATH").unwrap_or_default();
+                    let full_path = format!("{}:{}", default_paths, current_path);
+
+                    let mut cmd = Command::new(&node_bin);
+                    cmd.arg(&script)
+                        .current_dir(&home)
+                        .env("PATH", &full_path)
+                        .env("HOME", &home)
+                        .stdin(Stdio::null());
+
+                    if let Ok(log_file) = std::fs::OpenOptions::new().create(true).append(true).open("/tmp/ilc-server.log") {
+                        if let Ok(err_file) = log_file.try_clone() {
+                            cmd.stdout(Stdio::from(log_file));
+                            cmd.stderr(Stdio::from(err_file));
+                        } else {
+                            cmd.stdout(Stdio::null());
+                            cmd.stderr(Stdio::null());
+                        }
+                    } else {
+                        cmd.stdout(Stdio::null());
+                        cmd.stderr(Stdio::null());
+                    }
+
+                    match cmd.spawn() {
                         Ok(child) => {
                             if let Some(server_state) = app.try_state::<BackgroundServer>() {
                                 if let Ok(mut lock) = server_state.0.lock() {

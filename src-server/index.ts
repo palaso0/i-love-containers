@@ -13,6 +13,7 @@ const defaultPaths = [
   "/sbin",
   `${home}/.docker/bin`,
   `${home}/.orbstack/bin`,
+  `${home}/.rd/bin`,
   `${home}/.local/bin`,
 ];
 const currentPaths = (process.env.PATH || "").split(":");
@@ -53,11 +54,24 @@ server.listen(PORT, HOST, () => {
   console.log(`[Container Engine Server] Listening on http://${HOST}:${PORT}`);
 });
 
-process.stdin.resume();
-process.stdin.on("end", () => {
-  console.log("[Container Engine Server] Stdin closed, exiting...");
+process.on("SIGINT", () => {
+  console.log("[Container Engine Server] Received SIGINT, exiting...");
+  process.exit(0);
+});
+process.on("SIGTERM", () => {
+  console.log("[Container Engine Server] Received SIGTERM, exiting...");
   process.exit(0);
 });
 
-process.on("SIGINT", () => process.exit(0));
-process.on("SIGTERM", () => process.exit(0));
+if (process.ppid) {
+  const ppidCheck = setInterval(() => {
+    try {
+      process.kill(process.ppid, 0);
+    } catch {
+      clearInterval(ppidCheck);
+      console.log("[Container Engine Server] Parent process terminated, exiting...");
+      process.exit(0);
+    }
+  }, 3000);
+  ppidCheck.unref();
+}

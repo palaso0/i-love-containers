@@ -67,10 +67,14 @@ const DEFAULT_CANDIDATES: EngineCandidate[] = [
     type: "rancher",
     socketCandidates: [
       path.join(home, ".rd/docker.sock"),
+      path.join(home, ".rd2/docker.sock"),
       "/var/run/docker.sock",
     ],
     appPaths: ["/Applications/Rancher Desktop.app"],
-    configPaths: [path.join(home, ".rd")],
+    configPaths: [
+      path.join(home, ".rd"),
+      path.join(home, ".rd2"),
+    ],
     description: "Container management and local Kubernetes",
     icon: "rancher",
   },
@@ -373,6 +377,28 @@ async function getLiveContainerStat(
   );
 }
 
+async function detectRancherDesktopContext(): Promise<string | null> {
+  return new Promise((resolve) => {
+    exec("docker context ls --format '{{.Name}} {{.DockerEndpoint}}'", (err, stdout) => {
+      if (err || !stdout) {
+        resolve(null);
+        return;
+      }
+      for (const line of stdout.split("\n")) {
+        if (line.toLowerCase().includes("rancher")) {
+          const parts = line.trim().split(/\s+/);
+          const endpoint = parts[parts.length - 1];
+          if (endpoint.startsWith("unix://")) {
+            resolve(endpoint.replace("unix://", ""));
+            return;
+          }
+        }
+      }
+      resolve(null);
+    });
+  });
+}
+
 export async function detectEngines(activeId?: string): Promise<{
   engines: EngineInfo[];
   activeEngine: EngineInfo | null;
@@ -394,6 +420,15 @@ export async function detectEngines(activeId?: string): Promise<{
     });
   }
 
+  // Check Docker contexts for Rancher Desktop
+  const rdContextSocket = await detectRancherDesktopContext();
+  if (rdContextSocket) {
+    const existingRancher = candidates.find(c => c.id === "rancher");
+    if (existingRancher && !existingRancher.socketCandidates.includes(rdContextSocket)) {
+      existingRancher.socketCandidates.unshift(rdContextSocket);
+    }
+  }
+
   const results: EngineInfo[] = [];
 
   for (const candidate of candidates) {
@@ -401,7 +436,13 @@ export async function detectEngines(activeId?: string): Promise<{
     let isRunning = false;
     let versionInfo: { version?: string; apiVersion?: string; os?: string; arch?: string } = {};
 
-    for (const sock of candidate.socketCandidates) {
+    const isDockerDesktopAppMissing =
+      candidate.id === "docker-desktop" && !candidate.appPaths.some((p) => fs.existsSync(p));
+    const socketCandidates = isDockerDesktopAppMissing
+      ? candidate.socketCandidates.filter((s) => s !== "/var/run/docker.sock")
+      : candidate.socketCandidates;
+
+    for (const sock of socketCandidates) {
       if (fs.existsSync(sock)) {
         resolvedSocket = sock;
         const ping = await pingSocket(sock);
@@ -430,7 +471,9 @@ export async function detectEngines(activeId?: string): Promise<{
     }
 
     let status: "running" | "stopped" | "not_installed" = "not_installed";
-    if (isRunning) {
+    if (candidate.id === "docker-desktop" && !installedAppPath) {
+      status = "not_installed";
+    } else if (isRunning) {
       status = "running";
     } else if (installedAppPath || hasConfig || fs.existsSync(resolvedSocket)) {
       status = "stopped";
@@ -990,7 +1033,7 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
                     const destPath = `${targetDir}/${filename}`;
                     const tempFile = path.join(os.tmpdir(), `ilc-up-${Date.now()}-${Math.random().toString(36).slice(2)}`);
                     fs.writeFileSync(tempFile, Buffer.from(base64Data, "base64"));
-                    const extendedPath = `/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin:${home}/.docker/bin:${home}/.orbstack/bin:${home}/.local/bin:${process.env.PATH || ""}`;
+                    const extendedPath = `/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin:${home}/.docker/bin:${home}/.orbstack/bin:${home}/.rd/bin:${home}/.local/bin:${process.env.PATH || ""}`;
                     exec(
                       `docker cp ${JSON.stringify(tempFile)} ${containerId}:${JSON.stringify(destPath)}`,
                       { env: { ...process.env, PATH: extendedPath } },
