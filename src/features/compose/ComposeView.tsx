@@ -137,10 +137,14 @@ export const ComposeView: React.FC = () => {
     }
   };
 
-  const handleStartAll = async (containerIds: string[]) => {
-    for (const id of containerIds) {
-      await startContainer(id);
-    }
+  const handleStartStack = async () => {
+    if (!activeProject) return;
+    await api.upComposeProject(
+      activeProject.name,
+      activeProject.workingDir,
+      activeProject.configFile
+    );
+    await refreshData();
   };
 
   const handleRestartAll = async (containerIds: string[]) => {
@@ -307,7 +311,7 @@ export const ComposeView: React.FC = () => {
             </button>
 
             <button
-              onClick={() => handleStartAll(activeContainerIds)}
+              onClick={handleStartStack}
               className="p-1.5 rounded-lg text-muted-foreground hover:text-status-running bg-surface border border-border/70 hover:border-status-running/40 transition-colors shadow-xs"
               title={t.compose.startStack}
             >

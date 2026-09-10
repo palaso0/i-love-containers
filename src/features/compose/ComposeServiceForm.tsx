@@ -52,7 +52,16 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
 
   const updateCurrentService = (updater: (svc: ComposeServiceConfig) => void) => {
     const updatedServices = [...services];
-    const target = { ...updatedServices[selectedServiceIndex] };
+    const original = updatedServices[selectedServiceIndex];
+    const target: ComposeServiceConfig = {
+      ...original,
+      ports: [...(original.ports || [])],
+      environment: [...(original.environment || [])],
+      customDirectives: (original.customDirectives || []).map((d) => ({ ...d })),
+      networks: [...(original.networks || [])],
+      depends_on: [...(original.depends_on || [])],
+      volumes: [...(original.volumes || [])],
+    };
     updater(target);
     updatedServices[selectedServiceIndex] = target;
     setDraftConfig({
@@ -106,12 +115,10 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
   const handleRemoveService = (index: number) => {
     if (services.length <= 1) return;
     const removedName = services[index].name;
-    const updated = services.filter((_, idx) => idx !== index);
-    updated.forEach((s) => {
-      if (s.depends_on) {
-        s.depends_on = s.depends_on.filter((dep) => dep !== removedName);
-      }
-    });
+    const updated = services.filter((_, idx) => idx !== index).map((s) => ({
+      ...s,
+      depends_on: s.depends_on ? s.depends_on.filter((dep) => dep !== removedName) : [],
+    }));
 
     setDraftConfig({
       ...draftConfig,
@@ -198,7 +205,7 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
       <div className="flex-1 min-w-0 flex flex-col h-full overflow-y-auto overflow-x-hidden p-5 space-y-5 text-xs bg-background">
 
         {hasChanges && (
-          <div className="sticky top-0 z-30 -mt-2 -mx-5 px-5 py-2.5 bg-amber-500/15 border-b border-amber-500/30 backdrop-blur-md flex flex-wrap items-center justify-between gap-2 shadow-xs animate-in fade-in duration-100">
+          <div className="sticky top-0 z-30 px-5 py-2.5 bg-amber-500/15 border-b border-amber-500/30 backdrop-blur-md flex flex-wrap items-center justify-between gap-2 shadow-xs animate-in fade-in duration-100">
             <div className="flex items-center space-x-2 text-xs">
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
               <span className="text-foreground font-medium">

@@ -22,6 +22,7 @@ import {
   Layers,
 } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
+import * as api from "@/lib/api";
 import { ContainerDetail, ContainerState } from "@/types";
 import { formatBytes } from "@/lib/utils";
 import { openRealNativeWindow } from "@/lib/nativeWindow";
@@ -93,6 +94,7 @@ export const ContainersSplitView: React.FC = () => {
     removeContainer,
     removeComposeProject,
     composeProjects,
+    refreshData,
     isActionInProgress,
     images,
     setActiveTab,
@@ -246,6 +248,14 @@ export const ContainersSplitView: React.FC = () => {
 
   const handleStartAll = async (groupContainers: ContainerDetail[], e: React.MouseEvent) => {
     e.stopPropagation();
+    const isComposeGroup = groupContainers.length > 0 && groupContainers[0].composeProject;
+    if (isComposeGroup) {
+      const projectName = groupContainers[0].composeProject!;
+      const project = composeProjects.find(p => p.name === projectName);
+      await api.upComposeProject(projectName, project?.workingDir, project?.configFile);
+      await refreshData();
+      return;
+    }
     for (const c of groupContainers) {
       if (c.state !== "running") {
         await startContainer(c.id);

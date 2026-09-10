@@ -182,6 +182,9 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
+  const lastClickedIndexRef = useRef<number>(-1);
+  const shiftAnchorIndexRef = useRef<number>(-1);
+  const cursorIndexRef = useRef<number>(-1);
 
   const currentPathRef = useRef(currentPath);
   currentPathRef.current = currentPath;
@@ -238,11 +241,9 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
           if (res.ok) {
             successCount++;
           } else {
-            console.warn("[ILC DragDrop] docker cp failed for:", hostPath, "error:", res.error);
             anyError = res.error || fmRef.current.uploadFailed;
           }
         } catch (e) {
-          console.error("[ILC DragDrop] Error copying file:", hostPath, e);
           anyError = String(e);
         }
       }
@@ -270,14 +271,12 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
       try {
         const { getCurrentWebview } = await import("@tauri-apps/api/webview");
         const currentWebview = getCurrentWebview();
-        console.log("[ILC DragDrop] Registering onDragDropEvent for webview:", currentWebview.label);
         const unlistenFn = await currentWebview.onDragDropEvent(async (event) => {
           if (!isMounted) return;
           if (event.payload.type === "over" || event.payload.type === "enter") {
             setIsDraggingOver(true);
           } else if (event.payload.type === "drop") {
             setIsDraggingOver(false);
-            console.log("[ILC DragDrop] Drop detected via onDragDropEvent, paths:", event.payload.paths);
             await handleTauriDrop(event.payload.paths);
           } else {
             setIsDraggingOver(false);
@@ -285,19 +284,16 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
         });
         if (isMounted) {
           unlisten = unlistenFn;
-          console.log("[ILC DragDrop] ✓ onDragDropEvent listener registered successfully");
         } else {
           unlistenFn();
         }
-        return; // success — don't try fallback
+        return;
       } catch (e) {
-        console.warn("[ILC DragDrop] onDragDropEvent failed, trying global listen fallback:", e);
       }
 
       // Strategy 2: global listen on tauri://drag-drop
       try {
         const { listen } = await import("@tauri-apps/api/event");
-        console.log("[ILC DragDrop] Registering global tauri://drag-drop listener");
         const unlistenFn = await listen<any>("tauri://drag-drop", async (event) => {
           if (!isMounted) return;
           const payload = event.payload;
@@ -305,7 +301,6 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
             setIsDraggingOver(true);
           } else if (payload.type === "drop") {
             setIsDraggingOver(false);
-            console.log("[ILC DragDrop] Drop detected via global listen, paths:", payload.paths);
             await handleTauriDrop(payload.paths);
           } else {
             setIsDraggingOver(false);
@@ -313,12 +308,10 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
         });
         if (isMounted) {
           unlisten = unlistenFn;
-          console.log("[ILC DragDrop] ✓ Global tauri://drag-drop listener registered");
         } else {
           unlistenFn();
         }
       } catch (e2) {
-        console.error("[ILC DragDrop] ✗ All Tauri drag-drop listeners failed:", e2);
       }
     }
 
@@ -362,14 +355,11 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
       setIsDraggingOver(false);
 
       if (Date.now() - lastProcessedPathsRef.current.timestamp < 1500) {
-        console.log("[ILC DragDrop] DOM onDrop skipped (dedup)");
         return;
       }
 
       const droppedFiles = e.dataTransfer?.files;
       if (!droppedFiles || droppedFiles.length === 0) return;
-
-      console.log("[ILC DragDrop] DOM onDrop, files:", droppedFiles.length);
 
       const filesList = Array.from(droppedFiles);
       const targetDir = currentPathRef.current;
@@ -475,16 +465,50 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
     }
   };
 
+  const sortedFiles = [...files]
+    .filter((f) =>
+      searchQuery ? f.name.toLowerCase().includes(searchQuery.toLowerCase()) : true
+    )
+    .sort((a, b) => {
+      if (a.isDirectory && !b.isDirectory) return -1;
+      if (!a.isDirectory && b.isDirectory) return 1;
+      let cmp = 0;
+      if (sortField === "name") {
+        cmp = a.name.localeCompare(b.name);
+      } else if (sortField === "size") {
+        cmp = a.size - b.size;
+      } else if (sortField === "mtime") {
+        cmp = a.mtime.localeCompare(b.mtime);
+      }
+      return sortAsc ? cmp : -cmp;
+    });
+
   const handleSelect = (e: React.MouseEvent, item: ContainerFileItem) => {
     e.stopPropagation();
     setContextMenu(null);
-    if (e.metaKey || e.ctrlKey) {
+    const clickedIndex = sortedFiles.findIndex((f) => f.path === item.path);
+    cursorIndexRef.current = clickedIndex;
+
+    if (e.shiftKey && lastClickedIndexRef.current >= 0) {
+      const start = Math.min(lastClickedIndexRef.current, clickedIndex);
+      const end = Math.max(lastClickedIndexRef.current, clickedIndex);
+      const rangePaths = sortedFiles.slice(start, end + 1).map((f) => f.path);
+      if (e.metaKey || e.ctrlKey) {
+        const next = new Set(selectedPaths);
+        rangePaths.forEach((p) => next.add(p));
+        setSelectedPaths(next);
+      } else {
+        setSelectedPaths(new Set(rangePaths));
+      }
+    } else if (e.metaKey || e.ctrlKey) {
       const next = new Set(selectedPaths);
       if (next.has(item.path)) next.delete(item.path);
       else next.add(item.path);
       setSelectedPaths(next);
+      lastClickedIndexRef.current = clickedIndex;
     } else {
       setSelectedPaths(new Set([item.path]));
+      lastClickedIndexRef.current = clickedIndex;
     }
   };
 
@@ -494,24 +518,31 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
     if (item && !selectedPaths.has(item.path)) {
       setSelectedPaths(new Set([item.path]));
     }
-    const menuWidth = 200;
-    const menuHeight = 220;
-    let x = e.clientX;
-    let y = e.clientY;
-    if (x + menuWidth > window.innerWidth) {
-      x = window.innerWidth - menuWidth;
-    }
-    if (x < 0) {
-      x = 0;
-    }
-    if (y + menuHeight > window.innerHeight) {
-      y = window.innerHeight - menuHeight;
-    }
-    if (y < 0) {
-      y = 0;
-    }
-    setContextMenu({ x, y, item });
+    setContextMenu({ x: e.clientX, y: e.clientY, item });
   };
+
+  useEffect(() => {
+    if (!contextMenu || !contextMenuRef.current) return;
+    const el = contextMenuRef.current;
+    const rect = el.getBoundingClientRect();
+    let x = contextMenu.x;
+    let y = contextMenu.y;
+    let changed = false;
+    if (x + rect.width > window.innerWidth) {
+      x = window.innerWidth - rect.width - 4;
+      changed = true;
+    }
+    if (y + rect.height > window.innerHeight) {
+      y = window.innerHeight - rect.height - 4;
+      changed = true;
+    }
+    if (x < 0) { x = 4; changed = true; }
+    if (y < 0) { y = 4; changed = true; }
+    if (changed) {
+      el.style.left = x + "px";
+      el.style.top = y + "px";
+    }
+  }, [contextMenu]);
 
   useEffect(() => {
     const handleDismiss = (e: MouseEvent | TouchEvent) => {
@@ -593,15 +624,48 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
     setContextMenu(null);
   };
 
+  const handleFileDragStart = async (e: React.DragEvent, file: ContainerFileItem) => {
+    e.stopPropagation();
+    if (file.isDirectory) return;
+
+    const filesToDrag = selectedPaths.has(file.path)
+      ? files.filter((f) => selectedPaths.has(f.path) && !f.isDirectory)
+      : [file];
+
+    if (filesToDrag.length === 0) return;
+
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const { startDrag } = await import("@crabnebula/tauri-plugin-drag");
+
+      setDropStatus({ type: "loading", message: `Preparing ${filesToDrag.length} file(s)...` });
+
+      const tempPaths: string[] = [];
+      for (const f of filesToDrag) {
+        const tempPath = await invoke<string>("copy_file_from_container", {
+          containerId,
+          filePath: f.path,
+        });
+        tempPaths.push(tempPath);
+      }
+
+      setDropStatus(null);
+
+      await startDrag({
+        item: tempPaths,
+        icon: tempPaths[0],
+      });
+    } catch (err) {
+      setDropStatus(null);
+    }
+  };
+
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingOver(false);
 
-    console.log("[ILC DragDrop] HTML5 onDrop fired, files:", e.dataTransfer.files?.length, "tauri dedup ts:", lastProcessedPathsRef.current.timestamp);
-
     // If Tauri already handled this drop in the last 1.5 seconds, skip duplicate
     if (Date.now() - lastProcessedPathsRef.current.timestamp < 1500) {
-      console.log("[ILC DragDrop] Skipping HTML5 drop (Tauri already handled it)");
       return;
     }
 
@@ -765,9 +829,45 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
             handleItemDoubleClick(item);
           }
         }
-      } else if (e.key === "Escape") {
-        setSelectedPaths(new Set());
-        setContextMenu(null);
+    } else if (e.key === "Escape") {
+      setSelectedPaths(new Set());
+      setContextMenu(null);
+      shiftAnchorIndexRef.current = -1;
+      lastClickedIndexRef.current = -1;
+      cursorIndexRef.current = -1;
+      } else if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+        e.preventDefault();
+        if (sortedFiles.length === 0) return;
+
+        const currentIdx = cursorIndexRef.current >= 0
+          ? cursorIndexRef.current
+          : (selectedPaths.size > 0
+            ? sortedFiles.findIndex((f) => selectedPaths.has(f.path))
+            : -1);
+
+        let nextIdx: number;
+        if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+          nextIdx = currentIdx < sortedFiles.length - 1 ? currentIdx + 1 : 0;
+        } else {
+          nextIdx = currentIdx > 0 ? currentIdx - 1 : sortedFiles.length - 1;
+        }
+
+        cursorIndexRef.current = nextIdx;
+
+        if (e.shiftKey) {
+          if (shiftAnchorIndexRef.current < 0) {
+            shiftAnchorIndexRef.current = currentIdx >= 0 ? currentIdx : 0;
+          }
+          const anchor = shiftAnchorIndexRef.current;
+          const start = Math.min(anchor, nextIdx);
+          const end = Math.max(anchor, nextIdx);
+          const rangePaths = sortedFiles.slice(start, end + 1).map((f) => f.path);
+          setSelectedPaths(new Set(rangePaths));
+        } else {
+          shiftAnchorIndexRef.current = nextIdx;
+          setSelectedPaths(new Set([sortedFiles[nextIdx].path]));
+          lastClickedIndexRef.current = nextIdx;
+        }
       }
     };
 
@@ -775,6 +875,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
     files,
+    sortedFiles,
     selectedPaths,
     clipboard,
     currentPath,
@@ -787,24 +888,6 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
     newFileModal,
     deleteModal,
   ]);
-
-  const sortedFiles = [...files]
-    .filter((f) =>
-      searchQuery ? f.name.toLowerCase().includes(searchQuery.toLowerCase()) : true
-    )
-    .sort((a, b) => {
-      if (a.isDirectory && !b.isDirectory) return -1;
-      if (!a.isDirectory && b.isDirectory) return 1;
-      let cmp = 0;
-      if (sortField === "name") {
-        cmp = a.name.localeCompare(b.name);
-      } else if (sortField === "size") {
-        cmp = a.size - b.size;
-      } else if (sortField === "mtime") {
-        cmp = a.mtime.localeCompare(b.mtime);
-      }
-      return sortAsc ? cmp : -cmp;
-    });
 
   const pathBreadcrumbs = currentPath === "/" ? [""] : currentPath.split("/");
 
@@ -1141,6 +1224,8 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
                 return (
                   <div
                     key={file.path}
+                    draggable={!file.isDirectory}
+                    onDragStart={(e) => handleFileDragStart(e, file)}
                     onClick={(e) => handleSelect(e, file)}
                     onDoubleClick={() => handleItemDoubleClick(file)}
                     onContextMenu={(e) => handleContextMenu(e, file)}
@@ -1189,6 +1274,8 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
               return (
                 <div
                   key={file.path}
+                  draggable={!file.isDirectory}
+                  onDragStart={(e) => handleFileDragStart(e, file)}
                   onClick={(e) => handleSelect(e, file)}
                   onDoubleClick={() => handleItemDoubleClick(file)}
                   onContextMenu={(e) => handleContextMenu(e, file)}
@@ -1338,7 +1425,10 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
               <div className="h-[1px] bg-border/60 my-1" />
               <button
                 onClick={() => {
-                  setDeleteModal({ items: [contextMenu.item!] });
+                  const itemsToDelete = selectedPaths.has(contextMenu.item!.path)
+                    ? files.filter((f) => selectedPaths.has(f.path))
+                    : [contextMenu.item!];
+                  setDeleteModal({ items: itemsToDelete });
                   setContextMenu(null);
                 }}
                 className="w-full px-3 py-1.5 text-left flex items-center space-x-2 text-rose-500 hover:bg-rose-500 hover:text-white transition-colors"
@@ -1689,11 +1779,10 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
               {fm.confirmDeleteTitle}
             </h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              {fm.confirmDeleteDesc}{" "}
-              <span className="font-mono text-rose-500 font-semibold">
-                {deleteModal.items.map((i) => i.name).join(", ")}
-              </span>
-              ?
+              {deleteModal.items.length === 1
+                ? <>{fm.confirmDeleteDesc}{" "}<span className="font-mono text-rose-500 font-semibold">{deleteModal.items[0].name}</span>?</>
+                : <>{fm.confirmDeleteDesc}{" "}<span className="font-mono text-rose-500 font-semibold">{deleteModal.items.length} files</span>?</>
+              }
             </p>
             <div className="flex items-center justify-end space-x-2 pt-2">
               <button
