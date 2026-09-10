@@ -768,19 +768,6 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
     await loadFiles(currentPath);
   };
 
-  const handleDownloadChanges = () => {
-    if (!viewerModal) return;
-    const blob = new Blob([viewerModal.content], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = viewerModal.item.name;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
@@ -1513,16 +1500,6 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
                 )}
               </div>
               <div className="flex items-center space-x-2">
-                {!viewerModal.isBinary && viewerModal.content !== viewerModal.originalContent && (
-                  <button
-                    onClick={handleDownloadChanges}
-                    className="flex items-center space-x-1 px-2.5 py-1 rounded bg-amber-500/15 border border-amber-500/30 text-xs text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 transition-colors shadow-xs"
-                    title={fm.downloadChanges}
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>{fm.downloadChanges}</span>
-                  </button>
-                )}
                 {!viewerModal.isBinary && (
                   <button
                     onClick={handleSaveAndClose}
