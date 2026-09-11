@@ -9,7 +9,6 @@ import {
   FileText,
   Terminal,
   Activity,
-  Code2,
   AppWindow,
   Folder,
 } from "lucide-react";
@@ -19,7 +18,6 @@ import { OverviewTab } from "./tabs/OverviewTab";
 import { LogsTab } from "./tabs/LogsTab";
 import { TerminalTab } from "./tabs/TerminalTab";
 import { StatsTab } from "./tabs/StatsTab";
-import { InspectTab } from "./tabs/InspectTab";
 import { FileManagerTab } from "./tabs/FileManagerTab";
 import { TechIcon } from "@/components/TechIcon";
 
@@ -58,7 +56,7 @@ export const ContainerDetailView: React.FC = () => {
   const isRunning = container.state === "running";
 
   const tabs: {
-    id: "overview" | "logs" | "terminal" | "stats" | "inspect" | "files";
+    id: "overview" | "logs" | "terminal" | "stats" | "files";
     label: string;
     icon: React.ComponentType<{ className?: string }>;
   }[] = [
@@ -66,7 +64,6 @@ export const ContainerDetailView: React.FC = () => {
     { id: "logs", label: "Logs", icon: FileText },
     { id: "terminal", label: "Terminal", icon: Terminal },
     { id: "stats", label: "Stats", icon: Activity },
-    { id: "inspect", label: "Inspect", icon: Code2 },
     { id: "files", label: "Files", icon: Folder },
   ];
 
@@ -191,7 +188,9 @@ export const ContainerDetailView: React.FC = () => {
       </div>
 
       <div className="pt-1">
-        {containerDetailTab === "overview" && <OverviewTab container={container} />}
+        {(containerDetailTab === "overview" || containerDetailTab === "inspect") && (
+          <OverviewTab container={container} />
+        )}
         {containerDetailTab === "logs" && <LogsTab containerId={container.id} />}
         {containerDetailTab === "terminal" && (
           <TerminalTab
@@ -206,7 +205,6 @@ export const ContainerDetailView: React.FC = () => {
             containerState={container.state}
           />
         )}
-        {containerDetailTab === "inspect" && <InspectTab container={container} />}
         {containerDetailTab === "files" && (
           <div className="h-[600px] border border-border/70 rounded-xl overflow-hidden flex flex-col">
             <FileManagerTab

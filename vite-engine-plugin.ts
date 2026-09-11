@@ -1023,6 +1023,47 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
               return;
             }
 
+            const inspectPorts: any[] = [];
+            const portMap = c.NetworkSettings?.Ports || c.HostConfig?.PortBindings || {};
+            for (const [key, bindings] of Object.entries(portMap)) {
+              const [privatePortStr, type] = key.split("/");
+              const privatePort = parseInt(privatePortStr, 10) || 0;
+              if (Array.isArray(bindings) && bindings.length > 0) {
+                for (const b of bindings as any[]) {
+                  inspectPorts.push({
+                    ip: b.HostIp || "",
+                    privatePort,
+                    publicPort: parseInt(b.HostPort, 10) || undefined,
+                    type: type || "tcp",
+                  });
+                }
+              } else {
+                inspectPorts.push({
+                  privatePort,
+                  type: type || "tcp",
+                });
+              }
+            }
+
+            const mounts = Array.isArray(c.Mounts) && c.Mounts.length > 0
+              ? c.Mounts.map((m: any) => ({
+                  type: m.Type || "bind",
+                  source: m.Source || "",
+                  destination: m.Destination || "",
+                  mode: m.Mode || "",
+                  rw: m.RW ?? true,
+                }))
+              : (c.HostConfig?.Binds || []).map((b: string) => {
+                  const parts = b.split(":");
+                  return {
+                    type: "bind",
+                    source: parts[0] || "",
+                    destination: parts[1] || "",
+                    mode: parts[2] || "rw",
+                    rw: parts[2] !== "ro",
+                  };
+                });
+
             const detail = {
               id: c.Id,
               name: (c.Name || "").replace(/^\//, ""),
@@ -1032,16 +1073,10 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
               status: c.State?.Status || "",
               created: c.Created,
               startedAt: c.State?.StartedAt,
-              ports: [],
+              ports: inspectPorts,
               command: [c.Path, ...(c.Args || [])].filter(Boolean).join(" "),
               env: c.Config?.Env || [],
-              mounts: (c.Mounts || []).map((m: any) => ({
-                type: m.Type,
-                source: m.Source,
-                destination: m.Destination,
-                mode: m.Mode,
-                rw: m.RW,
-              })),
+              mounts,
               networks: Object.keys(c.NetworkSettings?.Networks || {}),
               ipAddress: c.NetworkSettings?.IPAddress || "",
               restartPolicy: c.HostConfig?.RestartPolicy?.Name || "no",

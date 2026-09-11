@@ -825,7 +825,7 @@
     user-select: none;
     transition: background-color 0.2s ease, color 0.2s ease;
   }
-  input, textarea, [contenteditable="true"], .select-text, .xterm, .xterm-rows {
+  input, textarea, [contenteditable="true"], .select-text, .select-text *, .xterm, .xterm-rows {
     user-select: text;
     -webkit-user-select: text;
   }

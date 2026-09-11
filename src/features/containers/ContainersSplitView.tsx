@@ -10,7 +10,6 @@ import {
   FileText,
   Terminal,
   Activity,
-  Code2,
   FolderGit2,
   ExternalLink,
   AppWindow,
@@ -29,7 +28,6 @@ import { OverviewTab } from "./tabs/OverviewTab";
 import { LogsTab } from "./tabs/LogsTab";
 import { TerminalTab } from "./tabs/TerminalTab";
 import { StatsTab } from "./tabs/StatsTab";
-import { InspectTab } from "./tabs/InspectTab";
 import { FileManagerTab } from "./tabs/FileManagerTab";
 import { TechIcon } from "@/components/TechIcon";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -354,7 +352,7 @@ export const ContainersSplitView: React.FC = () => {
   };
 
   const tabs: {
-    id: "overview" | "stats" | "logs" | "terminal" | "inspect" | "files";
+    id: "overview" | "stats" | "logs" | "terminal" | "files";
     label: string;
     icon: React.ComponentType<{ className?: string }>;
   }[] = [
@@ -362,7 +360,6 @@ export const ContainersSplitView: React.FC = () => {
     { id: "stats", label: t.containers.tabs.stats, icon: Activity },
     { id: "logs", label: t.containers.tabs.logs, icon: FileText },
     { id: "terminal", label: t.containers.tabs.terminal, icon: Terminal },
-    { id: "inspect", label: t.containers.tabs.inspect, icon: Code2 },
     { id: "files", label: t.containers.tabs.files, icon: Folder },
   ];
 
@@ -964,7 +961,9 @@ export const ContainersSplitView: React.FC = () => {
               } p-4 bg-background min-h-0`}
             >
               <ErrorBoundary fallbackTitle="Error loading container tab">
-                {containerDetailTab === "overview" && <OverviewTab container={activeContainer} />}
+                {(containerDetailTab === "overview" || containerDetailTab === "inspect") && (
+                  <OverviewTab container={activeContainer} />
+                )}
                 {containerDetailTab === "stats" && (
                   <StatsTab
                     containerId={activeContainer.id}
@@ -979,7 +978,6 @@ export const ContainersSplitView: React.FC = () => {
                     containerState={activeContainer.state}
                   />
                 )}
-                {containerDetailTab === "inspect" && <InspectTab container={activeContainer} />}
                 {containerDetailTab === "files" && (
                   <FileManagerTab
                     containerId={activeContainer.id}

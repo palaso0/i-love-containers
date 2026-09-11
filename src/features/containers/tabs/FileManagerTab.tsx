@@ -988,6 +988,10 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
               type="text"
               value={pathInput}
               autoFocus
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              autoComplete="off"
               onChange={(e) => setPathInput(e.target.value)}
               onBlur={() => {
                 setIsEditingPath(false);
@@ -1060,6 +1064,10 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
               type="text"
               placeholder={fm.searchPlaceholder}
               value={searchQuery}
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              autoComplete="off"
               onClick={(e) => e.stopPropagation()}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-7 pr-2 py-1 text-xs bg-surface/70 border border-border/70 rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary w-32 sm:w-40"
@@ -1606,6 +1614,10 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
               <input
                 type="text"
                 autoFocus
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                autoComplete="off"
                 value={renameModal.newName}
                 onChange={(e) =>
                   setRenameModal({ ...renameModal, newName: e.target.value })
@@ -1674,6 +1686,10 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
               <input
                 type="text"
                 autoFocus
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                autoComplete="off"
                 value={newFolderModal.name}
                 onChange={(e) =>
                   setNewFolderModal({ name: e.target.value })
@@ -1733,6 +1749,10 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
               <input
                 type="text"
                 autoFocus
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                autoComplete="off"
                 value={newFileModal.name}
                 onChange={(e) =>
                   setNewFileModal({ name: e.target.value })
