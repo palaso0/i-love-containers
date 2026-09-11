@@ -59,7 +59,6 @@ export const Header: React.FC = () => {
           </button>
         )}
 
-        {/* macOS Finder / Safari Style Back & Forward buttons */}
         <div className="flex items-center bg-surface-secondary/70 border border-border/60 rounded-lg p-0.5 shrink-0 shadow-2xs">
           <button
             onClick={goBack}

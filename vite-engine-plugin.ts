@@ -220,7 +220,6 @@ function demuxDockerStream(buffer: Buffer): { stdout: string; stderr: string; co
     const b2 = buffer[offset + 2];
     const b3 = buffer[offset + 3];
 
-    // Docker multiplex stream: byte 0 is 1 (stdout), 2 (stderr), or 0 (stdin); bytes 1-3 are 0
     if ((type === 1 || type === 2 || type === 0) && b1 === 0 && b2 === 0 && b3 === 0) {
       const frameSize = buffer.readUInt32BE(offset + 4);
       const frameStart = offset + 8;
@@ -459,7 +458,6 @@ export async function detectEngines(activeId?: string): Promise<{
     });
   }
 
-  // Check Docker contexts for Rancher Desktop
   const rdContextSocket = await detectRancherDesktopContext();
   if (rdContextSocket) {
     const existingRancher = candidates.find(c => c.id === "rancher");

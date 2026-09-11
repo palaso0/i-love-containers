@@ -21,9 +21,6 @@ export interface CompletionResult {
   candidates?: CompletionCandidate[];
 }
 
-/**
- * Given a list of strings, find the longest common prefix.
- */
 export function findLongestCommonPrefix(strings: string[]): string {
   if (strings.length === 0) return "";
   if (strings.length === 1) return strings[0];
@@ -41,21 +38,15 @@ export function findLongestCommonPrefix(strings: string[]): string {
   return prefix;
 }
 
-/**
- * Format candidates into clean terminal grid/columns with color tags.
- * Columns adapt to terminal width.
- */
 export function formatCompletionCandidates(candidates: CompletionCandidate[], termCols: number = 80): string[] {
   if (candidates.length === 0) return [];
 
-  // Sort candidates alphabetically
   const sorted = [...candidates].sort((a, b) => {
     if (a.isDirectory && !b.isDirectory) return -1;
     if (!a.isDirectory && b.isDirectory) return 1;
     return a.name.localeCompare(b.name);
   });
 
-  // Calculate maximum display length
   const maxLen = Math.max(...sorted.map((c) => c.name.length + (c.isDirectory ? 1 : 0))) + 2;
   const colWidth = Math.max(maxLen, 12);
   const numCols = Math.max(1, Math.floor(termCols / colWidth));
@@ -87,9 +78,6 @@ export function formatCompletionCandidates(candidates: CompletionCandidate[], te
   return lines;
 }
 
-/**
- * Resolves autocompletion for container shell input.
- */
 export async function resolveContainerCompletion(
   containerId: string,
   cwd: string,
@@ -99,7 +87,6 @@ export async function resolveContainerCompletion(
   const textBeforeCursor = buffer.slice(0, cursorPos);
   const textAfterCursor = buffer.slice(cursorPos);
 
-  // Extract the token currently being typed right before cursor
   const tokenMatch = textBeforeCursor.match(/(?:^|\s)([^\s]*)$/);
   if (!tokenMatch) return null;
 
@@ -125,7 +112,6 @@ export async function resolveContainerCompletion(
     }
   }
 
-  // 1. First attempt: fetchContainerFiles API
   let fileCandidates: CompletionCandidate[] = [];
   try {
     const res = await fetchContainerFiles(containerId, targetDir);
@@ -139,7 +125,6 @@ export async function resolveContainerCompletion(
     }
   } catch {}
 
-  // 2. Fallback attempt: if no candidates found via fetchContainerFiles, run `ls -1p` inside container
   if (fileCandidates.length === 0) {
     try {
       const safeDir = targetDir.replace(/'/g, "'\\''");
@@ -165,7 +150,6 @@ export async function resolveContainerCompletion(
     } catch {}
   }
 
-  // 3. If first word and no slash, also add matching common shell commands
   let commandCandidates: CompletionCandidate[] = [];
   if (isFirstWord && !hasSlash && prefix.length > 0) {
     commandCandidates = COMMON_COMMANDS
@@ -173,7 +157,6 @@ export async function resolveContainerCompletion(
       .map((cmd) => ({ name: cmd, isDirectory: false }));
   }
 
-  // Combine candidates, de-duplicating by name
   const candidateMap = new Map<string, CompletionCandidate>();
   for (const c of commandCandidates) {
     candidateMap.set(c.name, c);
@@ -212,7 +195,6 @@ export async function resolveContainerCompletion(
     };
   }
 
-  // Multiple matches:
   const lcp = findLongestCommonPrefix(matchNames);
 
   let newBuffer = buffer;

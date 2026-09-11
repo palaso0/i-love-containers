@@ -22,7 +22,6 @@ interface ImageLayerInspectorProps {
   onBack: () => void;
 }
 
-// Helper to format complex docker commands into clean, readable syntax
 function formatDockerCommand(cmd: string): { instruction: string; rest: string; tokens: string[] } {
   const trimmed = cmd.trim();
   const match = trimmed.match(/^([A-Z]+)\s+([\s\S]*)$/);
@@ -32,7 +31,6 @@ function formatDockerCommand(cmd: string): { instruction: string; rest: string; 
   const instruction = match[1];
   const rest = match[2];
 
-  // Split on chain operators (&&, ;, ||) and format nicely
   const parts = rest
     .split(/(\s*&&\s*|\s*;\s*|\s*\|\|\s*)/g)
     .filter(Boolean)
@@ -56,7 +54,6 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
   const [copiedCmd, setCopiedCmd] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
 
-  // Splitter state
   const splitViewRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
   const [leftWidth, setLeftWidth] = useState(() => {
@@ -137,7 +134,6 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
     return analysis.layers.find((l) => l.index === selectedLayerIndex) || analysis.layers[0];
   }, [analysis, selectedLayerIndex]);
 
-  // Use currentImage.size if available (exact image inspect size) or analysis.totalSize
   const displayTotalSize = currentImage?.size && currentImage.size > 0
     ? currentImage.size
     : (analysis?.totalSize ?? 0);
@@ -217,7 +213,6 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
-      {/* Top Banner / Breadcrumb & Image Summary */}
       <div className="p-3.5 sm:p-4 border-b border-border/70 bg-surface/60 backdrop-blur-md space-y-3 shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center space-x-3 min-w-0">
@@ -255,7 +250,6 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
             </div>
           </div>
 
-          {/* Total Size Metric */}
           <div className="flex items-center space-x-2.5 shrink-0 flex-wrap">
             <div className="px-3 py-1.5 bg-surface border border-border/70 rounded-xl shadow-2xs flex items-center space-x-2.5">
               <HardDrive className="w-4 h-4 text-primary shrink-0" />
@@ -272,9 +266,7 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
         </div>
       </div>
 
-      {/* Main Split Body (Layers List on Left, Details on Right) */}
       <div ref={splitViewRef} className="flex-1 flex min-h-0 overflow-hidden relative">
-        {/* Left Pane: Layer Stack */}
         <div
           style={{ width: `${leftWidth}px` }}
           className="shrink-0 flex flex-col min-h-0 bg-surface/30 border-r border-border/70"
@@ -346,7 +338,6 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
           </div>
         </div>
 
-        {/* Resizable Splitter Handle */}
         <div
           onMouseDown={handleMouseDown}
           className="w-1.5 hover:w-2 -mx-0.5 cursor-col-resize group relative flex items-center justify-center shrink-0 z-20 transition-all hover:bg-primary/40 active:bg-primary"
@@ -355,9 +346,7 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
           <div className="w-[1px] h-8 rounded-full bg-border group-hover:bg-primary/80 group-active:bg-primary transition-colors" />
         </div>
 
-        {/* Right Pane: Command & Details (Left Tab) and Files (Right Tab) */}
         <div className="flex-1 flex flex-col min-h-0 bg-background overflow-hidden min-w-0">
-          {/* Right Tabs Header: Command & Details FIRST, Files SECOND */}
           <div className="px-4 py-2 border-b border-border/70 flex items-center justify-between bg-surface/50 shrink-0 flex-wrap gap-2">
             <div className="flex items-center space-x-1 bg-surface-secondary/70 p-0.5 rounded-lg border border-border/60 text-xs">
               <button
@@ -397,10 +386,8 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
             )}
           </div>
 
-          {/* Tab 1: Command & Details (Clean, Beautified Syntax) */}
           {activeRightTab === "command" && selectedLayer && (
             <div className="flex-1 overflow-y-auto p-5 space-y-5">
-              {/* Dockerfile Instruction Card */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
@@ -429,7 +416,6 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
                   </button>
                 </div>
 
-                {/* Beautified Terminal Box */}
                 <div className="p-4 bg-surface-secondary/70 border border-border/70 rounded-xl font-mono text-xs text-foreground shadow-inner space-y-2">
                   <div className="flex items-center space-x-2 pb-2 border-b border-border/40 text-2xs text-muted-foreground">
                     <span className="w-2.5 h-2.5 rounded-full bg-rose-500/60 inline-block" />
@@ -482,7 +468,6 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
                 </div>
               </div>
 
-              {/* Metadata Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 text-xs">
                 <div className="p-3 bg-surface border border-border/70 rounded-xl space-y-1 shadow-2xs">
                   <span className="text-2xs uppercase tracking-wider text-muted-foreground block font-semibold">
@@ -525,10 +510,8 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
             </div>
           )}
 
-          {/* Tab 2: Filesystem Tree Diff (Right Tab) */}
           {activeRightTab === "files" && (
             <div className="flex-1 flex flex-col min-h-0">
-              {/* File Search & Change Filter Bar */}
               <div className="p-3 border-b border-border/70 flex items-center justify-between gap-2 bg-surface/20 shrink-0 flex-wrap">
                 <div className="relative flex-1 max-w-xs min-w-[180px]">
                   <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 top-2" />
@@ -585,7 +568,6 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
                 </div>
               </div>
 
-              {/* Files List */}
               <div className="flex-1 overflow-y-auto p-2 divide-y divide-border/40 font-mono text-xs">
                 {filteredFiles.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center p-8 space-y-2">

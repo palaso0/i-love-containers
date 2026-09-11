@@ -436,13 +436,6 @@ export function parseComposeYaml(
     });
   });
 
-  // 1. Group services into architectural tiers
-  // 0: Gateways & Reverse Proxies (nginx, traefik, envoy, gateway)
-  // 1: Frontends & Web UIs (web, ui, client, front)
-  // 2: Application Services & Core APIs (api, server, app, backend)
-  // 3: Workers & Auxiliary Tools (worker, queue, mailhog, tools)
-  // 4: Databases & Storage (postgres, mysql, mariadb, mongo)
-  // 5: Caches & In-Memory Stores (redis, memcached, valkey)
   const tiers: ComposeServiceNode[][] = [[], [], [], [], [], []];
 
   rawServices.forEach((svc) => {
@@ -479,7 +472,7 @@ export function parseComposeYaml(
   const nodeHeight = 96;
   const horizontalGap = 44;
   const verticalGap = 84;
-  const maxPerRow = 3; // Maximum nodes per row to prevent horizontal runaway
+  const maxPerRow = 3;
 
   interface LayoutRow {
     items: ComposeServiceNode[];
@@ -491,10 +484,8 @@ export function parseComposeYaml(
   tiers.forEach((tier, tierIdx) => {
     if (tier.length === 0) return;
 
-    // Stable sort by service name
     const sorted = [...tier].sort((a, b) => a.name.localeCompare(b.name));
 
-    // Chunk into rows of at most maxPerRow (or 2x2 if 4 items)
     const perRow = sorted.length === 4 ? 2 : maxPerRow;
     for (let i = 0; i < sorted.length; i += perRow) {
       rows.push({
@@ -513,7 +504,6 @@ export function parseComposeYaml(
     }
   }
 
-  // Calculate required canvas width
   let maxRowWidth = 0;
   rows.forEach((row) => {
     const w = row.items.length * nodeWidth + (row.items.length - 1) * horizontalGap;
@@ -525,7 +515,6 @@ export function parseComposeYaml(
   let prevTier = -1;
 
   rows.forEach((row) => {
-    // Add extra tier spacing when switching tiers
     if (prevTier !== -1 && row.tierIndex !== prevTier) {
       currentY += 16;
     }
@@ -545,8 +534,6 @@ export function parseComposeYaml(
     currentY += nodeHeight + verticalGap;
   });
 
-  // Position volumes cleanly in a dedicated storage tier at the bottom
-  // Guaranteed zero overlap with any service card!
   if (volumes.length > 0) {
     currentY += 24;
     const volWidth = 140;
@@ -571,7 +558,6 @@ export function parseComposeYaml(
 
   const canvasHeight = Math.max(760, currentY + 60);
 
-  // Generate clean edges (only real explicit depends_on and volume mounts)
   const edges: ComposeEdge[] = [];
   rawServices.forEach((svc) => {
     svc.dependsOn.forEach((dep) => {

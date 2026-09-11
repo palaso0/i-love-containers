@@ -58,7 +58,6 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
     );
     term.writeln("");
 
-    // Initialize real container working directory
     executeContainerCommand(containerId, "pwd").then((res) => {
       if (res.exitCode === 0 && res.output) {
         const lines = res.output.trim().split(/\r?\n/);

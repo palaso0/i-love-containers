@@ -148,7 +148,6 @@ export function setupTerminalInput({
     try {
       const result = await onComplete(buffer, cursorPos);
       if (!result) {
-        // No match found
         return;
       }
 
@@ -158,7 +157,6 @@ export function setupTerminalInput({
       }
 
       if (result.candidates && result.candidates.length > 0) {
-        // Render candidates list below prompt
         term.writeln("");
         const formattedLines = formatCompletionCandidates(result.candidates, term.cols);
         for (const line of formattedLines) {

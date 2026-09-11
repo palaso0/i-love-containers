@@ -231,7 +231,6 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
     };
   }, [containerId, loadFiles]);
 
-  // Listen to native Tauri OS drag-drop events (from Finder/Desktop)
   useEffect(() => {
     let unlisten: (() => void) | undefined;
     let isMounted = true;
@@ -253,7 +252,6 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
 
       for (const hostPath of paths) {
         try {
-          // Try Tauri IPC command (docker cp via Rust)
           const res = await copyHostFileToContainer(containerId, targetDir, hostPath);
           if (res.ok) {
             successCount++;
@@ -284,7 +282,6 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
     }
 
     async function initTauriDragDrop() {
-      // Strategy 1: try getCurrentWebview().onDragDropEvent (scoped to this webview)
       try {
         const { getCurrentWebview } = await import("@tauri-apps/api/webview");
         const currentWebview = getCurrentWebview();
@@ -308,7 +305,6 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
       } catch (e) {
       }
 
-      // Strategy 2: global listen on tauri://drag-drop
       try {
         const { listen } = await import("@tauri-apps/api/event");
         const unlistenFn = await listen<any>("tauri://drag-drop", async (event) => {
@@ -340,7 +336,6 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
     };
   }, [containerId, loadFiles]);
 
-  // Fallback: native DOM drag listeners (works in Tauri WKWebView where React synthetic events don't fire for OS file drops)
   useEffect(() => {
     let dragEnterCount = 0;
 
@@ -682,7 +677,6 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
     e.preventDefault();
     setIsDraggingOver(false);
 
-    // If Tauri already handled this drop in the last 1.5 seconds, skip duplicate
     if (Date.now() - lastProcessedPathsRef.current.timestamp < 1500) {
       return;
     }
