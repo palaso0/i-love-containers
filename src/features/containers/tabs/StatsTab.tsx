@@ -7,21 +7,28 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { ContainerStats } from "@/types";
+import { ContainerStats, ContainerState } from "@/types";
 import { formatBytes } from "@/lib/utils";
 import * as api from "@/lib/api";
 import { Cpu, Database, Activity, ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
+import { ContainerNotRunning } from "@/components/ContainerNotRunning";
 
 interface StatsTabProps {
   containerId: string;
+  containerState?: ContainerState;
 }
 
-export const StatsTab: React.FC<StatsTabProps> = ({ containerId }) => {
-  const { theme } = useAppStore();
+export const StatsTab: React.FC<StatsTabProps> = ({ containerId, containerState }) => {
+  const { theme, containers } = useAppStore();
+  const currentContainer = containers.find((c) => c.id === containerId);
+  const state = containerState ?? currentContainer?.state ?? "running";
+  const isRunning = state === "running";
+
   const [statsHistory, setStatsHistory] = useState<ContainerStats[]>([]);
 
   useEffect(() => {
+    if (!isRunning) return;
     let isMounted = true;
 
     setStatsHistory([]);
@@ -68,7 +75,7 @@ export const StatsTab: React.FC<StatsTabProps> = ({ containerId }) => {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [containerId]);
+  }, [containerId, isRunning]);
 
   const rootRef = useRef<HTMLDivElement>(null);
   const [isCompact, setIsCompact] = useState(false);
@@ -109,6 +116,16 @@ export const StatsTab: React.FC<StatsTabProps> = ({ containerId }) => {
 
   const isDark = theme === "dark";
   const axisColor = isDark ? "#475569" : "#94a3b8";
+
+  if (!isRunning) {
+    return (
+      <ContainerNotRunning
+        state={state}
+        containerName={currentContainer?.name}
+        featureName="stats"
+      />
+    );
+  }
 
   return (
     <div ref={rootRef} className="space-y-3">

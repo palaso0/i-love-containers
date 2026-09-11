@@ -8,6 +8,7 @@ import { useAppStore } from "@/stores/useAppStore";
 import { getTerminalTheme, formatTerminalPrompt } from "@/lib/terminalTheme";
 import { setupTerminalInput, TerminalController } from "@/lib/terminalInput";
 import { resolveContainerCompletion } from "@/lib/terminalCompletion";
+import { ContainerNotRunning } from "@/components/ContainerNotRunning";
 
 interface StandaloneTerminalWindowProps {
   containerId: string;
@@ -18,8 +19,12 @@ export const StandaloneTerminalWindow: React.FC<StandaloneTerminalWindowProps> =
   containerId,
   containerName,
 }) => {
-  const { theme } = useAppStore();
+  const { theme, containers } = useAppStore();
   const isDark = theme === "dark";
+
+  const currentContainer = containers.find((c) => c.id === containerId);
+  const state = currentContainer?.state;
+  const isRunning = !currentContainer || state === "running";
 
   const terminalElementRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
@@ -28,6 +33,7 @@ export const StandaloneTerminalWindow: React.FC<StandaloneTerminalWindowProps> =
   const controllerRef = useRef<TerminalController | null>(null);
 
   useEffect(() => {
+    if (!isRunning) return;
     if (!terminalElementRef.current) return;
     if (xtermRef.current) return;
 
@@ -181,7 +187,15 @@ export const StandaloneTerminalWindow: React.FC<StandaloneTerminalWindowProps> =
         className="h-10 px-4 bg-surface border-b border-border flex items-center justify-between font-mono text-2xs shrink-0"
       >
         <div className="flex items-center space-x-2">
-          <span className="w-2 h-2 rounded-full bg-status-running shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
+          <span
+            className={`w-2 h-2 rounded-full ${
+              isRunning
+                ? "bg-status-running shadow-[0_0_6px_rgba(16,185,129,0.5)]"
+                : state === "paused"
+                ? "bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.5)]"
+                : "bg-muted-foreground/60"
+            }`}
+          />
           <TerminalIcon className="w-3.5 h-3.5 text-primary" />
           <span className="font-bold text-foreground">{containerName}</span>
           <span className="text-muted-foreground">({containerId.substring(0, 12)})</span>
@@ -199,8 +213,12 @@ export const StandaloneTerminalWindow: React.FC<StandaloneTerminalWindowProps> =
         </div>
       </div>
 
-      <div className="flex-1 p-3 select-text overflow-hidden font-mono">
-        <div ref={terminalElementRef} className="w-full h-full" />
+      <div className="flex-1 p-3 select-text overflow-hidden font-mono flex flex-col min-h-0">
+        {!isRunning ? (
+          <ContainerNotRunning state={state} containerName={containerName} featureName="terminal" />
+        ) : (
+          <div ref={terminalElementRef} className="w-full h-full" />
+        )}
       </div>
     </div>
   );

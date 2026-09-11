@@ -43,7 +43,6 @@ img.lockFocus;
 var ctx = $.NSGraphicsContext.currentContext;
 ctx.imageInterpolation = $.NSImageInterpolationHigh;
 
-// 1. Sombra exterior macOS Dock
 var shadow = $.NSShadow.alloc.init;
 shadow.shadowOffset = $.NSMakeSize(0, -20);
 shadow.shadowBlurRadius = 28.0;
@@ -57,13 +56,11 @@ hexColor("#0e1522").set;
 squirclePath.fill;
 ctx.restoreGraphicsState;
 
-// 2. Degradado Deep Navy
 ctx.saveGraphicsState;
 squirclePath.addClip;
 var grad = $.NSGradient.alloc.initWithStartingColorEndingColor(hexColor("#0e1522"), hexColor("#1c2536"));
 grad.drawInRectAngle(squircleRect, 90.0);
 
-// Resplandor central sutil
 var glowGrad = $.NSGradient.alloc.initWithStartingColorEndingColor(
   hexColor("#0284c7", 0.18),
   hexColor("#0284c7", 0.0)
@@ -74,7 +71,6 @@ glowGrad.drawFromCenterRadiusToCenterRadiusOptions(
   0
 );
 
-// Reflejo sutil en la base
 var groundGrad = $.NSGradient.alloc.initWithStartingColorEndingColor(
   $.NSColor.colorWithCalibratedWhiteAlpha(1.0, 0.04),
   $.NSColor.colorWithCalibratedWhiteAlpha(1.0, 0.0)
@@ -83,7 +79,6 @@ groundGrad.drawInRectAngle($.NSMakeRect(100, 100, 824, 250), 90.0);
 
 ctx.restoreGraphicsState;
 
-// 3. Bisel superior sutil tipo cristal
 ctx.saveGraphicsState;
 var strokePath = $.NSBezierPath.bezierPathWithRoundedRectXRadiusYRadius(
   $.NSMakeRect(101, 101, 822, 822), 184, 184
@@ -93,7 +88,6 @@ $.NSColor.colorWithCalibratedWhiteAlpha(1.0, 0.18).set;
 strokePath.stroke;
 ctx.restoreGraphicsState;
 
-// 4. Mascot centrado
 var logoSize = 700;
 var logoX = 512 - (logoSize / 2);
 var logoY = 512 - (logoSize / 2) + 6;

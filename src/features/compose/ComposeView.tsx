@@ -23,12 +23,14 @@ import { DockerDisconnected } from "@/components/DockerDisconnected";
 export const ComposeView: React.FC = () => {
   const {
     t,
+    containers,
     composeProjects,
     systemOverview,
     setActiveTab,
     setSelectedContainerId,
     startContainer,
     stopContainer,
+    unpauseContainer,
     restartContainer,
     refreshData,
   } = useAppStore();
@@ -133,24 +135,48 @@ export const ComposeView: React.FC = () => {
 
   const handleStopAll = async (containerIds: string[]) => {
     for (const id of containerIds) {
+      const c = containers.find((item) => item.id === id);
+      if (c?.state === "paused") {
+        await unpauseContainer(id);
+      }
       await stopContainer(id);
     }
+    await refreshData();
   };
 
   const handleStartStack = async () => {
     if (!activeProject) return;
-    await api.upComposeProject(
-      activeProject.name,
-      activeProject.workingDir,
-      activeProject.configFile
-    );
+    let success = false;
+    if (activeProject.configFile || activeProject.workingDir) {
+      const res = await api.upComposeProject(
+        activeProject.name,
+        activeProject.workingDir,
+        activeProject.configFile
+      );
+      success = res.ok;
+    }
+    if (!success && activeContainerIds.length > 0) {
+      for (const id of activeContainerIds) {
+        const c = containers.find((item) => item.id === id);
+        if (c?.state === "paused") {
+          await unpauseContainer(id);
+        } else if (c?.state !== "running") {
+          await startContainer(id);
+        }
+      }
+    }
     await refreshData();
   };
 
   const handleRestartAll = async (containerIds: string[]) => {
     for (const id of containerIds) {
+      const c = containers.find((item) => item.id === id);
+      if (c?.state === "paused") {
+        await unpauseContainer(id);
+      }
       await restartContainer(id);
     }
+    await refreshData();
   };
 
   if (composeProjects.length === 0) {

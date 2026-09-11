@@ -8,18 +8,26 @@ import { executeContainerCommand } from "@/lib/api";
 import { getTerminalTheme, formatTerminalPrompt } from "@/lib/terminalTheme";
 import { setupTerminalInput, TerminalController } from "@/lib/terminalInput";
 import { resolveContainerCompletion } from "@/lib/terminalCompletion";
+import { ContainerNotRunning } from "@/components/ContainerNotRunning";
+import { ContainerState } from "@/types";
 
 interface TerminalTabProps {
   containerId: string;
   containerName: string;
+  containerState?: ContainerState;
 }
 
 export const TerminalTab: React.FC<TerminalTabProps> = ({
   containerId,
   containerName,
+  containerState,
 }) => {
-  const { theme } = useAppStore();
+  const { theme, containers } = useAppStore();
   const isDark = theme === "dark";
+
+  const currentContainer = containers.find((c) => c.id === containerId);
+  const state = containerState ?? currentContainer?.state ?? "running";
+  const isRunning = state === "running";
 
   const terminalElementRef = useRef<HTMLDivElement>(null);
   const xtermInstanceRef = useRef<XTerm | null>(null);
@@ -30,6 +38,7 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
   const [isCompact, setIsCompact] = useState(false);
 
   useEffect(() => {
+    if (!isRunning) return;
     if (!terminalElementRef.current) return;
 
     const term = new XTerm({
@@ -168,6 +177,16 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
     ro.observe(rootRef.current);
     return () => ro.disconnect();
   }, []);
+
+  if (!isRunning) {
+    return (
+      <ContainerNotRunning
+        state={state}
+        containerName={containerName}
+        featureName="terminal"
+      />
+    );
+  }
 
   return (
     <div

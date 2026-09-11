@@ -22,7 +22,6 @@ import {
   Layers,
 } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
-import * as api from "@/lib/api";
 import { ContainerDetail, ContainerState } from "@/types";
 import { formatBytes } from "@/lib/utils";
 import { openRealNativeWindow } from "@/lib/nativeWindow";
@@ -240,34 +239,37 @@ export const ContainersSplitView: React.FC = () => {
   const handleStopAll = async (groupContainers: ContainerDetail[], e: React.MouseEvent) => {
     e.stopPropagation();
     for (const c of groupContainers) {
-      if (c.state === "running") {
+      if (c.state === "paused") {
+        await unpauseContainer(c.id);
+      }
+      if (c.state === "running" || c.state === "paused") {
         await stopContainer(c.id);
       }
     }
+    await refreshData();
   };
 
   const handleStartAll = async (groupContainers: ContainerDetail[], e: React.MouseEvent) => {
     e.stopPropagation();
-    const isComposeGroup = groupContainers.length > 0 && groupContainers[0].composeProject;
-    if (isComposeGroup) {
-      const projectName = groupContainers[0].composeProject!;
-      const project = composeProjects.find(p => p.name === projectName);
-      await api.upComposeProject(projectName, project?.workingDir, project?.configFile);
-      await refreshData();
-      return;
-    }
     for (const c of groupContainers) {
-      if (c.state !== "running") {
+      if (c.state === "paused") {
+        await unpauseContainer(c.id);
+      } else if (c.state !== "running") {
         await startContainer(c.id);
       }
     }
+    await refreshData();
   };
 
   const handleRestartAll = async (groupContainers: ContainerDetail[], e: React.MouseEvent) => {
     e.stopPropagation();
     for (const c of groupContainers) {
+      if (c.state === "paused") {
+        await unpauseContainer(c.id);
+      }
       await restartContainer(c.id);
     }
+    await refreshData();
   };
 
   useEffect(() => {
@@ -963,16 +965,26 @@ export const ContainersSplitView: React.FC = () => {
             >
               <ErrorBoundary fallbackTitle="Error loading container tab">
                 {containerDetailTab === "overview" && <OverviewTab container={activeContainer} />}
-                {containerDetailTab === "stats" && <StatsTab containerId={activeContainer.id} />}
+                {containerDetailTab === "stats" && (
+                  <StatsTab
+                    containerId={activeContainer.id}
+                    containerState={activeContainer.state}
+                  />
+                )}
                 {containerDetailTab === "logs" && <LogsTab containerId={activeContainer.id} />}
                 {containerDetailTab === "terminal" && (
-                  <TerminalTab containerId={activeContainer.id} containerName={activeContainer.name} />
+                  <TerminalTab
+                    containerId={activeContainer.id}
+                    containerName={activeContainer.name}
+                    containerState={activeContainer.state}
+                  />
                 )}
                 {containerDetailTab === "inspect" && <InspectTab container={activeContainer} />}
                 {containerDetailTab === "files" && (
                   <FileManagerTab
                     containerId={activeContainer.id}
                     containerName={activeContainer.name}
+                    containerState={activeContainer.state}
                   />
                 )}
               </ErrorBoundary>

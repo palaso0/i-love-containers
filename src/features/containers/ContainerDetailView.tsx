@@ -194,13 +194,26 @@ export const ContainerDetailView: React.FC = () => {
         {containerDetailTab === "overview" && <OverviewTab container={container} />}
         {containerDetailTab === "logs" && <LogsTab containerId={container.id} />}
         {containerDetailTab === "terminal" && (
-          <TerminalTab containerId={container.id} containerName={container.name} />
+          <TerminalTab
+            containerId={container.id}
+            containerName={container.name}
+            containerState={container.state}
+          />
         )}
-        {containerDetailTab === "stats" && <StatsTab containerId={container.id} />}
+        {containerDetailTab === "stats" && (
+          <StatsTab
+            containerId={container.id}
+            containerState={container.state}
+          />
+        )}
         {containerDetailTab === "inspect" && <InspectTab container={container} />}
         {containerDetailTab === "files" && (
           <div className="h-[600px] border border-border/70 rounded-xl overflow-hidden flex flex-col">
-            <FileManagerTab containerId={container.id} containerName={container.name} />
+            <FileManagerTab
+              containerId={container.id}
+              containerName={container.name}
+              containerState={container.state}
+            />
           </div>
         )}
       </div>

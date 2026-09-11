@@ -32,7 +32,7 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react";
-import { ContainerFileItem } from "@/types";
+import { ContainerFileItem, ContainerState } from "@/types";
 import {
   fetchContainerFiles,
   fetchFileContent,
@@ -47,10 +47,12 @@ import {
   copyHostFileToContainer,
 } from "@/lib/api";
 import { useAppStore } from "@/stores/useAppStore";
+import { ContainerNotRunning } from "@/components/ContainerNotRunning";
 
 interface FileManagerTabProps {
   containerId: string;
   containerName?: string;
+  containerState?: ContainerState;
 }
 
 function formatBytes(bytes: number): string {
@@ -123,9 +125,15 @@ function getUniqueDuplicateName(originalName: string, existingNames: Set<string>
 
 export const FileManagerTab: React.FC<FileManagerTabProps> = ({
   containerId,
+  containerName,
+  containerState,
 }) => {
-  const { t } = useAppStore();
+  const { t, containers } = useAppStore();
   const fm = t.containers.fileManager;
+
+  const currentContainer = containers.find((c) => c.id === containerId);
+  const state = containerState ?? currentContainer?.state ?? "running";
+  const isRunning = state === "running";
 
   const [currentPath, setCurrentPath] = useState<string>("/");
   const [defaultPath, setDefaultPath] = useState<string>("/");
@@ -218,6 +226,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
   );
 
   useEffect(() => {
+    if (!isRunning) return;
     let isMounted = true;
     (async () => {
       const initialPath = await loadFiles();
@@ -229,7 +238,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [containerId, loadFiles]);
+  }, [containerId, isRunning, loadFiles]);
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;
@@ -887,6 +896,16 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
     newFileModal,
     deleteModal,
   ]);
+
+  if (!isRunning) {
+    return (
+      <ContainerNotRunning
+        state={state}
+        containerName={containerName}
+        featureName="files"
+      />
+    );
+  }
 
   const pathBreadcrumbs = currentPath === "/" ? [""] : currentPath.split("/");
 

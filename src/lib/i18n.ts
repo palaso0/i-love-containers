@@ -57,6 +57,10 @@ export const translations = {
       noContainers: "No containers found",
       disconnected: "Docker disconnected",
       selectToInspect: "Select a container to inspect details",
+      containerNotRunningTitle: "Container is not running",
+      containerNotRunningDesc: "This section requires the container to be running to execute commands, browse files, or inspect metrics.",
+      containerPausedTitle: "Container is paused",
+      containerPausedDesc: "This section requires the container to be active. Resume the container to access its terminal, files, or metrics.",
       tabs: {
         overview: "Overview",
         stats: "Stats",
@@ -438,6 +442,10 @@ export const translations = {
       noContainers: "No se encontraron contenedores",
       disconnected: "Docker desconectado",
       selectToInspect: "Selecciona un contenedor para inspeccionar detalles",
+      containerNotRunningTitle: "El contenedor no está en ejecución",
+      containerNotRunningDesc: "Esta sección requiere que el contenedor esté en ejecución para interactuar con su consola, explorar archivos o consultar métricas.",
+      containerPausedTitle: "El contenedor está pausado",
+      containerPausedDesc: "Esta sección requiere que el contenedor esté activo. Reanuda el contenedor para acceder a su consola, archivos o métricas.",
       tabs: {
         overview: "Resumen",
         stats: "Estadísticas",
