@@ -187,6 +187,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
   const [newFolderModal, setNewFolderModal] = useState<{ name: string } | null>(null);
   const [newFileModal, setNewFileModal] = useState<{ name: string } | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ items: ContainerFileItem[] } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1800,15 +1801,24 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
                 {fm.close}
               </button>
               <button
+                disabled={isDeleting}
                 onClick={async () => {
-                  const paths = deleteModal.items.map((i) => i.path);
-                  await deleteContainerFiles(containerId, paths);
-                  setDeleteModal(null);
-                  await loadFiles(currentPath);
+                  setIsDeleting(true);
+                  try {
+                    const paths = deleteModal.items.map((i) =>
+                      i.path.startsWith("/") ? i.path : `${currentPath === "/" ? "" : currentPath}/${i.path}`
+                    );
+                    await deleteContainerFiles(containerId, paths);
+                  } finally {
+                    setIsDeleting(false);
+                    setDeleteModal(null);
+                    await loadFiles(currentPath);
+                  }
                 }}
-                className="px-3 py-1 text-xs font-medium rounded-md bg-rose-500 hover:bg-rose-600 text-white transition-colors"
+                className="px-3 py-1 text-xs font-medium rounded-md bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white transition-colors flex items-center space-x-1.5"
               >
-                {fm.delete}
+                {isDeleting && <Loader2 className="w-3 h-3 animate-spin" />}
+                <span>{fm.delete}</span>
               </button>
             </div>
           </div>

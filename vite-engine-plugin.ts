@@ -256,7 +256,7 @@ async function execInContainer(
   cwd?: string
 ): Promise<{ output: string; exitCode: number }> {
   try {
-    const createRes = await requestUnixSocket(
+    let createRes = await requestUnixSocket(
       socketPath,
       `/containers/${containerId}/exec`,
       "POST",
@@ -264,10 +264,25 @@ async function execInContainer(
         AttachStdout: true,
         AttachStderr: true,
         Tty: false,
+        User: "0",
         WorkingDir: cwd && cwd !== "/" ? cwd : undefined,
-        Cmd: ["/bin/sh", "-c", cmd],
+        Cmd: ["sh", "-c", cmd],
       }
     );
+    if (createRes.status >= 400) {
+      createRes = await requestUnixSocket(
+        socketPath,
+        `/containers/${containerId}/exec`,
+        "POST",
+        {
+          AttachStdout: true,
+          AttachStderr: true,
+          Tty: false,
+          WorkingDir: cwd && cwd !== "/" ? cwd : undefined,
+          Cmd: ["/bin/sh", "-c", cmd],
+        }
+      );
+    }
     if (createRes.status < 300 && createRes.data?.Id) {
       const execId = createRes.data.Id;
       const startRes = await requestUnixSocket(
@@ -282,24 +297,45 @@ async function execInContainer(
       let output = "";
       if (startRes.rawBuffer && startRes.rawBuffer.length > 0) {
         const demuxed = demuxDockerStream(startRes.rawBuffer);
-        output = demuxed.stdout || demuxed.combined;
+        output = demuxed.stdout || demuxed.stderr || demuxed.combined;
       } else if (typeof startRes.data === "string") {
         output = startRes.data;
       }
-      return { output, exitCode: 0 };
+      let exitCode = 0;
+      try {
+        const inspectRes = await requestUnixSocket(socketPath, `/exec/${execId}/json`, "GET");
+        if (inspectRes.status < 300 && typeof inspectRes.data?.ExitCode === "number") {
+          exitCode = inspectRes.data.ExitCode;
+        }
+      } catch {}
+      return { output, exitCode };
     }
   } catch {}
 
   return new Promise((resolve) => {
+    const extendedPath = `/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin:${home}/.docker/bin:${home}/.orbstack/bin:${home}/.rd/bin:${home}/.local/bin:${process.env.PATH || ""}`;
     const cwdArg = cwd && cwd !== "/" ? `-w ${JSON.stringify(cwd)} ` : "";
     exec(
-      `docker exec ${cwdArg}${containerId} sh -c ${JSON.stringify(cmd)}`,
-      { timeout: 15000, maxBuffer: 15 * 1024 * 1024 },
+      `docker exec -u 0 ${cwdArg}${containerId} sh -c ${JSON.stringify(cmd)}`,
+      { env: { ...process.env, PATH: extendedPath }, timeout: 15000, maxBuffer: 15 * 1024 * 1024 },
       (error, stdout, stderr) => {
-        resolve({
-          output: stdout || stderr || "",
-          exitCode: error ? (error.code || 1) : 0,
-        });
+        if (!error) {
+          resolve({
+            output: stdout || stderr || "",
+            exitCode: 0,
+          });
+        } else {
+          exec(
+            `docker exec ${cwdArg}${containerId} sh -c ${JSON.stringify(cmd)}`,
+            { env: { ...process.env, PATH: extendedPath }, timeout: 15000, maxBuffer: 15 * 1024 * 1024 },
+            (fbErr, fbStdout, fbStderr) => {
+              resolve({
+                output: fbStdout || fbStderr || stdout || stderr || "",
+                exitCode: fbErr ? (fbErr.code || 1) : 0,
+              });
+            }
+          );
+        }
       }
     );
   });
@@ -914,14 +950,36 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
               const entries: any[] = [];
               for (const line of lines) {
                 if (line.startsWith("total ")) continue;
-                const cols = line.split(/\s+/);
-                if (cols.length < 9) continue;
-                const perms = cols[0];
-                const isDir = perms.startsWith("d");
-                const isSym = perms.startsWith("l");
-                const size = parseInt(cols[4], 10) || 0;
-                const dateStr = `${cols[5]} ${cols[6]} ${cols[7]}`;
-                let name = cols.slice(8).join(" ");
+                const match = line.match(/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(.+)$/);
+                let perms = "";
+                let isDir = false;
+                let isSym = false;
+                let size = 0;
+                let dateStr = "";
+                let name = "";
+                let owner = "";
+                let group = "";
+                if (match) {
+                  perms = match[1];
+                  isDir = perms.startsWith("d");
+                  isSym = perms.startsWith("l");
+                  owner = match[3];
+                  group = match[4];
+                  size = parseInt(match[5], 10) || 0;
+                  dateStr = `${match[6]} ${match[7]} ${match[8]}`;
+                  name = match[9];
+                } else {
+                  const cols = line.split(/\s+/);
+                  if (cols.length < 9) continue;
+                  perms = cols[0];
+                  isDir = perms.startsWith("d");
+                  isSym = perms.startsWith("l");
+                  owner = cols[2];
+                  group = cols[3];
+                  size = parseInt(cols[4], 10) || 0;
+                  dateStr = `${cols[5]} ${cols[6]} ${cols[7]}`;
+                  name = cols.slice(8).join(" ");
+                }
                 let linkTarget: string | undefined;
                 if (isSym && name.includes(" -> ")) {
                   const symParts = name.split(" -> ");
@@ -942,8 +1000,8 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
                   size,
                   mtime: dateStr,
                   permissions: perms,
-                  owner: cols[2],
-                  group: cols[3],
+                  owner,
+                  group,
                 });
               }
               entries.sort((a, b) => {
@@ -1018,7 +1076,8 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
           }
 
           if (url.startsWith("/api/containers/") && req.method === "POST") {
-            const parts = url.replace("/api/containers/", "").split("/");
+            const cleanPath = url.replace("/api/containers/", "").split("?")[0];
+            const parts = cleanPath.split("/");
             const containerId = parts[0];
             const action = parts[1];
 
@@ -1075,9 +1134,36 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
                     const newPath = (payload.newPath || "").replace(/'/g, "'\\''");
                     cmd = `mv '${oldPath}' '${newPath}'`;
                   } else if (fileAction === "delete") {
-                    const paths: string[] = Array.isArray(payload.paths) ? payload.paths : [payload.path];
-                    const safePaths = paths.map((p) => `'${p.replace(/'/g, "'\\''")}'`).join(" ");
-                    cmd = `rm -rf ${safePaths}`;
+                    const rawPaths: string[] = Array.isArray(payload.paths)
+                      ? payload.paths
+                      : payload.path
+                      ? [payload.path]
+                      : [];
+                    const paths = rawPaths.filter((p) => typeof p === "string" && p.trim().length > 0);
+                    if (paths.length === 0) {
+                      res.setHeader("Content-Type", "application/json");
+                      res.end(JSON.stringify({ ok: true, output: "", exitCode: 0 }));
+                      return;
+                    }
+                    const cmds: string[] = [];
+                    for (const p of paths) {
+                      const norm = path.posix.normalize(p);
+                      const dir = path.posix.dirname(norm);
+                      const base = path.posix.basename(norm);
+                      const safePath = `'${norm.replace(/'/g, "'\\''")}'`;
+                      cmds.push(`chmod -R u+w -- ${safePath} 2>/dev/null || true`);
+                      cmds.push(`rm -rf -- ${safePath} 2>/dev/null || true`);
+                      if (/[\s\u00a0\u202f]/.test(base)) {
+                        const safeDir = `'${dir.replace(/'/g, "'\\''")}'`;
+                        const escapedBaseForGlob = base
+                          .replace(/'/g, "'\\''")
+                          .split(/[\s\u00a0\u202f]+/)
+                          .map((part) => `'${part}'`)
+                          .join("*");
+                        cmds.push(`(cd ${safeDir} 2>/dev/null && rm -rf -- ${escapedBaseForGlob} 2>/dev/null) || true`);
+                      }
+                    }
+                    cmd = cmds.join(" ; ");
                   } else if (fileAction === "copy") {
                     const sourcePath = (payload.sourcePath || "").replace(/'/g, "'\\''");
                     const targetPath = (payload.targetPath || "").replace(/'/g, "'\\''");
