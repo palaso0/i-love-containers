@@ -1025,9 +1025,13 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
 
             const inspectPorts: any[] = [];
             const portMap = c.NetworkSettings?.Ports || c.HostConfig?.PortBindings || {};
-            for (const [key, bindings] of Object.entries(portMap)) {
+            const exposedPortsMap = c.Config?.ExposedPorts || {};
+            const allPortKeys = Array.from(new Set([...Object.keys(portMap), ...Object.keys(exposedPortsMap)]));
+
+            for (const key of allPortKeys) {
               const [privatePortStr, type] = key.split("/");
               const privatePort = parseInt(privatePortStr, 10) || 0;
+              const bindings = portMap[key];
               if (Array.isArray(bindings) && bindings.length > 0) {
                 for (const b of bindings as any[]) {
                   inspectPorts.push({
@@ -1856,14 +1860,12 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
                   }
                 }
 
-                if (resolvedFile && fs.existsSync(resolvedFile)) {
-                  projectMap.set(kp.name, {
-                    name: kp.name,
-                    workingDir: resolvedDir || path.dirname(resolvedFile),
-                    configFile: resolvedFile,
-                    containers: [],
-                  });
-                }
+                projectMap.set(kp.name, {
+                  name: kp.name,
+                  workingDir: resolvedDir || (resolvedFile ? path.dirname(resolvedFile) : undefined),
+                  configFile: resolvedFile,
+                  containers: [],
+                });
               }
             }
 

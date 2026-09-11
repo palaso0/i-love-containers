@@ -11,6 +11,7 @@ import {
   Upload,
   Download,
   RotateCw,
+  RotateCcw,
   ChevronRight,
   ChevronLeft,
   ArrowUp,
@@ -190,6 +191,8 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const editorGutterRef = useRef<HTMLDivElement>(null);
+  const editorTextareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const lastClickedIndexRef = useRef<number>(-1);
@@ -1085,7 +1088,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
             title={fm.newFolder}
           >
             <FolderPlus className="w-3.5 h-3.5 text-primary" />
-            <span className="hidden md:inline">{fm.newFolder}</span>
+            <span className="hidden xl:inline">{fm.newFolder}</span>
           </button>
 
           <button
@@ -1097,7 +1100,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
             title={fm.newFile}
           >
             <FilePlus className="w-3.5 h-3.5 text-sky-400" />
-            <span className="hidden md:inline">{fm.newFile}</span>
+            <span className="hidden xl:inline">{fm.newFile}</span>
           </button>
 
           <button
@@ -1112,7 +1115,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
             title={fm.upload}
           >
             <Upload className="w-3.5 h-3.5" />
-            <span>{fm.upload}</span>
+            <span className="hidden sm:inline">{fm.upload}</span>
           </button>
 
           <div className="h-4 w-[1px] bg-border/60 mx-0.5" />
@@ -1294,7 +1297,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 p-2">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(84px,1fr))] gap-2 p-2">
             {sortedFiles.map((file) => {
               const Icon = getFileIcon(file);
               const isSelected = selectedPaths.has(file.path);
@@ -1306,7 +1309,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
                   onClick={(e) => handleSelect(e, file)}
                   onDoubleClick={() => handleItemDoubleClick(file)}
                   onContextMenu={(e) => handleContextMenu(e, file)}
-                  className={`flex flex-col items-center justify-center p-3 rounded-xl cursor-pointer border transition-all text-center ${
+                  className={`flex flex-col items-center justify-center p-2 rounded-xl cursor-pointer border transition-all text-center min-w-0 ${
                     isSelected
                       ? "bg-primary/20 border-primary ring-2 ring-primary/60 shadow-md scale-[1.02]"
                       : "bg-surface/50 hover:bg-surface border-border/60 hover:border-border"
@@ -1314,7 +1317,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
                   title={`${file.name}${file.isDirectory ? "" : `\n${formatBytes(file.size)}`}\n${file.mtime}`}
                 >
                   <Icon
-                    className={`w-10 h-10 mb-2 transition-transform ${
+                    className={`w-9 h-9 mb-1.5 transition-transform shrink-0 ${
                       isSelected
                         ? "text-primary fill-primary/20 scale-105"
                         : file.isDirectory
@@ -1323,7 +1326,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
                     }`}
                   />
                   <span
-                    className={`text-xs truncate w-full break-all line-clamp-2 leading-tight px-1.5 py-0.5 rounded transition-colors ${
+                    className={`text-xs w-full break-words line-clamp-2 leading-tight px-1 py-0.5 rounded transition-colors ${
                       isSelected
                         ? "bg-primary text-white font-semibold"
                         : "text-foreground font-medium"
@@ -1333,7 +1336,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
                   </span>
                   {!file.isDirectory && (
                     <span
-                      className={`text-[10px] font-mono mt-1 ${
+                      className={`text-[10px] font-mono mt-0.5 truncate max-w-full ${
                         isSelected ? "text-primary font-semibold" : "text-muted-foreground"
                       }`}
                     >
@@ -1535,11 +1538,30 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
                 <span className="text-2xs font-mono text-muted-foreground truncate">
                   ({viewerModal.item.path})
                 </span>
+                {!viewerModal.isBinary && (
+                  <span className="text-2xs font-mono text-muted-foreground/60 shrink-0 hidden sm:inline">
+                    • {fm.linesCount.replace("{count}", String((viewerModal.content || "").split("\n").length))}
+                  </span>
+                )}
                 {viewerModal.content !== viewerModal.originalContent && (
                   <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" title="Unsaved changes" />
                 )}
               </div>
               <div className="flex items-center space-x-2">
+                {!viewerModal.isBinary && viewerModal.content !== viewerModal.originalContent && (
+                  <button
+                    onClick={() =>
+                      setViewerModal((prev) =>
+                        prev ? { ...prev, content: prev.originalContent } : null
+                      )
+                    }
+                    className="flex items-center space-x-1 px-2.5 py-1 rounded bg-surface-secondary border border-border text-xs text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors shadow-xs"
+                    title={fm.discardChanges}
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-500" />
+                    <span>{fm.discardChanges}</span>
+                  </button>
+                )}
                 {!viewerModal.isBinary && (
                   <button
                     onClick={handleSaveAndClose}
@@ -1573,24 +1595,45 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
               </div>
             </div>
 
-            <div className="flex-1 p-3 overflow-hidden bg-background">
+            <div className="flex-1 overflow-hidden bg-background">
               {viewerModal.isBinary ? (
                 <div className="h-full flex flex-col items-center justify-center text-center p-6 text-muted-foreground">
                   <File className="w-12 h-12 mb-2 opacity-40" />
                   <p className="text-xs font-medium">{fm.readOnlyWarning}</p>
                 </div>
               ) : (
-                <textarea
-                  value={viewerModal.content}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setViewerModal((prev) =>
-                      prev ? { ...prev, content: val } : null
-                    );
-                  }}
-                  className="w-full h-full p-2 bg-transparent text-foreground font-mono text-xs resize-none focus:outline-none leading-relaxed"
-                  spellCheck={false}
-                />
+                <div className="flex flex-1 h-full overflow-hidden">
+                  <div
+                    ref={editorGutterRef}
+                    className="py-2.5 pl-3 pr-2.5 select-none text-right font-mono text-xs leading-relaxed border-r border-border/50 bg-surface-secondary/20 overflow-hidden shrink-0"
+                    aria-hidden="true"
+                  >
+                    <pre className="font-mono text-xs leading-relaxed m-0 p-0 text-muted-foreground/40">
+                      {Array.from(
+                        { length: Math.max(1, (viewerModal.content || "").split("\n").length) },
+                        (_, i) => i + 1
+                      ).join("\n")}
+                    </pre>
+                  </div>
+                  <textarea
+                    ref={editorTextareaRef}
+                    value={viewerModal.content}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setViewerModal((prev) =>
+                        prev ? { ...prev, content: val } : null
+                      );
+                    }}
+                    onScroll={(e) => {
+                      if (editorGutterRef.current) {
+                        editorGutterRef.current.scrollTop = e.currentTarget.scrollTop;
+                      }
+                    }}
+                    wrap="off"
+                    className="w-full h-full p-2.5 bg-transparent text-foreground font-mono text-xs resize-none focus:outline-none leading-relaxed overflow-auto whitespace-pre select-text"
+                    spellCheck={false}
+                  />
+                </div>
               )}
             </div>
           </div>

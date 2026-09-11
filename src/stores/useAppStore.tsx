@@ -73,6 +73,8 @@ interface AppState {
   restartContainer: (id: string) => Promise<void>;
   removeContainer: (id: string) => Promise<void>;
   removeComposeProject: (projectName: string, workingDir?: string, configFile?: string) => Promise<void>;
+  upComposeProject: (projectName: string, workingDir?: string, configFile?: string) => Promise<{ ok: boolean; stdout?: string; stderr?: string }>;
+  forgetComposeProject: (projectName: string) => Promise<void>;
   removeImage: (id: string) => Promise<void>;
   removeVolume: (name: string) => Promise<void>;
 }
@@ -590,33 +592,66 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handleRemoveContainer = async (id: string) => {
     setIsActionInProgress(true);
-    await api.removeContainer(id);
-    if (selectedContainerId === id) {
-      setSelectedContainerId(null);
+    try {
+      await api.removeContainer(id);
+      if (selectedContainerId === id) {
+        setSelectedContainerId(null);
+      }
+      await refreshData();
+    } finally {
+      setIsActionInProgress(false);
     }
-    await refreshData();
-    setIsActionInProgress(false);
   };
 
   const handleRemoveComposeProject = async (projectName: string, workingDir?: string, configFile?: string) => {
     setIsActionInProgress(true);
-    await api.removeComposeProject(projectName, workingDir, configFile);
-    await refreshData();
-    setIsActionInProgress(false);
+    try {
+      await api.removeComposeProject(projectName, workingDir, configFile);
+      await refreshData();
+    } finally {
+      setIsActionInProgress(false);
+    }
+  };
+
+  const handleUpComposeProject = async (projectName: string, workingDir?: string, configFile?: string) => {
+    setIsActionInProgress(true);
+    try {
+      const res = await api.upComposeProject(projectName, workingDir, configFile);
+      await refreshData();
+      return res;
+    } finally {
+      setIsActionInProgress(false);
+    }
+  };
+
+  const handleForgetComposeProject = async (projectName: string) => {
+    setIsActionInProgress(true);
+    try {
+      await api.forgetComposeProject(projectName);
+      await refreshData();
+    } finally {
+      setIsActionInProgress(false);
+    }
   };
 
   const handleRemoveImage = async (id: string) => {
     setIsActionInProgress(true);
-    await api.removeImage(id);
-    await refreshData();
-    setIsActionInProgress(false);
+    try {
+      await api.removeImage(id);
+      await refreshData();
+    } finally {
+      setIsActionInProgress(false);
+    }
   };
 
   const handleRemoveVolume = async (name: string) => {
     setIsActionInProgress(true);
-    await api.removeVolume(name);
-    await refreshData();
-    setIsActionInProgress(false);
+    try {
+      await api.removeVolume(name);
+      await refreshData();
+    } finally {
+      setIsActionInProgress(false);
+    }
   };
 
   return (
@@ -677,6 +712,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         restartContainer: handleRestartContainer,
         removeContainer: handleRemoveContainer,
         removeComposeProject: handleRemoveComposeProject,
+        upComposeProject: handleUpComposeProject,
+        forgetComposeProject: handleForgetComposeProject,
         removeImage: handleRemoveImage,
         removeVolume: handleRemoveVolume,
       }}

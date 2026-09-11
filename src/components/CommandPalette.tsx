@@ -20,6 +20,7 @@ import {
   X,
   Server,
   Zap,
+  Folder,
 } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 
@@ -235,6 +236,19 @@ export const CommandPalette: React.FC = () => {
         setActiveTab("containers");
         setSelectedContainerId(container.id);
         setContainerDetailTab("stats");
+      },
+    });
+
+    items.push({
+      id: `files-${container.id}`,
+      category: "Containers",
+      title: `Files: ${container.name}`,
+      description: `Browse and edit files in ${container.name}`,
+      icon: Folder,
+      action: () => {
+        setActiveTab("containers");
+        setSelectedContainerId(container.id);
+        setContainerDetailTab("files");
       },
     });
 

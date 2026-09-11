@@ -510,19 +510,19 @@ export function parseComposeYaml(
     if (w > maxRowWidth) maxRowWidth = w;
   });
 
-  const canvasWidth = Math.max(1040, maxRowWidth + 140);
-  let currentY = 70;
+  const canvasWidth = Math.max(1120, maxRowWidth + 240);
+  let currentY = 84;
   let prevTier = -1;
 
   rows.forEach((row) => {
     if (prevTier !== -1 && row.tierIndex !== prevTier) {
-      currentY += 16;
+      currentY += 20;
     }
     prevTier = row.tierIndex;
 
     const count = row.items.length;
     const rowWidth = count * nodeWidth + (count - 1) * horizontalGap;
-    const startX = Math.max(50, (canvasWidth - rowWidth) / 2);
+    const startX = Math.max(80, (canvasWidth - rowWidth) / 2);
 
     row.items.forEach((svc, idx) => {
       svc.x = Math.round(startX + idx * (nodeWidth + horizontalGap));
@@ -545,7 +545,7 @@ export function parseComposeYaml(
     for (let i = 0; i < sortedVolumes.length; i += volPerRow) {
       const chunk = sortedVolumes.slice(i, i + volPerRow);
       const rowW = chunk.length * volWidth + (chunk.length - 1) * volGap;
-      const startX = Math.max(50, (canvasWidth - rowW) / 2);
+      const startX = Math.max(80, (canvasWidth - rowW) / 2);
 
       chunk.forEach((vol, idx) => {
         vol.x = Math.round(startX + idx * (volWidth + volGap));
@@ -556,7 +556,7 @@ export function parseComposeYaml(
     }
   }
 
-  const canvasHeight = Math.max(760, currentY + 60);
+  const canvasHeight = Math.max(780, currentY + 80);
 
   const edges: ComposeEdge[] = [];
   rawServices.forEach((svc) => {

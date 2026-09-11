@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
 import {
   Play,
   Square,
@@ -90,6 +89,8 @@ export const ContainersSplitView: React.FC = () => {
     restartContainer,
     removeContainer,
     removeComposeProject,
+    upComposeProject,
+    forgetComposeProject,
     composeProjects,
     refreshData,
     isActionInProgress,
@@ -227,12 +228,29 @@ export const ContainersSplitView: React.FC = () => {
 
   const activeContainer = containers.find((c) => c.id === selectedContainerId) || filteredContainers[0];
 
-  const composeGroups = filteredContainers.reduce<Record<string, ContainerDetail[]>>((acc, c) => {
-    const groupName = c.composeProject || "__standalone__";
-    if (!acc[groupName]) acc[groupName] = [];
-    acc[groupName].push(c);
-    return acc;
-  }, {});
+  const composeGroups = React.useMemo(() => {
+    const groups: Record<string, ContainerDetail[]> = {};
+
+    for (const proj of composeProjects) {
+      const matchesSearch =
+        !searchQuery ||
+        proj.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const shouldIncludeForFilter =
+        stateFilter === "all" || stateFilter === "stopped";
+
+      if (matchesSearch && shouldIncludeForFilter) {
+        groups[proj.name] = [];
+      }
+    }
+
+    for (const c of filteredContainers) {
+      const groupName = c.composeProject || "__standalone__";
+      if (!groups[groupName]) groups[groupName] = [];
+      groups[groupName].push(c);
+    }
+
+    return groups;
+  }, [composeProjects, filteredContainers, searchQuery, stateFilter]);
 
   const handleStopAll = async (groupContainers: ContainerDetail[], e: React.MouseEvent) => {
     e.stopPropagation();
@@ -247,8 +265,15 @@ export const ContainersSplitView: React.FC = () => {
     await refreshData();
   };
 
-  const handleStartAll = async (groupContainers: ContainerDetail[], e: React.MouseEvent) => {
+  const handleStartAll = async (groupName: string, groupContainers: ContainerDetail[], e: React.MouseEvent) => {
     e.stopPropagation();
+    const proj = composeProjects.find(
+      (p) => p.name.toLowerCase() === groupName.toLowerCase()
+    );
+    if (groupContainers.length === 0 && proj) {
+      await upComposeProject(proj.name, proj.workingDir, proj.configFile);
+      return;
+    }
     for (const c of groupContainers) {
       if (c.state === "paused") {
         await unpauseContainer(c.id);
@@ -259,8 +284,15 @@ export const ContainersSplitView: React.FC = () => {
     await refreshData();
   };
 
-  const handleRestartAll = async (groupContainers: ContainerDetail[], e: React.MouseEvent) => {
+  const handleRestartAll = async (groupName: string, groupContainers: ContainerDetail[], e: React.MouseEvent) => {
     e.stopPropagation();
+    const proj = composeProjects.find(
+      (p) => p.name.toLowerCase() === groupName.toLowerCase()
+    );
+    if (groupContainers.length === 0 && proj) {
+      await upComposeProject(proj.name, proj.workingDir, proj.configFile);
+      return;
+    }
     for (const c of groupContainers) {
       if (c.state === "paused") {
         await unpauseContainer(c.id);
@@ -514,21 +546,24 @@ export const ContainersSplitView: React.FC = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          openRealNativeWindow({
-                            id: `stack-logs-${groupName}-${Date.now()}`,
-                            title: `${groupName} — Unified Logs`,
-                            type: "logs",
-                            composeProject: groupName,
-                          });
+                          if (groupList.length > 0) {
+                            openRealNativeWindow({
+                              id: `stack-logs-${groupName}-${Date.now()}`,
+                              title: `${groupName} — Unified Logs`,
+                              type: "logs",
+                              composeProject: groupName,
+                            });
+                          }
                         }}
-                        className="flex items-center space-x-1 px-1.5 py-0.5 rounded text-sky-400 hover:text-sky-300 hover:bg-surface/80 transition-colors text-2xs font-mono"
+                        disabled={groupList.length === 0}
+                        className="flex items-center space-x-1 px-1.5 py-0.5 rounded text-sky-400 hover:text-sky-300 hover:bg-surface/80 transition-colors text-2xs font-mono disabled:opacity-40 disabled:pointer-events-none"
                         title="Open unified live logs in native window"
                       >
                         <FileText className="w-3 h-3" />
                         <span>Logs</span>
                       </button>
                       <button
-                        onClick={(e) => handleStartAll(groupList, e)}
+                        onClick={(e) => handleStartAll(groupName, groupList, e)}
                         className="p-1 rounded text-muted-foreground hover:text-status-running hover:bg-surface/80 transition-colors"
                         title={t.containers.startAll}
                       >
@@ -536,13 +571,14 @@ export const ContainersSplitView: React.FC = () => {
                       </button>
                       <button
                         onClick={(e) => handleStopAll(groupList, e)}
-                        className="p-1 rounded text-muted-foreground hover:text-status-restarting hover:bg-surface/80 transition-colors"
+                        disabled={runningInGroup === 0}
+                        className="p-1 rounded text-muted-foreground hover:text-status-restarting hover:bg-surface/80 transition-colors disabled:opacity-40 disabled:pointer-events-none"
                         title={t.containers.stopAll}
                       >
                         <Square className="w-3 h-3 fill-current" />
                       </button>
                       <button
-                        onClick={(e) => handleRestartAll(groupList, e)}
+                        onClick={(e) => handleRestartAll(groupName, groupList, e)}
                         className="p-1 rounded text-muted-foreground hover:text-sky-400 hover:bg-surface/80 transition-colors"
                         title={t.containers.restartAll}
                       >
@@ -580,7 +616,7 @@ export const ContainersSplitView: React.FC = () => {
                   </div>
                 )}
 
-                {!isCollapsed && (
+                {!isCollapsed && groupList.length > 0 && (
                   <div className="space-y-1">
                     {groupList.map((container) => {
                       const isSelected = activeContainer?.id === container.id;
@@ -749,7 +785,7 @@ export const ContainersSplitView: React.FC = () => {
           );
         })}
 
-          {filteredContainers.length === 0 && (
+          {filteredContainers.length === 0 && Object.keys(composeGroups).length === 0 && (
             <div className="p-8 text-center text-xs text-muted-foreground">
               {t.containers.noContainers}
             </div>
@@ -891,17 +927,24 @@ export const ContainersSplitView: React.FC = () => {
                 </div>
 
                 <div className="flex items-center space-x-1.5">
-                  {activeContainer.ports && activeContainer.ports.length > 0 && activeContainer.ports[0].publicPort && (
-                    <a
-                      href={`http://localhost:${activeContainer.ports[0].publicPort}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center space-x-1 px-2 py-0.5 rounded bg-surface border border-border/70 text-2xs font-mono text-primary hover:underline shadow-xs"
-                    >
-                      <span>:{activeContainer.ports[0].publicPort}</span>
-                      <ExternalLink className="w-2.5 h-2.5" />
-                    </a>
-                  )}
+                  {(() => {
+                    const mappedPort = activeContainer.ports?.find((p) => p.publicPort);
+                    if (mappedPort?.publicPort) {
+                      return (
+                        <a
+                          href={`http://localhost:${mappedPort.publicPort}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center space-x-1 px-2 py-0.5 rounded bg-surface border border-border/70 text-2xs font-mono text-primary hover:underline shadow-xs"
+                          title="Open in browser"
+                        >
+                          <span>:{mappedPort.publicPort}</span>
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
+                      );
+                    }
+                    return null;
+                  })()}
 
                   <button
                     onClick={() => {
@@ -996,160 +1039,202 @@ export const ContainersSplitView: React.FC = () => {
         )}
       </div>
 
-      {containerToDelete &&
-        createPortal(
+      {containerToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none">
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 "
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
             onClick={() => setContainerToDelete(null)}
-          >
-            <div
-              className="bg-popover text-foreground border border-border/80 dark:border-white/15 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl shadow-black/80"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-sm font-semibold text-foreground">{t.containers.removeConfirmTitle}</h3>
-              <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                {t.containers.removeConfirmDesc}{" "}
-                <span className="font-mono text-status-danger font-medium">{containerToDelete.name}</span>?{" "}
-                {t.containers.cannotBeUndone}
-              </p>
-              <div className="flex items-center justify-end space-x-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setContainerToDelete(null)}
-                  className="px-3 py-1 rounded-md text-xs font-medium text-foreground bg-surface border border-border/80 hover:bg-surface-secondary transition-colors shadow-xs cursor-pointer"
-                >
-                  {t.containers.cancel}
-                </button>
-                <button
-                  type="button"
-                  disabled={isActionInProgress}
-                  onClick={async () => {
-                    await removeContainer(containerToDelete.id);
-                    setContainerToDelete(null);
-                  }}
-                  className="px-3 py-1 rounded-md text-xs font-medium bg-status-danger hover:bg-status-danger/90 text-white shadow-xs transition-opacity cursor-pointer flex items-center space-x-1.5"
-                >
-                  {isActionInProgress && <RotateCw className="w-3 h-3 animate-spin" />}
-                  <span>{t.containers.remove}</span>
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-
-      {stackToDelete &&
-        createPortal(
+          />
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 "
+            className="relative z-10 bg-popover text-foreground border border-popover-border rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl shadow-black/80 animate-in zoom-in-95 duration-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground">{t.containers.removeConfirmTitle}</h3>
+              <button
+                type="button"
+                onClick={() => setContainerToDelete(null)}
+                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground font-sans leading-relaxed">
+              {t.containers.removeConfirmDesc}{" "}
+              <span className="font-mono text-status-danger font-medium">{containerToDelete.name}</span>?{" "}
+              {t.containers.cannotBeUndone}
+            </p>
+            <div className="flex items-center justify-end space-x-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setContainerToDelete(null)}
+                className="px-3 py-1 rounded-md text-xs font-medium text-foreground bg-surface border border-border/80 hover:bg-surface-secondary transition-colors shadow-xs cursor-pointer"
+              >
+                {t.containers.cancel}
+              </button>
+              <button
+                type="button"
+                disabled={isActionInProgress}
+                onClick={async () => {
+                  await removeContainer(containerToDelete.id);
+                  setContainerToDelete(null);
+                }}
+                className="px-3 py-1 rounded-md text-xs font-medium bg-status-danger hover:bg-status-danger/90 text-white shadow-xs transition-opacity cursor-pointer flex items-center space-x-1.5"
+              >
+                {isActionInProgress && <RotateCw className="w-3 h-3 animate-spin" />}
+                <span>{t.containers.remove}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {stackToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
             onClick={() => setStackToDelete(null)}
-          >
-            <div
-              className="bg-popover text-foreground border border-border/80 dark:border-white/15 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl shadow-black/80"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-sm font-semibold text-foreground">{t.containers.removeConfirmTitle}</h3>
-              <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                {t.containers.removeConfirmDesc}{" "}
-                <span className="font-mono text-status-danger font-medium">{stackToDelete.name}</span>{" "}
-                ({stackToDelete.containers.length} {t.containers.active})?{" "}
-                {t.containers.cannotBeUndone}
-              </p>
-              <div className="flex items-center justify-end space-x-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setStackToDelete(null)}
-                  className="px-3 py-1 rounded-md text-xs font-medium text-foreground bg-surface border border-border/80 hover:bg-surface-secondary transition-colors shadow-xs cursor-pointer"
-                >
-                  {t.containers.cancel}
-                </button>
-                <button
-                  type="button"
-                  disabled={isActionInProgress}
-                  onClick={async () => {
-                    const proj = composeProjects.find(
-                      (p) => p.name.toLowerCase() === stackToDelete.name.toLowerCase()
-                    );
-                    await removeComposeProject(stackToDelete.name, proj?.workingDir, proj?.configFile);
-                    setStackToDelete(null);
-                  }}
-                  className="px-3 py-1 rounded-md text-xs font-medium bg-status-danger hover:bg-status-danger/90 text-white shadow-xs transition-opacity cursor-pointer flex items-center space-x-1.5"
-                >
-                  {isActionInProgress && <RotateCw className="w-3 h-3 animate-spin" />}
-                  <span>{t.containers.remove}</span>
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-
-      {bulkToDelete &&
-        createPortal(
+          />
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 "
-            onClick={() => setBulkToDelete(null)}
+            className="relative z-10 bg-popover text-foreground border border-popover-border rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl shadow-black/80 animate-in zoom-in-95 duration-100"
+            onClick={(e) => e.stopPropagation()}
           >
-            <div
-              className="bg-popover text-foreground border border-border/80 dark:border-white/15 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl shadow-black/80"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-sm font-semibold text-foreground">{t.containers.removeConfirmTitle}</h3>
-              <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-                ¿Deseas eliminar permanentemente los {bulkToDelete.length} contenedores seleccionados?{" "}
-                {t.containers.cannotBeUndone}
-              </p>
-              <div className="max-h-36 overflow-y-auto space-y-1 p-2 bg-surface/50 rounded-lg border border-border/50 text-2xs font-mono">
-                {bulkToDelete.map((id) => {
-                  const c = containers.find((item) => item.id === id);
-                  return (
-                    <div key={id} className="text-muted-foreground truncate flex items-center space-x-1.5">
-                      <span className="text-status-danger">•</span>
-                      <span className="text-foreground font-medium">{c?.name || id.slice(0, 12)}</span>
-                      {c?.composeProject && (
-                        <span className="text-muted-foreground/60 text-[10px]">({c.composeProject})</span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="flex items-center justify-end space-x-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setBulkToDelete(null)}
-                  className="px-3 py-1 rounded-md text-xs font-medium text-foreground bg-surface border border-border/80 hover:bg-surface-secondary transition-colors shadow-xs cursor-pointer"
-                >
-                  {t.containers.cancel}
-                </button>
-                <button
-                  type="button"
-                  disabled={isBulkOperating}
-                  onClick={async () => {
-                    setIsBulkOperating(true);
-                    try {
-                      for (const id of bulkToDelete) {
-                        await removeContainer(id);
-                      }
-                      setSelectedIds((prev) => {
-                        const next = new Set(prev);
-                        bulkToDelete.forEach((id) => next.delete(id));
-                        return next;
-                      });
-                    } finally {
-                      setIsBulkOperating(false);
-                      setBulkToDelete(null);
-                    }
-                  }}
-                  className="px-3 py-1 rounded-md text-xs font-medium bg-status-danger hover:bg-status-danger/90 text-white shadow-xs transition-opacity cursor-pointer flex items-center space-x-1.5"
-                >
-                  {isBulkOperating && <RotateCw className="w-3 h-3 animate-spin" />}
-                  <span>{t.containers.remove}</span>
-                </button>
-              </div>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground">
+                {stackToDelete.containers.length > 0
+                  ? t.containers.removeStackContainersTitle || t.containers.removeStackConfirmTitle
+                  : t.containers.removeStackConfirmTitle}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setStackToDelete(null)}
+                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
-          </div>,
-          document.body
-        )}
+            <p className="text-xs text-muted-foreground font-sans leading-relaxed">
+              {stackToDelete.containers.length > 0 ? (
+                <>
+                  {(t.containers.removeStackContainersDesc || t.containers.removeConfirmDesc)}{" "}
+                  <span className="font-mono text-status-danger font-medium">{stackToDelete.name}</span>{" "}
+                  ({stackToDelete.containers.length} {t.containers.active})?{" "}
+                  {t.containers.removeStackContainersNote}
+                </>
+              ) : (
+                <>
+                  {t.containers.removeStackConfirmDesc}{" "}
+                  <span className="font-mono text-status-danger font-medium">{stackToDelete.name}</span>?{" "}
+                  {t.containers.cannotBeUndone}
+                </>
+              )}
+            </p>
+            <div className="flex items-center justify-end space-x-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setStackToDelete(null)}
+                className="px-3 py-1 rounded-md text-xs font-medium text-foreground bg-surface border border-border/80 hover:bg-surface-secondary transition-colors shadow-xs cursor-pointer"
+              >
+                {t.containers.cancel}
+              </button>
+              <button
+                type="button"
+                disabled={isActionInProgress}
+                onClick={async () => {
+                  const proj = composeProjects.find(
+                    (p) => p.name.toLowerCase() === stackToDelete.name.toLowerCase()
+                  );
+                  if (stackToDelete.containers.length === 0) {
+                    await forgetComposeProject(stackToDelete.name);
+                  } else {
+                    await removeComposeProject(stackToDelete.name, proj?.workingDir, proj?.configFile);
+                  }
+                  setStackToDelete(null);
+                }}
+                className="px-3 py-1 rounded-md text-xs font-medium bg-status-danger hover:bg-status-danger/90 text-white shadow-xs transition-opacity cursor-pointer flex items-center space-x-1.5"
+              >
+                {isActionInProgress && <RotateCw className="w-3 h-3 animate-spin" />}
+                <span>{t.containers.remove}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {bulkToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setBulkToDelete(null)}
+          />
+          <div
+            className="relative z-10 bg-popover text-foreground border border-popover-border rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl shadow-black/80 animate-in zoom-in-95 duration-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground">{t.containers.removeBulkConfirmTitle || t.containers.removeConfirmTitle}</h3>
+              <button
+                type="button"
+                onClick={() => setBulkToDelete(null)}
+                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground font-sans leading-relaxed">
+              {(t.containers.removeBulkConfirmDesc || "¿Deseas eliminar permanentemente los contenedores seleccionados?")}{" "}
+              {t.containers.cannotBeUndone}
+            </p>
+            <div className="max-h-36 overflow-y-auto space-y-1 p-2 bg-surface/50 rounded-lg border border-border/50 text-2xs font-mono">
+              {bulkToDelete.map((id) => {
+                const c = containers.find((item) => item.id === id);
+                return (
+                  <div key={id} className="text-muted-foreground truncate flex items-center space-x-1.5">
+                    <span className="text-status-danger">•</span>
+                    <span className="text-foreground font-medium">{c?.name || id.slice(0, 12)}</span>
+                    {c?.composeProject && (
+                      <span className="text-muted-foreground/60 text-[10px]">({c.composeProject})</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex items-center justify-end space-x-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setBulkToDelete(null)}
+                className="px-3 py-1 rounded-md text-xs font-medium text-foreground bg-surface border border-border/80 hover:bg-surface-secondary transition-colors shadow-xs cursor-pointer"
+              >
+                {t.containers.cancel}
+              </button>
+              <button
+                type="button"
+                disabled={isBulkOperating}
+                onClick={async () => {
+                  setIsBulkOperating(true);
+                  try {
+                    for (const id of bulkToDelete) {
+                      await removeContainer(id);
+                    }
+                    setSelectedIds((prev) => {
+                      const next = new Set(prev);
+                      bulkToDelete.forEach((id) => next.delete(id));
+                      return next;
+                    });
+                  } finally {
+                    setIsBulkOperating(false);
+                    setBulkToDelete(null);
+                  }
+                }}
+                className="px-3 py-1 rounded-md text-xs font-medium bg-status-danger hover:bg-status-danger/90 text-white shadow-xs transition-opacity cursor-pointer flex items-center space-x-1.5"
+              >
+                {isBulkOperating && <RotateCw className="w-3 h-3 animate-spin" />}
+                <span>{t.containers.remove}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

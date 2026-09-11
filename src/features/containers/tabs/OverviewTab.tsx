@@ -10,7 +10,8 @@ interface OverviewTabProps {
 }
 
 export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
-  const { images, setActiveTab, setSelectedImageId } = useAppStore();
+  const { images, setActiveTab, setSelectedImageId, t } = useAppStore();
+  const ot = t.containers.overviewTab;
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [detail, setDetail] = useState<ContainerDetail>(container);
 
@@ -74,11 +75,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
     <div className="space-y-4 select-text">
       <div className="bg-surface/80 backdrop-blur-sm border border-border/70 rounded-xl p-4 shadow-xs">
         <h3 className="text-xs font-semibold text-muted-foreground/80 uppercase tracking-wider mb-3 select-none">
-          Configuration & Metadata
+          {ot.configMetadata}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono">
           <div className="bg-surface-secondary/50 p-2.5 rounded-lg border border-border/60">
-            <span className="text-muted-foreground block text-[11px] font-sans font-medium uppercase select-none">Container ID</span>
+            <span className="text-muted-foreground block text-[11px] font-sans font-medium uppercase select-none">
+              {ot.containerId}
+            </span>
             <div className="flex items-center justify-between mt-1 text-foreground">
               <span className="truncate text-xs select-text">{detail.id}</span>
               <button
@@ -92,14 +95,16 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
 
           <div className="bg-surface-secondary/50 p-2.5 rounded-lg border border-border/60">
             <div className="flex items-center justify-between select-none">
-              <span className="text-muted-foreground block text-[11px] font-sans font-medium uppercase">Image Hash</span>
+              <span className="text-muted-foreground block text-[11px] font-sans font-medium uppercase">
+                {ot.imageHash}
+              </span>
               <button
                 onClick={handleGoToImage}
                 className="text-primary hover:underline text-[11px] font-sans font-medium flex items-center space-x-1"
-                title="Inspeccionar imagen y capas"
+                title={ot.viewImage}
               >
                 <Layers className="w-3 h-3 text-sky-400" />
-                <span>Ver imagen</span>
+                <span>{ot.viewImage}</span>
               </button>
             </div>
             <div className="flex items-center justify-between mt-1 text-foreground">
@@ -114,18 +119,24 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
           </div>
 
           <div className="bg-surface-secondary/50 p-2.5 rounded-lg border border-border/60">
-            <span className="text-muted-foreground block text-[11px] font-sans font-medium uppercase select-none">Uptime / Status</span>
+            <span className="text-muted-foreground block text-[11px] font-sans font-medium uppercase select-none">
+              {ot.uptimeStatus}
+            </span>
             <span className="text-foreground text-xs block mt-1 select-text">{detail.status}</span>
           </div>
 
           <div className="bg-surface-secondary/50 p-2.5 rounded-lg border border-border/60">
-            <span className="text-muted-foreground block text-[11px] font-sans font-medium uppercase select-none">Restart Policy</span>
+            <span className="text-muted-foreground block text-[11px] font-sans font-medium uppercase select-none">
+              {ot.restartPolicy}
+            </span>
             <span className="text-foreground text-xs block mt-1 select-text">{detail.restartPolicy || "no"}</span>
           </div>
 
           <div className="bg-surface-secondary/50 p-2.5 rounded-lg border border-border/60 md:col-span-2">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground block text-[11px] font-sans font-medium uppercase select-none">Entrypoint Command</span>
+              <span className="text-muted-foreground block text-[11px] font-sans font-medium uppercase select-none">
+                {ot.entrypointCommand}
+              </span>
               {detail.command && (
                 <button
                   onClick={() => copyToClipboard(detail.command || "", "command")}
@@ -145,7 +156,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
 
       <div className="bg-surface/80 backdrop-blur-sm border border-border/70 rounded-xl p-4 shadow-xs">
         <h3 className="text-xs font-semibold text-muted-foreground/80 uppercase tracking-wider mb-3 select-none">
-          Port Bindings
+          {ot.portBindings}
         </h3>
         {Array.isArray(detail.ports) && detail.ports.length > 0 ? (
           <div className="divide-y divide-border/60 select-text">
@@ -159,7 +170,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
                 </div>
                 <div className="text-muted-foreground select-text">
                   {port.publicPort ? (
-                    <div className="flex items-center space-x-1.5 select-text">
+                    <div className="flex items-center space-x-2 select-text">
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400 text-2xs font-sans font-medium select-none">
+                        {ot.externalHost}
+                      </span>
                       <span className="text-status-running font-semibold select-text">
                         {port.ip || "0.0.0.0"}:{port.publicPort}
                       </span>
@@ -172,20 +186,31 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
                       </button>
                     </div>
                   ) : (
-                    "Internal"
+                    <div className="flex items-center space-x-2 select-text">
+                      <span className="px-2 py-0.5 rounded-md bg-surface-secondary border border-border/70 text-muted-foreground text-2xs font-sans select-none">
+                        {ot.internalOnly}
+                      </span>
+                      <button
+                        onClick={() => copyToClipboard(String(port.privatePort), `port-${index}`)}
+                        className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-surface transition-colors select-none"
+                        title="Copiar puerto"
+                      >
+                        {copiedKey === `port-${index}` ? <Check className="w-3.5 h-3.5 text-status-running" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="text-xs text-muted-foreground select-none">No mapped host ports</div>
+          <div className="text-xs text-muted-foreground select-none">{ot.noPorts}</div>
         )}
       </div>
 
       <div className="bg-surface/80 backdrop-blur-sm border border-border/70 rounded-xl p-4 shadow-xs">
         <h3 className="text-xs font-semibold text-muted-foreground/80 uppercase tracking-wider mb-3 select-none">
-          Volume & Bind Mounts
+          {ot.volumeMounts}
         </h3>
         {Array.isArray(detail.mounts) && detail.mounts.length > 0 ? (
           <div className="space-y-2 select-text">
@@ -193,7 +218,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
               <div key={index} className="bg-surface-secondary/50 p-2.5 rounded-lg border border-border/60 text-xs font-mono select-text">
                 <div className="flex items-center justify-between text-muted-foreground mb-1 select-none">
                   <span className="font-semibold text-foreground uppercase text-2xs">{mount.type}</span>
-                  <span className="text-2xs">{mount.rw ? "Read/Write" : "Read-only"}</span>
+                  <span className="text-2xs">{mount.rw ? ot.readWrite : ot.readOnly}</span>
                 </div>
                 <div className="text-muted-foreground flex items-center justify-between py-0.5 select-text">
                   <div className="truncate mr-2 select-text">
@@ -229,30 +254,30 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
             ))}
           </div>
         ) : (
-          <div className="text-xs text-muted-foreground select-none">No mounts attached</div>
+          <div className="text-xs text-muted-foreground select-none">{ot.noMounts}</div>
         )}
       </div>
 
       <div className="bg-surface/80 backdrop-blur-sm border border-border/70 rounded-xl p-4 shadow-xs">
         <div className="flex items-center justify-between mb-3 select-none">
           <h3 className="text-xs font-semibold text-muted-foreground/80 uppercase tracking-wider">
-            Environment Variables
+            {ot.environmentVariables}
           </h3>
           {detail.env && detail.env.length > 0 && (
             <button
               onClick={() => copyToClipboard(detail.env!.join("\n"), "all-env")}
               className="flex items-center space-x-1 text-xs text-muted-foreground hover:text-foreground p-1 px-2 rounded hover:bg-surface transition-colors"
-              title="Copiar todas las variables"
+              title={ot.copyAll}
             >
               {copiedKey === "all-env" ? (
                 <>
                   <Check className="w-3.5 h-3.5 text-status-running mr-1" />
-                  <span className="text-status-running font-sans text-[11px]">Copiado</span>
+                  <span className="text-status-running font-sans text-[11px]">{ot.copied}</span>
                 </>
               ) : (
                 <>
                   <Copy className="w-3.5 h-3.5 mr-1" />
-                  <span className="font-sans text-[11px]">Copiar todo</span>
+                  <span className="font-sans text-[11px]">{ot.copyAll}</span>
                 </>
               )}
             </button>
@@ -288,13 +313,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
             })}
           </div>
         ) : (
-          <div className="text-xs text-muted-foreground select-none">No custom variables configured</div>
+          <div className="text-xs text-muted-foreground select-none">{ot.noEnv}</div>
         )}
       </div>
 
       <div className="bg-surface/80 backdrop-blur-sm border border-border/70 rounded-xl p-4 shadow-xs space-y-3">
         <h3 className="text-xs font-semibold text-muted-foreground/80 uppercase tracking-wider select-none">
-          Inspect (JSON)
+          {ot.inspectJson}
         </h3>
         <InspectTab container={detail} />
       </div>

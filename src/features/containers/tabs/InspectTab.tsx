@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import { ContainerDetail } from "@/types";
 import { Copy, Check, Search } from "lucide-react";
+import { useAppStore } from "@/stores/useAppStore";
 
 interface InspectTabProps {
   container: ContainerDetail;
 }
 
 export const InspectTab: React.FC<InspectTabProps> = ({ container }) => {
+  const { t } = useAppStore();
+  const ot = t.containers.overviewTab;
   const [copied, setCopied] = useState(false);
   const [filterQuery, setFilterQuery] = useState("");
 
@@ -33,7 +36,7 @@ export const InspectTab: React.FC<InspectTabProps> = ({ container }) => {
             type="text"
             value={filterQuery}
             onChange={(e) => setFilterQuery(e.target.value)}
-            placeholder="Search attributes..."
+            placeholder={ot.searchAttributes}
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
@@ -47,7 +50,7 @@ export const InspectTab: React.FC<InspectTabProps> = ({ container }) => {
           className="flex items-center space-x-1 px-2.5 py-1 text-2xs font-mono rounded bg-surface border border-border text-muted-foreground hover:text-foreground transition-colors"
         >
           {copied ? <Check className="w-3 h-3 text-status-running" /> : <Copy className="w-3 h-3" />}
-          <span>{copied ? "Copied" : "Copy JSON"}</span>
+          <span>{copied ? ot.copied : ot.copyJson}</span>
         </button>
       </div>
 

@@ -116,15 +116,19 @@ export const SettingsView: React.FC = () => {
     { id: "raspberrypi", name: "Homelab Pi", socket: "ssh://pi@pi.local" },
   ];
 
+  const isEs = language === "es";
+
   const shortcuts = [
-    { key: "⌘K", action: "Open Command Palette / Spotlight" },
-    { key: "⌘B", action: "Toggle Sidebar navigation" },
-    { key: "M", action: "Toggle Minimalist / Detailed view mode" },
-    { key: "R", action: "Refresh all active runtime states" },
-    { key: "L", action: "Jump to container Logs" },
-    { key: "T", action: "Jump to container Terminal" },
-    { key: "S", action: "Jump to container Stats" },
-    { key: "Esc", action: "Dismiss modals and overlays" },
+    { key: "⌘K", action: isEs ? "Abrir Paleta de Comandos / Búsqueda" : "Open Command Palette / Search" },
+    { key: "⌘B", action: isEs ? "Alternar barra lateral" : "Toggle Sidebar navigation" },
+    { key: "M", action: isEs ? "Alternar vista Minimalista / Detallada" : "Toggle Minimalist / Detailed view mode" },
+    { key: "R", action: isEs ? "Actualizar recursos y estado" : "Refresh all active runtime states" },
+    { key: "O", action: isEs ? "Ir a Resumen (Overview)" : "Jump to Overview" },
+    { key: "F", action: isEs ? "Ir a Archivos de contenedor (Files)" : "Jump to container Files" },
+    { key: "L", action: isEs ? "Ir a Registros de contenedor (Logs)" : "Jump to container Logs" },
+    { key: "T", action: isEs ? "Ir a Terminal / Shell de contenedor" : "Jump to container Terminal" },
+    { key: "S", action: isEs ? "Ir a Estadísticas de contenedor (Stats)" : "Jump to container Stats" },
+    { key: "Esc", action: isEs ? "Cerrar modales y ventanas emergentes" : "Dismiss modals and overlays" },
   ];
 
   return (

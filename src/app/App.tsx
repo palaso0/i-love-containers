@@ -16,7 +16,9 @@ export const App: React.FC = () => {
   const {
     viewMode,
     activeTab,
+    setActiveTab,
     selectedContainerId,
+    containerDetailTab,
     setContainerDetailTab,
     refreshData,
     isInitialLoading,
@@ -59,15 +61,26 @@ export const App: React.FC = () => {
       } else if (event.key.toLowerCase() === "m" && !event.metaKey && !event.ctrlKey) {
         event.preventDefault();
         toggleViewMode();
-      } else if (event.key.toLowerCase() === "l" && selectedContainerId) {
+      } else if (event.key.toLowerCase() === "l" && !event.metaKey && !event.ctrlKey && selectedContainerId) {
         event.preventDefault();
         setContainerDetailTab("logs");
-      } else if (event.key.toLowerCase() === "t" && selectedContainerId) {
+      } else if (event.key.toLowerCase() === "t" && !event.metaKey && !event.ctrlKey && selectedContainerId) {
         event.preventDefault();
         setContainerDetailTab("terminal");
-      } else if (event.key.toLowerCase() === "s" && selectedContainerId) {
+      } else if (event.key.toLowerCase() === "s" && !event.metaKey && !event.ctrlKey && selectedContainerId) {
         event.preventDefault();
         setContainerDetailTab("stats");
+      } else if (event.key.toLowerCase() === "f" && !event.metaKey && !event.ctrlKey && selectedContainerId) {
+        event.preventDefault();
+        setActiveTab("containers");
+        setContainerDetailTab("files");
+      } else if (event.key.toLowerCase() === "o" && !event.metaKey && !event.ctrlKey) {
+        event.preventDefault();
+        if (selectedContainerId && activeTab === "containers" && containerDetailTab !== "overview") {
+          setContainerDetailTab("overview");
+        } else {
+          setActiveTab("overview");
+        }
       }
     };
 
@@ -75,6 +88,9 @@ export const App: React.FC = () => {
     return () => window.removeEventListener("keydown", handleGlobalShortcuts);
   }, [
     selectedContainerId,
+    containerDetailTab,
+    activeTab,
+    setActiveTab,
     setContainerDetailTab,
     refreshData,
     toggleViewMode,
