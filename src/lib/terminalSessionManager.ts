@@ -30,6 +30,12 @@ export function getOrCreateTerminalSession(
       existing.term.options.theme = getTerminalTheme(isDark);
     }
     existing.containerName = containerName;
+    if (existing.term.cols < 25) {
+      try {
+        existing.term.resize(80, 24);
+        existing.controller.clear();
+      } catch {}
+    }
     return existing;
   }
 
@@ -46,6 +52,8 @@ export function getOrCreateTerminalSession(
     rightClickSelectsWord: true,
     theme: getTerminalTheme(isDark),
     convertEol: true,
+    cols: 80,
+    rows: 24,
   });
 
   const fitAddon = new FitAddon();
@@ -67,7 +75,9 @@ export function getOrCreateTerminalSession(
         const lastLine = lines[lines.length - 1].trim();
         if (lastLine.startsWith("/")) {
           currentCwd.current = lastLine;
-          controller.redraw();
+          if (controller.getBuffer() === "") {
+            controller.redraw();
+          }
         }
       }
     })

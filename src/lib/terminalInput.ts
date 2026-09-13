@@ -64,7 +64,7 @@ export function setupTerminalInput({
     const prompt = getPrompt();
     const diff = buffer.length - cursorPos;
     const moveCursorBack = diff > 0 ? `\x1b[${diff}D` : "";
-    term.write(`\r\x1b[K${prompt}${buffer}${moveCursorBack}`);
+    term.write(`\r\x1b[2K${prompt}${buffer}${moveCursorBack}`);
   };
 
   const insertText = (text: string) => {
@@ -370,6 +370,7 @@ export function setupTerminalInput({
       onDataDisposable.dispose();
     },
     clear: () => {
+      term.write("\x1b[2J\x1b[3J\x1b[H");
       term.clear();
       buffer = "";
       cursorPos = 0;

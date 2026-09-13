@@ -45,11 +45,22 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
       containerEl.appendChild(session.wrapperEl);
     }
 
-    const fitTimer = setTimeout(() => {
+    const safeFit = () => {
+      if (!containerEl || containerEl.clientWidth < 100 || containerEl.clientHeight < 50) {
+        return;
+      }
       try {
         session.fitAddon.fit();
+        if (session.term.cols < 30) {
+          session.term.resize(80, 24);
+        }
+        if (session.controller.getBuffer() === "") {
+          session.controller.redraw();
+        }
       } catch {}
-    }, 10);
+    };
+
+    const fitTimer = setTimeout(safeFit, 20);
 
     const handleContextMenu = (e: MouseEvent) => {
       const selection = session.term.getSelection();
@@ -61,9 +72,7 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
     containerEl.addEventListener("contextmenu", handleContextMenu);
 
     const handleResize = () => {
-      try {
-        session.fitAddon.fit();
-      } catch {}
+      safeFit();
     };
     window.addEventListener("resize", handleResize);
 
@@ -86,11 +95,17 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
     if (!rootRef.current) return;
     const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        setIsCompact(entry.contentRect.width < 460);
-        try {
-          const session = getOrCreateTerminalSession(containerId, containerName, isDark);
-          session.fitAddon.fit();
-        } catch {}
+        const { width, height } = entry.contentRect;
+        setIsCompact(width < 460);
+        if (width >= 100 && height >= 50) {
+          try {
+            const session = getOrCreateTerminalSession(containerId, containerName, isDark);
+            session.fitAddon.fit();
+            if (session.term.cols < 30) {
+              session.term.resize(80, 24);
+            }
+          } catch {}
+        }
       }
     });
     ro.observe(rootRef.current);
