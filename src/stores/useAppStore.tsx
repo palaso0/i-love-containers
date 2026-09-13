@@ -628,6 +628,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsActionInProgress(true);
     try {
       await api.forgetComposeProject(projectName);
+      setComposeProjects((prev) =>
+        prev.filter((p) => p.name.toLowerCase() !== projectName.toLowerCase())
+      );
       await refreshData();
     } finally {
       setIsActionInProgress(false);

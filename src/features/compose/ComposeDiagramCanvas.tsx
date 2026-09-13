@@ -13,6 +13,7 @@ import {
   X,
   Loader2,
   Sparkles,
+  FolderGit2,
 } from "lucide-react";
 import {
   ComposeTopology,
@@ -1173,6 +1174,18 @@ export const ComposeDiagramCanvas: React.FC<ComposeDiagramCanvasProps> = ({
             </div>
           );
         })}
+
+        {topology.services.length === 0 && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            <div className="bg-surface/90 backdrop-blur-md border border-border/80 rounded-2xl p-6 text-center max-w-sm shadow-lg pointer-events-auto">
+              <FolderGit2 className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-40" />
+              <h3 className="text-sm font-semibold text-foreground mb-1">Sin servicios en el YAML</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Define servicios en la pestaña <span className="font-semibold text-foreground">YAML</span> o levanta un stack con Docker Compose.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {selectedService && (

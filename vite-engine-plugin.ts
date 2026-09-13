@@ -1719,11 +1719,16 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
 
             const knownProjectsFile = path.join(home, ".ilovecontainers-compose-projects.json");
             const knownProjects = new Map<string, { name: string; workingDir?: string; configFile?: string; lastUsed: number }>();
+            const forgottenProjects = new Set<string>();
             try {
               if (fs.existsSync(knownProjectsFile)) {
                 const data = JSON.parse(fs.readFileSync(knownProjectsFile, "utf-8"));
+                if (Array.isArray(data._forgotten)) {
+                  data._forgotten.forEach((f: string) => forgottenProjects.add(f.toLowerCase()));
+                }
                 for (const [key, val] of Object.entries(data)) {
-                  if (val && typeof val === "object") {
+                  if (key === "_forgotten") continue;
+                  if (val && typeof val === "object" && !forgottenProjects.has(key.toLowerCase())) {
                     knownProjects.set(key.toLowerCase(), val as any);
                   }
                 }
@@ -1731,8 +1736,6 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
             } catch {}
 
             const searchCandidateDirs = [
-              path.join(home, "Documents/AI Projects/testsDockerCompose"),
-              path.join(home, "Documents/AI Projects"),
               process.cwd(),
             ];
             for (const cDir of searchCandidateDirs) {
@@ -1740,7 +1743,7 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
                 const cFile = path.join(cDir, "docker-compose.yml");
                 if (fs.existsSync(cFile)) {
                   const bName = path.basename(cDir);
-                  if (!knownProjects.has(bName.toLowerCase())) {
+                  if (!forgottenProjects.has(bName.toLowerCase()) && !knownProjects.has(bName.toLowerCase())) {
                     knownProjects.set(bName.toLowerCase(), {
                       name: bName,
                       workingDir: cDir,
@@ -1829,16 +1832,28 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
               });
             });
 
+            for (const [name, p] of Array.from(projectMap.entries())) {
+              if (p.containers.length === 0 && forgottenProjects.has(p.name.toLowerCase())) {
+                projectMap.delete(name);
+              }
+            }
+
             for (const p of projectMap.values()) {
-              knownProjects.set(p.name.toLowerCase(), {
-                name: p.name,
-                workingDir: p.workingDir,
-                configFile: p.configFile,
-                lastUsed: Date.now(),
-              });
+              if (p.containers.length > 0) {
+                forgottenProjects.delete(p.name.toLowerCase());
+              }
+              if (!forgottenProjects.has(p.name.toLowerCase())) {
+                knownProjects.set(p.name.toLowerCase(), {
+                  name: p.name,
+                  workingDir: p.workingDir,
+                  configFile: p.configFile,
+                  lastUsed: Date.now(),
+                });
+              }
             }
 
             for (const kp of knownProjects.values()) {
+              if (forgottenProjects.has(kp.name.toLowerCase())) continue;
               const alreadyInMap = Array.from(projectMap.keys()).some(
                 (k) => k.toLowerCase() === kp.name.toLowerCase()
               );
@@ -1872,7 +1887,12 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
             try {
               const toPersist: Record<string, any> = {};
               for (const [k, v] of knownProjects.entries()) {
-                toPersist[k] = v;
+                if (!forgottenProjects.has(k.toLowerCase())) {
+                  toPersist[k] = v;
+                }
+              }
+              if (forgottenProjects.size > 0) {
+                toPersist._forgotten = Array.from(forgottenProjects);
               }
               fs.writeFileSync(knownProjectsFile, JSON.stringify(toPersist, null, 2), "utf-8");
             } catch {}
@@ -2002,6 +2022,10 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
                     if (fs.existsSync(knownProjectsFile)) {
                       const data = JSON.parse(fs.readFileSync(knownProjectsFile, "utf-8"));
                       delete data[projectName.toLowerCase()];
+                      if (!Array.isArray(data._forgotten)) data._forgotten = [];
+                      if (!data._forgotten.includes(projectName.toLowerCase())) {
+                        data._forgotten.push(projectName.toLowerCase());
+                      }
                       fs.writeFileSync(knownProjectsFile, JSON.stringify(data, null, 2), "utf-8");
                     }
                   } catch {}

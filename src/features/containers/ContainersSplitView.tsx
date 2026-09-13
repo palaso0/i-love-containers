@@ -90,7 +90,6 @@ export const ContainersSplitView: React.FC = () => {
     removeContainer,
     removeComposeProject,
     upComposeProject,
-    forgetComposeProject,
     composeProjects,
     refreshData,
     isActionInProgress,
@@ -106,6 +105,43 @@ export const ContainersSplitView: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkToDelete, setBulkToDelete] = useState<string[] | null>(null);
   const [isBulkOperating, setIsBulkOperating] = useState(false);
+
+  const [hiddenStacks, setHiddenStacks] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem("ilc_hidden_container_stacks");
+      return saved ? new Set(JSON.parse(saved).map((s: string) => s.toLowerCase())) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  // Any stack that has existing containers must NEVER be marked as hidden
+  useEffect(() => {
+    const activeStacks = new Set(
+      containers
+        .map((c) => c.composeProject?.toLowerCase())
+        .filter((name): name is string => Boolean(name))
+    );
+    if (activeStacks.size > 0) {
+      setHiddenStacks((prev) => {
+        let changed = false;
+        const next = new Set(prev);
+        for (const stack of activeStacks) {
+          if (next.has(stack)) {
+            next.delete(stack);
+            changed = true;
+          }
+        }
+        if (changed) {
+          try {
+            localStorage.setItem("ilc_hidden_container_stacks", JSON.stringify(Array.from(next)));
+          } catch {}
+          return next;
+        }
+        return prev;
+      });
+    }
+  }, [containers]);
 
   const [collapsedStacks, setCollapsedStacks] = useState<Set<string>>(() => {
     try {
@@ -232,6 +268,9 @@ export const ContainersSplitView: React.FC = () => {
     const groups: Record<string, ContainerDetail[]> = {};
 
     for (const proj of composeProjects) {
+      if (hiddenStacks.has(proj.name.toLowerCase())) {
+        continue;
+      }
       const matchesSearch =
         !searchQuery ||
         proj.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -244,13 +283,17 @@ export const ContainersSplitView: React.FC = () => {
     }
 
     for (const c of filteredContainers) {
-      const groupName = c.composeProject || "__standalone__";
-      if (!groups[groupName]) groups[groupName] = [];
-      groups[groupName].push(c);
+      const rawGroupName = c.composeProject || "__standalone__";
+      const existingKey = Object.keys(groups).find(
+        (k) => k.toLowerCase() === rawGroupName.toLowerCase()
+      );
+      const targetKey = existingKey || rawGroupName;
+      if (!groups[targetKey]) groups[targetKey] = [];
+      groups[targetKey].push(c);
     }
 
     return groups;
-  }, [composeProjects, filteredContainers, searchQuery, stateFilter]);
+  }, [composeProjects, filteredContainers, searchQuery, stateFilter, hiddenStacks]);
 
   const handleStopAll = async (groupContainers: ContainerDetail[], e: React.MouseEvent) => {
     e.stopPropagation();
@@ -267,6 +310,18 @@ export const ContainersSplitView: React.FC = () => {
 
   const handleStartAll = async (groupName: string, groupContainers: ContainerDetail[], e: React.MouseEvent) => {
     e.stopPropagation();
+    setHiddenStacks((prev) => {
+      if (prev.has(groupName.toLowerCase())) {
+        const next = new Set(prev);
+        next.delete(groupName.toLowerCase());
+        try {
+          localStorage.setItem("ilc_hidden_container_stacks", JSON.stringify(Array.from(next)));
+        } catch {}
+        return next;
+      }
+      return prev;
+    });
+
     const proj = composeProjects.find(
       (p) => p.name.toLowerCase() === groupName.toLowerCase()
     );
@@ -286,6 +341,18 @@ export const ContainersSplitView: React.FC = () => {
 
   const handleRestartAll = async (groupName: string, groupContainers: ContainerDetail[], e: React.MouseEvent) => {
     e.stopPropagation();
+    setHiddenStacks((prev) => {
+      if (prev.has(groupName.toLowerCase())) {
+        const next = new Set(prev);
+        next.delete(groupName.toLowerCase());
+        try {
+          localStorage.setItem("ilc_hidden_container_stacks", JSON.stringify(Array.from(next)));
+        } catch {}
+        return next;
+      }
+      return prev;
+    });
+
     const proj = composeProjects.find(
       (p) => p.name.toLowerCase() === groupName.toLowerCase()
     );
@@ -1004,30 +1071,32 @@ export const ContainersSplitView: React.FC = () => {
               } p-4 bg-background min-h-0`}
             >
               <ErrorBoundary fallbackTitle="Error loading container tab">
-                {(containerDetailTab === "overview" || containerDetailTab === "inspect") && (
+                <div className={containerDetailTab === "overview" || containerDetailTab === "inspect" ? "h-full w-full" : "hidden"}>
                   <OverviewTab container={activeContainer} />
-                )}
-                {containerDetailTab === "stats" && (
+                </div>
+                <div className={containerDetailTab === "stats" ? "h-full w-full" : "hidden"}>
                   <StatsTab
                     containerId={activeContainer.id}
                     containerState={activeContainer.state}
                   />
-                )}
-                {containerDetailTab === "logs" && <LogsTab containerId={activeContainer.id} />}
-                {containerDetailTab === "terminal" && (
+                </div>
+                <div className={containerDetailTab === "logs" ? "h-full w-full flex flex-col min-h-0" : "hidden"}>
+                  <LogsTab containerId={activeContainer.id} />
+                </div>
+                <div className={containerDetailTab === "terminal" ? "h-full w-full flex flex-col min-h-0" : "hidden"}>
                   <TerminalTab
                     containerId={activeContainer.id}
                     containerName={activeContainer.name}
                     containerState={activeContainer.state}
                   />
-                )}
-                {containerDetailTab === "files" && (
+                </div>
+                <div className={containerDetailTab === "files" ? "h-full w-full flex flex-col min-h-0" : "hidden"}>
                   <FileManagerTab
                     containerId={activeContainer.id}
                     containerName={activeContainer.name}
                     containerState={activeContainer.state}
                   />
-                )}
+                </div>
               </ErrorBoundary>
             </div>
           </div>
@@ -1139,17 +1208,47 @@ export const ContainersSplitView: React.FC = () => {
               </button>
               <button
                 type="button"
-                disabled={isActionInProgress}
                 onClick={async () => {
+                  const stackNameLower = stackToDelete.name.toLowerCase();
                   const proj = composeProjects.find(
-                    (p) => p.name.toLowerCase() === stackToDelete.name.toLowerCase()
+                    (p) => p.name.toLowerCase() === stackNameLower
                   );
-                  if (stackToDelete.containers.length === 0) {
-                    await forgetComposeProject(stackToDelete.name);
-                  } else {
+
+                  if (stackToDelete.containers.length > 0) {
+                    // Step 1: Remove all containers of the stack.
+                    // The stack MUST remain visible in Containers (0/0), so ensure it is NOT in hiddenStacks!
+                    setHiddenStacks((prev) => {
+                      if (prev.has(stackNameLower)) {
+                        const next = new Set(prev);
+                        next.delete(stackNameLower);
+                        try {
+                          localStorage.setItem(
+                            "ilc_hidden_container_stacks",
+                            JSON.stringify(Array.from(next))
+                          );
+                        } catch {}
+                        return next;
+                      }
+                      return prev;
+                    });
                     await removeComposeProject(stackToDelete.name, proj?.workingDir, proj?.configFile);
+                  } else {
+                    // Step 2: Stack has 0 containers, user clicked remove again:
+                    // Only now hide the stack component from Containers view!
+                    setHiddenStacks((prev) => {
+                      const next = new Set(prev);
+                      next.add(stackNameLower);
+                      try {
+                        localStorage.setItem(
+                          "ilc_hidden_container_stacks",
+                          JSON.stringify(Array.from(next))
+                        );
+                      } catch {}
+                      return next;
+                    });
                   }
                   setStackToDelete(null);
+                  await refreshData();
                 }}
                 className="px-3 py-1 rounded-md text-xs font-medium bg-status-danger hover:bg-status-danger/90 text-white shadow-xs transition-opacity cursor-pointer flex items-center space-x-1.5"
               >

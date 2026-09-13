@@ -119,7 +119,9 @@ export const App: React.FC = () => {
         <Header />
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background">
           {activeTab === "overview" && (viewMode === "minimal" ? <FleetView /> : <OverviewView />)}
-          {activeTab === "containers" && <ContainersSplitView />}
+          <div className={activeTab === "containers" ? "flex-1 flex flex-col min-w-0 h-full overflow-hidden" : "hidden"}>
+            <ContainersSplitView />
+          </div>
           {activeTab === "images" && <ImagesView />}
           {activeTab === "volumes" && <VolumesView />}
           {activeTab === "networks" && <NetworksView />}

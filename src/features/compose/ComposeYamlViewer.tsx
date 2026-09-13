@@ -11,7 +11,6 @@ import {
   RotateCw,
 } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
-import { sampleComposeYaml } from "@/lib/composeParser";
 import {
   parseComposeYamlToConfig,
   serializeConfigToComposeYaml,
@@ -81,9 +80,9 @@ export const ComposeYamlViewer: React.FC<ComposeYamlViewerProps> = ({
   };
 
   const handleResetToSample = () => {
-    setEditedYaml(sampleComposeYaml);
+    setEditedYaml("");
     if (onYamlChange) {
-      onYamlChange(sampleComposeYaml);
+      onYamlChange("");
     }
     setIsEditingRaw(false);
   };

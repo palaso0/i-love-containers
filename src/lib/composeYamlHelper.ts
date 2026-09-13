@@ -1,4 +1,10 @@
-
+import {
+  parseDocument,
+  Document,
+  isMap,
+  isSeq,
+  YAMLMap,
+} from "yaml";
 
 export interface ComposeServiceConfig {
   name: string;
@@ -26,312 +32,370 @@ export interface ParsedComposeFile {
   rawTopLevelNetworks?: string;
   rawTopLevelVolumes?: string;
   rawHeaderComments?: string;
+  _rawDoc?: Document;
 }
 
-export function parseComposeYamlToConfig(yaml: string): ParsedComposeFile {
-  const lines = yaml.split("\n");
-  const services: ComposeServiceConfig[] = [];
+export function parseComposeYamlToConfig(yamlString: string): ParsedComposeFile {
+  let doc: Document;
+  try {
+    doc = parseDocument(yamlString);
+  } catch {
+    doc = new Document({ version: "3.8", services: {} });
+  }
+
+  const versionNode = doc.get("version");
+  const version =
+    typeof versionNode === "string" || typeof versionNode === "number"
+      ? String(versionNode)
+      : "3.8";
+
   const availableNetworks: string[] = [];
+  const networksNode = doc.get("networks");
+  if (isMap(networksNode)) {
+    for (const item of networksNode.items) {
+      if (item.key != null) {
+        const k = String((item.key as any).valueOf());
+        if (k && !availableNetworks.includes(k)) availableNetworks.push(k);
+      }
+    }
+  }
+
   const availableVolumes: string[] = [];
-
-  let version: string | undefined = undefined;
-  let currentSection: "header" | "services" | "networks" | "volumes" | "other" = "header";
-  let currentService: ComposeServiceConfig | null = null;
-  let currentArrayKey: "ports" | "environment" | "depends_on" | "networks" | "volumes" | "extra" | null = null;
-
-  const headerLines: string[] = [];
-  const networkLines: string[] = [];
-  const volumeLines: string[] = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const rawLine = lines[i];
-    const trimmed = rawLine.trim();
-
-    if (trimmed.startsWith("version:")) {
-      version = trimmed.replace("version:", "").trim().replace(/['"]/g, "");
-      headerLines.push(rawLine);
-      continue;
-    }
-
-    const indent = rawLine.search(/\S/);
-    if (indent === 0 && trimmed.endsWith(":")) {
-      if (currentService) {
-        services.push(currentService);
-        currentService = null;
+  const volumesNode = doc.get("volumes");
+  if (isMap(volumesNode)) {
+    for (const item of volumesNode.items) {
+      if (item.key != null) {
+        const k = String((item.key as any).valueOf());
+        if (k && !availableVolumes.includes(k)) availableVolumes.push(k);
       }
-      currentArrayKey = null;
-
-      if (trimmed.startsWith("services:")) {
-        currentSection = "services";
-      } else if (trimmed.startsWith("networks:")) {
-        currentSection = "networks";
-      } else if (trimmed.startsWith("volumes:")) {
-        currentSection = "volumes";
-      } else {
-        currentSection = "other";
-      }
-      continue;
     }
+  }
 
-    if (currentSection === "header") {
-      headerLines.push(rawLine);
-      continue;
-    }
+  const services: ComposeServiceConfig[] = [];
+  const servicesNode = doc.get("services");
 
-    if (currentSection === "networks") {
-      networkLines.push(rawLine);
-      if (indent === 2 && trimmed.endsWith(":")) {
-        const netName = trimmed.slice(0, -1).trim();
-        if (netName && !availableNetworks.includes(netName)) {
-          availableNetworks.push(netName);
-        }
-      }
-      continue;
-    }
+  if (isMap(servicesNode)) {
+    for (const pair of servicesNode.items) {
+      const serviceName = String((pair.key as any)?.valueOf() || "");
+      if (!serviceName) continue;
 
-    if (currentSection === "volumes") {
-      volumeLines.push(rawLine);
-      if (indent === 2 && trimmed.endsWith(":")) {
-        const volName = trimmed.slice(0, -1).trim();
-        if (volName && !availableVolumes.includes(volName)) {
-          availableVolumes.push(volName);
-        }
-      }
-      continue;
-    }
-
-    if (currentSection === "services") {
-      if (indent === 2 && trimmed.endsWith(":")) {
-        if (currentService) {
-          services.push(currentService);
-        }
-        const sName = trimmed.slice(0, -1).trim();
-        currentService = {
-          name: sName,
+      const svcVal = pair.value;
+      if (!isMap(svcVal)) {
+        services.push({
+          name: serviceName,
           ports: [],
           environment: [],
           depends_on: [],
           networks: [],
           volumes: [],
           customDirectives: [],
-          extraLines: [],
-        };
-        currentArrayKey = null;
+        });
         continue;
       }
 
-      if (!currentService) continue;
+      const image = svcVal.get("image");
+      const containerName = svcVal.get("container_name");
+      const restart = svcVal.get("restart");
+      const platform = svcVal.get("platform");
+      const command = svcVal.get("command");
 
-      if (trimmed.startsWith("- ") && currentArrayKey) {
-        let val = trimmed.slice(2).trim();
-        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
-          val = val.slice(1, -1);
-        }
-
-        if (currentArrayKey === "ports") currentService.ports?.push(val);
-        else if (currentArrayKey === "environment") currentService.environment?.push(val);
-        else if (currentArrayKey === "depends_on") currentService.depends_on?.push(val);
-        else if (currentArrayKey === "networks") currentService.networks?.push(val);
-        else if (currentArrayKey === "volumes") currentService.volumes?.push(val);
-        else currentService.extraLines?.push(rawLine);
-        continue;
-      }
-
-      if (currentArrayKey === "environment" && indent >= 6 && trimmed.includes(":") && !trimmed.startsWith("-")) {
-        const colonIdx = trimmed.indexOf(":");
-        const k = trimmed.slice(0, colonIdx).trim();
-        let v = trimmed.slice(colonIdx + 1).trim();
-        if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
-          v = v.slice(1, -1);
-        }
-        currentService.environment = currentService.environment || [];
-        currentService.environment.push(`${k}=${v}`);
-        continue;
-      }
-
-      if (indent === 4) {
-        const colonIdx = trimmed.indexOf(":");
-        if (colonIdx === -1) {
-          currentService.extraLines?.push(rawLine);
-          continue;
-        }
-
-        const key = trimmed.slice(0, colonIdx).trim();
-        const value = trimmed.slice(colonIdx + 1).trim();
-
-        if (trimmed.endsWith(":") && !value) {
-          if (["ports", "environment", "depends_on", "networks", "volumes"].includes(key)) {
-            currentArrayKey = key as any;
-          } else {
-            currentArrayKey = null;
-            currentService.extraLines?.push(rawLine);
-          }
-          continue;
-        }
-
-        currentArrayKey = null;
-        let cleanVal = value;
-        if ((cleanVal.startsWith('"') && cleanVal.endsWith('"')) || (cleanVal.startsWith("'") && cleanVal.endsWith("'"))) {
-          cleanVal = cleanVal.slice(1, -1);
-        }
-
-        switch (key) {
-          case "image":
-            currentService.image = cleanVal;
-            break;
-          case "container_name":
-            currentService.container_name = cleanVal;
-            break;
-          case "restart":
-            currentService.restart = cleanVal;
-            break;
-          case "platform":
-            currentService.platform = cleanVal;
-            break;
-          case "command":
-            currentService.command = cleanVal;
-            break;
-          default:
-            if (key && cleanVal !== undefined) {
-              currentService.customDirectives = currentService.customDirectives || [];
-              currentService.customDirectives.push({ key, value: cleanVal });
-            } else {
-              currentService.extraLines?.push(rawLine);
+      // Ports
+      const ports: string[] = [];
+      const portsNode = svcVal.get("ports");
+      if (isSeq(portsNode)) {
+        for (const p of portsNode.items) {
+          const val = (p as any)?.valueOf();
+          if (typeof val === "string" || typeof val === "number") {
+            ports.push(String(val));
+          } else if (val && typeof val === "object") {
+            const target = (val as any).target;
+            const published = (val as any).published;
+            if (target && published) {
+              ports.push(`${published}:${target}`);
+            } else if (target) {
+              ports.push(String(target));
             }
-            break;
+          }
         }
-        continue;
       }
 
-      if (indent > 4 && currentService) {
-        currentService.extraLines?.push(rawLine);
+      // Environment
+      const environment: string[] = [];
+      const envNode = svcVal.get("environment");
+      if (isSeq(envNode)) {
+        for (const e of envNode.items) {
+          const val = (e as any)?.valueOf();
+          if (val != null) environment.push(String(val));
+        }
+      } else if (isMap(envNode)) {
+        for (const envPair of envNode.items) {
+          const k = String((envPair.key as any)?.valueOf() || "");
+          const v = (envPair.value as any)?.valueOf();
+          if (k) {
+            environment.push(`${k}=${v != null ? String(v) : ""}`);
+          }
+        }
       }
+
+      // Depends on
+      const dependsOn: string[] = [];
+      const depNode = svcVal.get("depends_on");
+      if (isSeq(depNode)) {
+        for (const d of depNode.items) {
+          const val = (d as any)?.valueOf();
+          if (val != null) dependsOn.push(String(val));
+        }
+      } else if (isMap(depNode)) {
+        for (const depPair of depNode.items) {
+          const k = String((depPair.key as any)?.valueOf() || "");
+          if (k) dependsOn.push(k);
+        }
+      }
+
+      // Networks
+      const networks: string[] = [];
+      const netNode = svcVal.get("networks");
+      if (isSeq(netNode)) {
+        for (const n of netNode.items) {
+          const val = (n as any)?.valueOf();
+          if (val != null) networks.push(String(val));
+        }
+      } else if (isMap(netNode)) {
+        for (const netPair of netNode.items) {
+          const k = String((netPair.key as any)?.valueOf() || "");
+          if (k) networks.push(k);
+        }
+      }
+
+      // Volumes
+      const volumes: string[] = [];
+      const volNode = svcVal.get("volumes");
+      if (isSeq(volNode)) {
+        for (const v of volNode.items) {
+          const val = (v as any)?.valueOf();
+          if (typeof val === "string") {
+            volumes.push(val);
+          } else if (val && typeof val === "object") {
+            const source = (val as any).source;
+            const target = (val as any).target;
+            if (source && target) {
+              volumes.push(`${source}:${target}`);
+            }
+          }
+        }
+      }
+
+      // Custom Directives
+      const customDirectives: Array<{ key: string; value: string }> = [];
+      const knownKeys = new Set([
+        "image",
+        "container_name",
+        "restart",
+        "platform",
+        "command",
+        "ports",
+        "environment",
+        "depends_on",
+        "networks",
+        "volumes",
+      ]);
+
+      for (const p of svcVal.items) {
+        const k = String((p.key as any)?.valueOf() || "");
+        if (knownKeys.has(k)) continue;
+        const v = (p.value as any)?.valueOf();
+        if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
+          customDirectives.push({ key: k, value: String(v) });
+        }
+      }
+
+      services.push({
+        name: serviceName,
+        image: image != null ? String((image as any).valueOf()) : undefined,
+        container_name: containerName != null ? String((containerName as any).valueOf()) : undefined,
+        restart: restart != null ? String((restart as any).valueOf()) : undefined,
+        platform: platform != null ? String((platform as any).valueOf()) : undefined,
+        command:
+          command != null
+            ? Array.isArray((command as any).valueOf())
+              ? ((command as any).valueOf() as any[]).join(" ")
+              : String((command as any).valueOf())
+            : undefined,
+        ports,
+        environment,
+        depends_on: dependsOn,
+        networks,
+        volumes,
+        customDirectives,
+      });
     }
   }
 
-  if (currentService) {
-    services.push(currentService);
-  }
-
   return {
-    version: version || "3.8",
+    version,
     services,
     availableNetworks,
     availableVolumes,
-    rawTopLevelNetworks: networkLines.join("\n"),
-    rawTopLevelVolumes: volumeLines.join("\n"),
-    rawHeaderComments: headerLines.filter((l) => l.trim().startsWith("#")).join("\n"),
+    _rawDoc: doc,
   };
 }
 
 export function serializeConfigToComposeYaml(config: ParsedComposeFile): string {
-  const parts: string[] = [];
+  const doc: Document = config._rawDoc ? config._rawDoc.clone() : new Document();
 
-  if (config.rawHeaderComments) {
-    parts.push(config.rawHeaderComments);
+  if (!config._rawDoc) {
+    if (config.version) {
+      doc.set("version", config.version);
+    }
+    doc.set("services", new YAMLMap());
   }
 
-  parts.push(`version: '${config.version || "3.8"}'\n`);
-  parts.push("services:");
+  let servicesNode = doc.get("services") as any;
+  if (!isMap(servicesNode)) {
+    servicesNode = new YAMLMap();
+    doc.set("services", servicesNode);
+  }
 
+  const existingServiceKeys = new Set<string>();
+  for (const item of servicesNode.items) {
+    const k = String((item.key as any)?.valueOf() || "");
+    if (k) existingServiceKeys.add(k);
+  }
+
+  const desiredServiceNames = new Set(config.services.map((s) => s.name));
+
+  // Remove deleted services
+  for (const existingKey of existingServiceKeys) {
+    if (!desiredServiceNames.has(existingKey)) {
+      servicesNode.delete(existingKey);
+    }
+  }
+
+  // Update or insert services
   for (const svc of config.services) {
-    parts.push(`  ${svc.name}:`);
-
-    if (svc.image) {
-      parts.push(`    image: ${svc.image}`);
-    }
-    if (svc.container_name) {
-      parts.push(`    container_name: ${svc.container_name}`);
-    }
-    if (svc.platform) {
-      parts.push(`    platform: ${svc.platform}`);
-    }
-    if (svc.command) {
-      parts.push(`    command: ${svc.command}`);
-    }
-    if (svc.restart) {
-      parts.push(`    restart: ${svc.restart}`);
+    let svcMap = servicesNode.get(svc.name) as any;
+    if (!isMap(svcMap)) {
+      svcMap = new YAMLMap();
+      servicesNode.set(svc.name, svcMap);
     }
 
+    if (svc.image) svcMap.set("image", svc.image);
+    else svcMap.delete("image");
+
+    if (svc.container_name) svcMap.set("container_name", svc.container_name);
+    else svcMap.delete("container_name");
+
+    if (svc.restart) svcMap.set("restart", svc.restart);
+    else svcMap.delete("restart");
+
+    if (svc.platform) svcMap.set("platform", svc.platform);
+    else svcMap.delete("platform");
+
+    if (svc.command) svcMap.set("command", svc.command);
+    else svcMap.delete("command");
+
+    // Ports
     if (svc.ports && svc.ports.length > 0) {
-      parts.push("    ports:");
-      for (const p of svc.ports) {
-        parts.push(`      - "${p}"`);
-      }
+      svcMap.set("ports", svc.ports);
+    } else {
+      svcMap.delete("ports");
     }
 
+    // Environment
     if (svc.environment && svc.environment.length > 0) {
-      parts.push("    environment:");
-      for (const env of svc.environment) {
-        parts.push(`      - ${env}`);
-      }
+      svcMap.set("environment", svc.environment);
+    } else {
+      svcMap.delete("environment");
     }
 
+    // Depends on
     if (svc.depends_on && svc.depends_on.length > 0) {
-      parts.push("    depends_on:");
-      for (const dep of svc.depends_on) {
-        parts.push(`      - ${dep}`);
+      const existingDepNode = svcMap.get("depends_on");
+      if (isMap(existingDepNode)) {
+        // Keep existing map structure with conditions, remove unselected, add new
+        const existingDepKeys = new Set<string>();
+        for (const depItem of existingDepNode.items) {
+          const depK = String((depItem.key as any)?.valueOf() || "");
+          if (depK) existingDepKeys.add(depK);
+        }
+
+        // Delete dependencies no longer selected
+        for (const depK of existingDepKeys) {
+          if (!svc.depends_on.includes(depK)) {
+            existingDepNode.delete(depK);
+          }
+        }
+
+        // Add newly selected dependencies with default condition
+        for (const dep of svc.depends_on) {
+          if (!existingDepKeys.has(dep)) {
+            existingDepNode.set(dep, { condition: "service_started" });
+          }
+        }
+      } else {
+        svcMap.set("depends_on", svc.depends_on);
       }
+    } else {
+      svcMap.delete("depends_on");
     }
 
-    if (svc.volumes && svc.volumes.length > 0) {
-      parts.push("    volumes:");
-      for (const v of svc.volumes) {
-        parts.push(`      - ${v}`);
-      }
-    }
-
+    // Networks
     if (svc.networks && svc.networks.length > 0) {
-      parts.push("    networks:");
-      for (const net of svc.networks) {
-        parts.push(`      - ${net}`);
-      }
+      svcMap.set("networks", svc.networks);
+    } else {
+      svcMap.delete("networks");
     }
 
+    // Volumes
+    if (svc.volumes && svc.volumes.length > 0) {
+      svcMap.set("volumes", svc.volumes);
+    } else {
+      svcMap.delete("volumes");
+    }
+
+    // Custom directives
     if (svc.customDirectives && svc.customDirectives.length > 0) {
       for (const d of svc.customDirectives) {
         if (d.key && d.key.trim()) {
-          parts.push(`    ${d.key.trim()}: ${d.value.trim()}`);
+          svcMap.set(d.key.trim(), d.value.trim());
         }
       }
     }
+  }
 
-    if (svc.extraLines && svc.extraLines.length > 0) {
-      for (const line of svc.extraLines) {
-        parts.push(line);
+  // Top level networks
+  if (config.availableNetworks && config.availableNetworks.length > 0) {
+    let networksNode = doc.get("networks") as any;
+    if (!isMap(networksNode)) {
+      networksNode = new YAMLMap();
+      doc.set("networks", networksNode);
+    }
+    for (const net of config.availableNetworks) {
+      if (!networksNode.has(net)) {
+        const netDef = new YAMLMap();
+        netDef.set("driver", "bridge");
+        networksNode.set(net, netDef);
       }
     }
-
-    parts.push("");
   }
 
-  if (config.rawTopLevelNetworks && config.rawTopLevelNetworks.trim()) {
-    parts.push("networks:");
-    parts.push(config.rawTopLevelNetworks);
-    parts.push("");
-  } else if (config.availableNetworks && config.availableNetworks.length > 0) {
-    parts.push("networks:");
-    for (const net of config.availableNetworks) {
-      parts.push(`  ${net}:`);
-      parts.push("    driver: bridge");
+  // Top level volumes
+  if (config.availableVolumes && config.availableVolumes.length > 0) {
+    let volumesNode = doc.get("volumes") as any;
+    if (!isMap(volumesNode)) {
+      volumesNode = new YAMLMap();
+      doc.set("volumes", volumesNode);
     }
-    parts.push("");
-  }
-
-  if (config.rawTopLevelVolumes && config.rawTopLevelVolumes.trim()) {
-    parts.push("volumes:");
-    parts.push(config.rawTopLevelVolumes);
-    parts.push("");
-  } else if (config.availableVolumes && config.availableVolumes.length > 0) {
-    parts.push("volumes:");
     for (const vol of config.availableVolumes) {
-      parts.push(`  ${vol}:`);
-      parts.push("    driver: local");
+      if (!volumesNode.has(vol)) {
+        const volDef = new YAMLMap();
+        volDef.set("driver", "local");
+        volumesNode.set(vol, volDef);
+      }
     }
-    parts.push("");
   }
 
-  return parts.join("\n").trimEnd() + "\n";
+  return doc.toString();
 }
 
 export function applyBulkServiceConfig(
@@ -343,39 +407,62 @@ export function applyBulkServiceConfig(
     customKey?: string;
   }
 ): string {
-  const config = parseComposeYamlToConfig(yamlString);
-  const targets = new Set(targetServices.length > 0 ? targetServices : config.services.map((s) => s.name));
+  const doc = parseDocument(yamlString);
+  const servicesNode = doc.get("services") as any;
+  if (!isMap(servicesNode)) {
+    return yamlString;
+  }
 
-  for (const svc of config.services) {
-    if (!targets.has(svc.name)) continue;
+  const allServiceNames: string[] = [];
+  for (const pair of servicesNode.items) {
+    const k = String((pair.key as any)?.valueOf() || "");
+    if (k) allServiceNames.push(k);
+  }
+
+  const targets = new Set(
+    targetServices.length > 0 ? targetServices : allServiceNames
+  );
+
+  for (const svcName of targets) {
+    const svcMap = servicesNode.get(svcName) as any;
+    if (!isMap(svcMap)) continue;
 
     switch (action.field) {
       case "platform":
         if (action.value.trim() === "") {
-          delete svc.platform;
+          svcMap.delete("platform");
         } else {
-          svc.platform = action.value.trim();
+          svcMap.set("platform", action.value.trim());
         }
         break;
 
       case "restart":
         if (action.value.trim() === "") {
-          delete svc.restart;
+          svcMap.delete("restart");
         } else {
-          svc.restart = action.value.trim();
+          svcMap.set("restart", action.value.trim());
         }
         break;
 
       case "environment": {
         const envItem = action.value.trim();
         if (envItem) {
-          svc.environment = svc.environment || [];
           const [varName] = envItem.split("=");
-          const existingIdx = svc.environment.findIndex((e) => e.startsWith(`${varName}=`));
-          if (existingIdx >= 0) {
-            svc.environment[existingIdx] = envItem;
+          let envNode = svcMap.get("environment") as any;
+          if (isSeq(envNode)) {
+            const idx = envNode.items.findIndex((item: any) =>
+              String(item?.valueOf() || "").startsWith(`${varName}=`)
+            );
+            if (idx >= 0) {
+              envNode.items[idx] = envItem;
+            } else {
+              envNode.add(envItem);
+            }
+          } else if (isMap(envNode)) {
+            const [, val] = envItem.split("=");
+            envNode.set(varName, val || "");
           } else {
-            svc.environment.push(envItem);
+            svcMap.set("environment", [envItem]);
           }
         }
         break;
@@ -384,12 +471,27 @@ export function applyBulkServiceConfig(
       case "network": {
         const netName = action.value.trim();
         if (netName) {
-          svc.networks = svc.networks || [];
-          if (!svc.networks.includes(netName)) {
-            svc.networks.push(netName);
+          let netNode = svcMap.get("networks") as any;
+          if (isSeq(netNode)) {
+            const exists = netNode.items.some(
+              (item: any) => String(item?.valueOf() || "") === netName
+            );
+            if (!exists) {
+              netNode.add(netName);
+            }
+          } else {
+            svcMap.set("networks", [netName]);
           }
-          if (!config.availableNetworks.includes(netName)) {
-            config.availableNetworks.push(netName);
+
+          let topNetworks = doc.get("networks") as any;
+          if (!isMap(topNetworks)) {
+            topNetworks = new YAMLMap();
+            doc.set("networks", topNetworks);
+          }
+          if (!topNetworks.has(netName)) {
+            const def = new YAMLMap();
+            def.set("driver", "bridge");
+            topNetworks.set(netName, def);
           }
         }
         break;
@@ -399,18 +501,12 @@ export function applyBulkServiceConfig(
         if (action.customKey) {
           const k = action.customKey.trim();
           const v = action.value.trim();
-          svc.customDirectives = svc.customDirectives || [];
-          const existing = svc.customDirectives.find((d) => d.key === k);
-          if (existing) {
-            existing.value = v;
-          } else {
-            svc.customDirectives.push({ key: k, value: v });
-          }
+          svcMap.set(k, v);
         }
         break;
       }
     }
   }
 
-  return serializeConfigToComposeYaml(config);
+  return doc.toString();
 }

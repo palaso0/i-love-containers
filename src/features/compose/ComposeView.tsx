@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { openRealNativeWindow } from "@/lib/nativeWindow";
-import { parseComposeYaml, sampleComposeYaml } from "@/lib/composeParser";
+import { parseComposeYaml } from "@/lib/composeParser";
 import * as api from "@/lib/api";
 import { ComposeDiagramCanvas } from "./ComposeDiagramCanvas";
 import { ComposeYamlViewer } from "./ComposeYamlViewer";
@@ -50,41 +50,43 @@ export const ComposeView: React.FC = () => {
     return <DockerDisconnected icon={FolderGit2} />;
   }
 
-  const activeProject = composeProjects[selectedProjectIndex] || composeProjects[0];
-  const projectName = activeProject?.name || "default";
+  const activeProject = composeProjects[selectedProjectIndex] || composeProjects[0] || {
+    name: "compose",
+    containers: [],
+  };
+  const projectName = activeProject?.name || "compose";
 
   const [composeYaml, setComposeYaml] = useState<string>(() => {
     if (activeProject?.yamlContent) {
       return activeProject.yamlContent;
     }
     try {
-      const saved = localStorage.getItem(`ilc-compose-yaml-${projectName}`);
-      return saved || sampleComposeYaml;
+      const saved = localStorage.getItem(`ilc-compose-yaml-${projectName}`) || localStorage.getItem("ilc-compose-yaml-last");
+      return saved || "";
     } catch {
-      return sampleComposeYaml;
+      return "";
     }
   });
 
   useEffect(() => {
-    if (activeProject?.name) {
-      if (activeProject.yamlContent) {
-        setComposeYaml(activeProject.yamlContent);
-      } else {
-        try {
-          const saved = localStorage.getItem(`ilc-compose-yaml-${activeProject.name}`);
-          setComposeYaml(saved || sampleComposeYaml);
-        } catch {
-          setComposeYaml(sampleComposeYaml);
+    if (activeProject?.yamlContent) {
+      setComposeYaml(activeProject.yamlContent);
+    } else if (activeProject?.name) {
+      try {
+        const saved = localStorage.getItem(`ilc-compose-yaml-${activeProject.name}`) || localStorage.getItem("ilc-compose-yaml-last");
+        if (saved) {
+          setComposeYaml(saved);
         }
-      }
+      } catch {}
     }
   }, [activeProject?.name, activeProject?.yamlContent]);
 
   const handleYamlChange = (newYaml: string) => {
     setComposeYaml(newYaml);
-    const pName = activeProject?.name || "default";
+    const pName = activeProject?.name || "compose";
     try {
       localStorage.setItem(`ilc-compose-yaml-${pName}`, newYaml);
+      localStorage.setItem("ilc-compose-yaml-last", newYaml);
     } catch {}
 
     if (activeProject?.configFile || activeProject?.workingDir) {
@@ -119,7 +121,7 @@ export const ComposeView: React.FC = () => {
   };
 
   const handleForget = async () => {
-    if (!activeProject) return;
+    if (!activeProject || composeProjects.length === 0) return;
     if (window.confirm(`¿Quitar "${activeProject.name}" del historial de stacks guardados?`)) {
       await api.forgetComposeProject(activeProject.name);
       await refreshData();
@@ -178,39 +180,6 @@ export const ComposeView: React.FC = () => {
     }
     await refreshData();
   };
-
-  if (composeProjects.length === 0) {
-    return (
-      <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-background max-w-4xl mx-auto">
-        <div className="border-b border-border/70 pb-3">
-          <h1 className="text-lg font-semibold text-foreground tracking-tight">{t.compose.title}</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">{t.compose.subtitle}</p>
-        </div>
-
-        <div className="bg-surface/60 border border-border/70 rounded-2xl p-8 text-center shadow-mac-card space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto text-primary shadow-xs">
-            <FolderGit2 className="w-6 h-6" />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-foreground">{t.compose.noStacks}</h3>
-            <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
-              No se detectaron stacks en ejecución ni proyectos en el historial. Puedes cargar o registrar cualquier archivo docker-compose.yml de tu equipo.
-            </p>
-          </div>
-
-          <div className="flex items-center justify-center space-x-3 pt-2">
-            <button
-              onClick={() => refreshData()}
-              className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-surface hover:bg-surface-hover border border-border/80 text-foreground transition-all shadow-xs"
-            >
-              <RotateCw className="w-3.5 h-3.5" />
-              <span>Escanear Stacks Locales</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const activeContainerIds = activeProject ? activeProject.containers.map((c) => c.id) : [];
   const runningCount = activeProject
@@ -362,7 +331,7 @@ export const ComposeView: React.FC = () => {
 
             <div className="h-4 w-[1px] bg-border/80 hidden sm:block" />
 
-            {isInactive && (
+            {isInactive && composeProjects.length > 0 && (
               <button
                 onClick={handleForget}
                 className="p-1.5 rounded-lg text-muted-foreground hover:text-status-danger bg-surface border border-border/70 hover:border-status-danger/40 transition-colors shadow-xs"

@@ -49,6 +49,7 @@ import {
 } from "@/lib/api";
 import { useAppStore } from "@/stores/useAppStore";
 import { ContainerNotRunning } from "@/components/ContainerNotRunning";
+import { getFileManagerCache, setFileManagerCache } from "@/lib/fileManagerCache";
 
 interface FileManagerTabProps {
   containerId: string;
@@ -136,19 +137,20 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
   const state = containerState ?? currentContainer?.state ?? "running";
   const isRunning = state === "running";
 
-  const [currentPath, setCurrentPath] = useState<string>("/");
+  const cached = getFileManagerCache(containerId);
+  const [currentPath, setCurrentPath] = useState<string>(cached?.currentPath || "/");
   const [defaultPath, setDefaultPath] = useState<string>("/");
-  const [history, setHistory] = useState<string[]>(["/"]);
-  const [historyIdx, setHistoryIdx] = useState<number>(0);
+  const [history, setHistory] = useState<string[]>(cached?.history || ["/"]);
+  const [historyIdx, setHistoryIdx] = useState<number>(cached?.historyIdx || 0);
   const [files, setFiles] = useState<ContainerFileItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
-  const [sortField, setSortField] = useState<"name" | "size" | "mtime">("name");
-  const [sortAsc, setSortAsc] = useState<boolean>(true);
+  const [viewMode, setViewMode] = useState<"list" | "grid">(cached?.viewMode || "grid");
+  const [sortField, setSortField] = useState<"name" | "size" | "mtime">(cached?.sortField || "name");
+  const [sortAsc, setSortAsc] = useState<boolean>(cached?.sortAsc ?? true);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
   const [isEditingPath, setIsEditingPath] = useState<boolean>(false);
-  const [pathInput, setPathInput] = useState<string>("/");
+  const [pathInput, setPathInput] = useState<string>(cached?.currentPath || "/");
   const [isDraggingOver, setIsDraggingOver] = useState<boolean>(false);
 
   const [dropStatus, setDropStatus] = useState<{
@@ -233,16 +235,36 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
     if (!isRunning) return;
     let isMounted = true;
     (async () => {
-      const initialPath = await loadFiles();
-      if (isMounted && initialPath) {
-        setHistory([initialPath]);
-        setHistoryIdx(0);
+      const cachedState = getFileManagerCache(containerId);
+      const pathToLoad = cachedState?.currentPath || undefined;
+      const resolved = await loadFiles(pathToLoad);
+      if (isMounted && resolved) {
+        if (!cachedState) {
+          setHistory([resolved]);
+          setHistoryIdx(0);
+          setFileManagerCache(containerId, {
+            currentPath: resolved,
+            history: [resolved],
+            historyIdx: 0,
+          });
+        }
       }
     })();
     return () => {
       isMounted = false;
     };
   }, [containerId, isRunning, loadFiles]);
+
+  useEffect(() => {
+    setFileManagerCache(containerId, {
+      currentPath,
+      history,
+      historyIdx,
+      viewMode,
+      sortField,
+      sortAsc,
+    });
+  }, [containerId, currentPath, history, historyIdx, viewMode, sortField, sortAsc]);
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;

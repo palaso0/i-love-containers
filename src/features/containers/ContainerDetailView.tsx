@@ -188,32 +188,32 @@ export const ContainerDetailView: React.FC = () => {
       </div>
 
       <div className="pt-1">
-        {(containerDetailTab === "overview" || containerDetailTab === "inspect") && (
+        <div className={containerDetailTab === "overview" || containerDetailTab === "inspect" ? "h-full w-full" : "hidden"}>
           <OverviewTab container={container} />
-        )}
-        {containerDetailTab === "logs" && <LogsTab containerId={container.id} />}
-        {containerDetailTab === "terminal" && (
+        </div>
+        <div className={containerDetailTab === "stats" ? "h-full w-full" : "hidden"}>
+          <StatsTab
+            containerId={container.id}
+            containerState={container.state}
+          />
+        </div>
+        <div className={containerDetailTab === "logs" ? "h-full w-full" : "hidden"}>
+          <LogsTab containerId={container.id} />
+        </div>
+        <div className={containerDetailTab === "terminal" ? "h-full w-full" : "hidden"}>
           <TerminalTab
             containerId={container.id}
             containerName={container.name}
             containerState={container.state}
           />
-        )}
-        {containerDetailTab === "stats" && (
-          <StatsTab
+        </div>
+        <div className={containerDetailTab === "files" ? "h-[600px] border border-border/70 rounded-xl overflow-hidden flex flex-col" : "hidden"}>
+          <FileManagerTab
             containerId={container.id}
+            containerName={container.name}
             containerState={container.state}
           />
-        )}
-        {containerDetailTab === "files" && (
-          <div className="h-[600px] border border-border/70 rounded-xl overflow-hidden flex flex-col">
-            <FileManagerTab
-              containerId={container.id}
-              containerName={container.name}
-              containerState={container.state}
-            />
-          </div>
-        )}
+        </div>
       </div>
 
       {showDeleteConfirm && (
