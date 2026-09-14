@@ -73,7 +73,7 @@ interface AppState {
   restartContainer: (id: string) => Promise<void>;
   removeContainer: (id: string) => Promise<void>;
   removeComposeProject: (projectName: string, workingDir?: string, configFile?: string) => Promise<void>;
-  upComposeProject: (projectName: string, workingDir?: string, configFile?: string) => Promise<{ ok: boolean; stdout?: string; stderr?: string }>;
+  upComposeProject: (projectName: string, workingDir?: string, configFile?: string, customCommand?: string) => Promise<{ ok: boolean; stdout?: string; stderr?: string }>;
   forgetComposeProject: (projectName: string) => Promise<void>;
   removeImage: (id: string) => Promise<void>;
   removeVolume: (name: string) => Promise<void>;
@@ -613,10 +613,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const handleUpComposeProject = async (projectName: string, workingDir?: string, configFile?: string) => {
+  const handleUpComposeProject = async (
+    projectName: string,
+    workingDir?: string,
+    configFile?: string,
+    customCommand?: string
+  ) => {
     setIsActionInProgress(true);
     try {
-      const res = await api.upComposeProject(projectName, workingDir, configFile);
+      const res = await api.upComposeProject(projectName, workingDir, configFile, customCommand);
       await refreshData();
       return res;
     } finally {

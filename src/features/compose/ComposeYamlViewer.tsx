@@ -18,12 +18,15 @@ import {
 } from "@/lib/composeYamlHelper";
 import { ComposeServiceForm } from "./ComposeServiceForm";
 import { ComposeBulkApplyModal } from "./ComposeBulkApplyModal";
+import { ComposeCustomRunModal } from "./ComposeCustomRunModal";
+import { getCustomComposeConfig } from "@/lib/composeCustomStorage";
 
 interface ComposeYamlViewerProps {
   yamlContent: string;
   onYamlChange?: (newYaml: string) => void;
   projectName: string;
   configFile?: string;
+  workingDir?: string;
   onDeploy?: () => void;
   isDeploying?: boolean;
   deploySuccess?: boolean;
@@ -34,6 +37,7 @@ export const ComposeYamlViewer: React.FC<ComposeYamlViewerProps> = ({
   onYamlChange,
   projectName,
   configFile,
+  workingDir,
   onDeploy,
   isDeploying,
   deploySuccess,
@@ -43,9 +47,15 @@ export const ComposeYamlViewer: React.FC<ComposeYamlViewerProps> = ({
 
   const [viewerMode, setViewerMode] = useState<"form" | "code">("code");
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
+  const [customConfig, setCustomConfig] = useState(() => getCustomComposeConfig(projectName));
   const [copied, setCopied] = useState(false);
   const [isEditingRaw, setIsEditingRaw] = useState(false);
   const [editedYaml, setEditedYaml] = useState(yamlContent);
+
+  useEffect(() => {
+    setCustomConfig(getCustomComposeConfig(projectName));
+  }, [projectName]);
 
   useEffect(() => {
     if (!isEditingRaw) {
@@ -143,14 +153,7 @@ export const ComposeYamlViewer: React.FC<ComposeYamlViewerProps> = ({
       <div className="px-4 py-2 bg-surface/90 backdrop-blur-md border border-border/80 rounded-xl mb-3 flex flex-wrap items-center justify-between gap-2 shadow-xs shrink-0">
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
-            <Code2 className="w-4 h-4 text-primary" />
-            <span
-              className="text-xs font-mono font-semibold text-foreground max-w-sm truncate"
-              title={configFile || `${projectName}/docker-compose.yml`}
-            >
-              {configFile || `${projectName}/docker-compose.yml`}
-            </span>
-            <span className="text-[10px] font-mono text-muted-foreground bg-surface-secondary px-2 py-0.2 rounded-full border border-border/60">
+            <span className="text-[10px] font-mono text-muted-foreground bg-surface-secondary px-2 py-0.5 rounded-full border border-border/60">
               {parsedConfig.services.length} {t.compose.servicesCountLabel} • {lines.length} {t.compose.linesCount}
             </span>
           </div>
@@ -205,6 +208,23 @@ export const ComposeYamlViewer: React.FC<ComposeYamlViewerProps> = ({
               )}
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={() => setIsCustomModalOpen(true)}
+            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-mono transition-all shadow-xs ${
+              customConfig.useAsDefault
+                ? "text-purple-300 bg-purple-500/20 border border-purple-500/50 hover:bg-purple-500/30"
+                : "text-purple-400 hover:text-purple-300 bg-purple-500/10 hover:bg-purple-500/15 border border-purple-500/30"
+            }`}
+            title={t.compose.customPlayTitle || "Custom Play"}
+          >
+            <Play className="w-3 h-3 fill-current text-purple-400" />
+            <span className="font-sans font-medium">{t.compose.customPlay || "Custom"}</span>
+            {customConfig.useAsDefault && (
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_6px_rgba(168,85,247,0.8)]" />
+            )}
+          </button>
         </div>
 
         <div className="flex items-center space-x-2">
@@ -336,6 +356,20 @@ export const ComposeYamlViewer: React.FC<ComposeYamlViewerProps> = ({
         onApplyYaml={handleApplyBulkYaml}
         services={parsedConfig.services}
         availableNetworks={parsedConfig.availableNetworks}
+      />
+
+      <ComposeCustomRunModal
+        isOpen={isCustomModalOpen}
+        onClose={() => {
+          setIsCustomModalOpen(false);
+          setCustomConfig(getCustomComposeConfig(projectName));
+        }}
+        projectName={projectName}
+        configFile={configFile}
+        workingDir={workingDir}
+        onSuccess={() => {
+          setCustomConfig(getCustomComposeConfig(projectName));
+        }}
       />
     </div>
   );

@@ -563,13 +563,14 @@ export async function saveComposeProjectYaml(
 export async function upComposeProject(
   projectName: string,
   workingDir?: string,
-  configFile?: string
+  configFile?: string,
+  customCommand?: string
 ): Promise<{ ok: boolean; stdout?: string; stderr?: string }> {
   try {
     const response = await apiFetch(`/api/compose/${encodeURIComponent(projectName)}/up`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ workingDir, configFile }),
+      body: JSON.stringify({ workingDir, configFile, customCommand }),
     });
     if (response.ok) return await response.json();
   } catch {}

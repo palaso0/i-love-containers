@@ -16,6 +16,7 @@ import { useAppStore } from "@/stores/useAppStore";
 import { openRealNativeWindow } from "@/lib/nativeWindow";
 import { parseComposeYaml } from "@/lib/composeParser";
 import * as api from "@/lib/api";
+import { getCustomComposeConfig } from "@/lib/composeCustomStorage";
 import { ComposeDiagramCanvas } from "./ComposeDiagramCanvas";
 import { ComposeYamlViewer } from "./ComposeYamlViewer";
 import { DockerDisconnected } from "@/components/DockerDisconnected";
@@ -104,10 +105,13 @@ export const ComposeView: React.FC = () => {
     setIsDeploying(true);
     setDeploySuccess(false);
     try {
+      const customCfg = getCustomComposeConfig(activeProject.name);
+      const customCommand = customCfg.useAsDefault && customCfg.command.trim() ? customCfg.command.trim() : undefined;
       const res = await api.upComposeProject(
         activeProject.name,
         activeProject.workingDir,
-        activeProject.configFile
+        activeProject.configFile,
+        customCommand
       );
       if (res.ok) {
         setDeploySuccess(true);
@@ -149,11 +153,14 @@ export const ComposeView: React.FC = () => {
   const handleStartStack = async () => {
     if (!activeProject) return;
     let success = false;
-    if (activeProject.configFile || activeProject.workingDir) {
+    const customCfg = getCustomComposeConfig(activeProject.name);
+    const customCommand = customCfg.useAsDefault && customCfg.command.trim() ? customCfg.command.trim() : undefined;
+    if (activeProject.configFile || activeProject.workingDir || customCommand) {
       const res = await api.upComposeProject(
         activeProject.name,
         activeProject.workingDir,
-        activeProject.configFile
+        activeProject.configFile,
+        customCommand
       );
       success = res.ok;
     }
@@ -171,6 +178,19 @@ export const ComposeView: React.FC = () => {
   };
 
   const handleRestartAll = async (containerIds: string[]) => {
+    if (activeProject) {
+      const customCfg = getCustomComposeConfig(activeProject.name);
+      if (customCfg.useAsDefault && customCfg.command.trim()) {
+        await api.upComposeProject(
+          activeProject.name,
+          activeProject.workingDir,
+          activeProject.configFile,
+          customCfg.command.trim()
+        );
+        await refreshData();
+        return;
+      }
+    }
     for (const id of containerIds) {
       const c = containers.find((item) => item.id === id);
       if (c?.state === "paused") {
@@ -240,7 +260,7 @@ export const ComposeView: React.FC = () => {
               )}
             </div>
             <p
-              className="text-[11px] font-mono text-muted-foreground truncate"
+              className="text-[11px] font-mono text-muted-foreground select-text cursor-text break-all"
               title={activeProject?.configFile || activeProject?.workingDir || "/workspace"}
             >
               {activeProject?.configFile || activeProject?.workingDir || "/workspace"}
@@ -359,6 +379,7 @@ export const ComposeView: React.FC = () => {
               onYamlChange={handleYamlChange}
               projectName={activeProject.name}
               configFile={activeProject.configFile}
+              workingDir={activeProject.workingDir}
               onDeploy={handleDeploy}
               isDeploying={isDeploying}
               deploySuccess={deploySuccess}

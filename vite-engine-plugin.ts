@@ -1981,11 +1981,13 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
             req.on("end", async () => {
               try {
                 const payload = JSON.parse(body || "{}");
-                const { workingDir, configFile } = payload;
+                const { workingDir, configFile, customCommand } = payload;
                 const cwd = workingDir || (configFile ? path.dirname(configFile) : undefined);
                 const fileArg = configFile ? `-f "${configFile}"` : "";
 
-                const cmd = `docker compose ${fileArg} up -d`.trim();
+                const cmd = (typeof customCommand === "string" && customCommand.trim())
+                  ? customCommand.trim()
+                  : `docker compose ${fileArg} up -d`.trim();
                 exec(cmd, { cwd: cwd || process.cwd() }, (error, stdout, stderr) => {
                   res.setHeader("Content-Type", "application/json");
                   res.end(
