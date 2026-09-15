@@ -26,8 +26,12 @@ export const VolumeNodeItem: React.FC<VolumeNodeItemProps> = ({
         <HardDrive className="w-3 h-3" />
       </div>
       <div>
-        <div className="font-semibold text-foreground text-[11px]">{vol.name}</div>
-        <div className="text-[9px] text-muted-foreground">driver: {vol.driver}</div>
+        <div className="font-semibold text-foreground text-[11px]">
+          {vol.name}
+        </div>
+        <div className="text-[9px] text-muted-foreground">
+          driver: {vol.driver}
+        </div>
       </div>
     </div>
   );

@@ -10,7 +10,13 @@ import {
 import { ContainerStats, ContainerState } from "@/types";
 import { formatBytes } from "@/lib/utils";
 import * as api from "@/lib/api";
-import { Cpu, Database, Activity, ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import {
+  Cpu,
+  Database,
+  Activity,
+  ArrowDownLeft,
+  ArrowUpRight,
+} from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { ContainerNotRunning } from "@/components/ContainerNotRunning";
 
@@ -19,7 +25,10 @@ interface StatsTabProps {
   containerState?: ContainerState;
 }
 
-export const StatsTab: React.FC<StatsTabProps> = ({ containerId, containerState }) => {
+export const StatsTab: React.FC<StatsTabProps> = ({
+  containerId,
+  containerState,
+}) => {
   const { theme, containers } = useAppStore();
   const currentContainer = containers.find((c) => c.id === containerId);
   const state = containerState ?? currentContainer?.state ?? "running";
@@ -46,13 +55,23 @@ export const StatsTab: React.FC<StatsTabProps> = ({ containerId, containerState 
             setStatsHistory((prev) => {
               if (!prev || prev.length <= 1) {
                 const seeded: ContainerStats[] = [];
-                const now = new Date(newPoint.timestamp).getTime() || Date.now();
+                const now =
+                  new Date(newPoint.timestamp).getTime() || Date.now();
                 for (let i = 19; i >= 1; i--) {
                   seeded.push({
                     ...newPoint,
                     timestamp: new Date(now - i * 2000).toISOString(),
-                    cpuPercent: Math.max(0.1, Number((newPoint.cpuPercent + (Math.sin(i) * 0.3)).toFixed(1))),
-                    memoryUsage: Math.max(1024 * 1024, newPoint.memoryUsage + Math.floor(Math.sin(i) * 1024 * 1024)),
+                    cpuPercent: Math.max(
+                      0.1,
+                      Number(
+                        (newPoint.cpuPercent + Math.sin(i) * 0.3).toFixed(1),
+                      ),
+                    ),
+                    memoryUsage: Math.max(
+                      1024 * 1024,
+                      newPoint.memoryUsage +
+                        Math.floor(Math.sin(i) * 1024 * 1024),
+                    ),
                   });
                 }
                 return [...seeded, newPoint];
@@ -93,18 +112,27 @@ export const StatsTab: React.FC<StatsTabProps> = ({ containerId, containerState 
 
   const safeHistory = Array.isArray(statsHistory) ? statsHistory : [];
 
-  const latestStats = safeHistory.length > 0 ? safeHistory[safeHistory.length - 1] : null;
+  const latestStats =
+    safeHistory.length > 0 ? safeHistory[safeHistory.length - 1] : null;
 
   const chartData = safeHistory.map((stat: ContainerStats) => {
     let timeStr = "";
     try {
       const d = new Date(stat.timestamp);
       if (!isNaN(d.getTime())) {
-        timeStr = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        timeStr = d.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
       }
     } catch {}
     if (!timeStr) {
-      timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      timeStr = new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
     }
 
     return {
@@ -129,7 +157,9 @@ export const StatsTab: React.FC<StatsTabProps> = ({ containerId, containerState 
 
   return (
     <div ref={rootRef} className="space-y-3">
-      <div className={`grid ${isCompact ? "grid-cols-2" : "grid-cols-2 md:grid-cols-4"} gap-2.5 font-mono`}>
+      <div
+        className={`grid ${isCompact ? "grid-cols-2" : "grid-cols-2 md:grid-cols-4"} gap-2.5 font-mono`}
+      >
         <div className="bg-surface border border-border rounded-lg p-2.5 shadow-xs">
           <div className="flex items-center justify-between text-2xs text-muted-foreground mb-1">
             <span>CPU</span>
@@ -138,7 +168,9 @@ export const StatsTab: React.FC<StatsTabProps> = ({ containerId, containerState 
           <div className="text-base sm:text-lg font-bold text-status-running">
             {latestStats?.cpuPercent ?? 0}%
           </div>
-          <div className="text-[10px] text-muted-foreground mt-0.5">Active load</div>
+          <div className="text-[10px] text-muted-foreground mt-0.5">
+            Active load
+          </div>
         </div>
 
         <div className="bg-surface border border-border rounded-lg p-2.5 shadow-xs">
@@ -170,7 +202,9 @@ export const StatsTab: React.FC<StatsTabProps> = ({ containerId, containerState 
               {formatBytes(latestStats?.networkTxBytes ?? 0)}
             </span>
           </div>
-          <div className="text-[10px] text-muted-foreground mt-0.5">Cumulative</div>
+          <div className="text-[10px] text-muted-foreground mt-0.5">
+            Cumulative
+          </div>
         </div>
 
         <div className="bg-surface border border-border rounded-lg p-2.5 shadow-xs">
@@ -181,14 +215,20 @@ export const StatsTab: React.FC<StatsTabProps> = ({ containerId, containerState 
           <div className="text-base sm:text-lg font-bold text-foreground">
             {latestStats?.pidsCount ?? 0}
           </div>
-          <div className="text-[10px] text-muted-foreground mt-0.5">Processes</div>
+          <div className="text-[10px] text-muted-foreground mt-0.5">
+            Processes
+          </div>
         </div>
       </div>
 
       <div className="bg-surface border border-border rounded-lg p-3 sm:p-4 shadow-xs">
         <div className="flex items-center justify-between mb-2 sm:mb-3 text-2xs font-mono">
-          <span className="font-bold text-muted-foreground uppercase">CPU Utilization Trend (%)</span>
-          <span className="text-status-running font-bold">{latestStats?.cpuPercent ?? 0}%</span>
+          <span className="font-bold text-muted-foreground uppercase">
+            CPU Utilization Trend (%)
+          </span>
+          <span className="text-status-running font-bold">
+            {latestStats?.cpuPercent ?? 0}%
+          </span>
         </div>
         <div className={`${isCompact ? "h-32" : "h-40"} w-full`}>
           <ResponsiveContainer width="100%" height="100%">
@@ -199,8 +239,18 @@ export const StatsTab: React.FC<StatsTabProps> = ({ containerId, containerState 
                   <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="time" stroke={axisColor} fontSize={9} tickLine={false} />
-              <YAxis stroke={axisColor} fontSize={9} tickLine={false} domain={[0, "auto"]} />
+              <XAxis
+                dataKey="time"
+                stroke={axisColor}
+                fontSize={9}
+                tickLine={false}
+              />
+              <YAxis
+                stroke={axisColor}
+                fontSize={9}
+                tickLine={false}
+                domain={[0, "auto"]}
+              />
               <Tooltip
                 contentStyle={{
                   backgroundColor: isDark ? "#10141d" : "#ffffff",
@@ -225,7 +275,9 @@ export const StatsTab: React.FC<StatsTabProps> = ({ containerId, containerState 
 
       <div className="bg-surface border border-border rounded-lg p-4 shadow-xs">
         <div className="flex items-center justify-between mb-3 text-2xs font-mono">
-          <span className="font-bold text-muted-foreground uppercase">Memory Utilization (MB)</span>
+          <span className="font-bold text-muted-foreground uppercase">
+            Memory Utilization (MB)
+          </span>
           <span className="text-cyan-500 font-bold">
             {Math.round((latestStats?.memoryUsage ?? 0) / (1024 * 1024))} MB
           </span>
@@ -239,8 +291,18 @@ export const StatsTab: React.FC<StatsTabProps> = ({ containerId, containerState 
                   <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="time" stroke={axisColor} fontSize={9} tickLine={false} />
-              <YAxis stroke={axisColor} fontSize={9} tickLine={false} domain={["auto", "auto"]} />
+              <XAxis
+                dataKey="time"
+                stroke={axisColor}
+                fontSize={9}
+                tickLine={false}
+              />
+              <YAxis
+                stroke={axisColor}
+                fontSize={9}
+                tickLine={false}
+                domain={["auto", "auto"]}
+              />
               <Tooltip
                 contentStyle={{
                   backgroundColor: isDark ? "#10141d" : "#ffffff",

@@ -90,8 +90,10 @@ export const LogsTab: React.FC<LogsTabProps> = ({ containerId }) => {
   };
 
   const safeLogs = Array.isArray(logs) ? logs : [];
-  const filteredLogs = safeLogs.filter((log) =>
-    typeof log === "string" && log.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredLogs = safeLogs.filter(
+    (log) =>
+      typeof log === "string" &&
+      log.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -122,7 +124,11 @@ export const LogsTab: React.FC<LogsTabProps> = ({ containerId }) => {
                 : "bg-surface-secondary border-border text-muted-foreground hover:text-foreground hover:bg-surface-hover"
             }`}
           >
-            {isPaused ? <Play className="w-3 h-3 fill-current" /> : <Pause className="w-3 h-3 fill-current" />}
+            {isPaused ? (
+              <Play className="w-3 h-3 fill-current" />
+            ) : (
+              <Pause className="w-3 h-3 fill-current" />
+            )}
           </button>
 
           <button
@@ -130,7 +136,8 @@ export const LogsTab: React.FC<LogsTabProps> = ({ containerId }) => {
               const next = !autoScroll;
               setAutoScroll(next);
               if (next && containerRef.current) {
-                containerRef.current.scrollTop = containerRef.current.scrollHeight;
+                containerRef.current.scrollTop =
+                  containerRef.current.scrollHeight;
               }
             }}
             title={autoScroll ? "Auto-scroll: ON" : "Auto-scroll: OFF"}
@@ -157,7 +164,11 @@ export const LogsTab: React.FC<LogsTabProps> = ({ containerId }) => {
 
           <button
             onClick={() => setWrapLines(!wrapLines)}
-            title={wrapLines ? "Word wrap: ON (click to scroll horizontally)" : "Word wrap: OFF (horizontal scroll enabled)"}
+            title={
+              wrapLines
+                ? "Word wrap: ON (click to scroll horizontally)"
+                : "Word wrap: OFF (horizontal scroll enabled)"
+            }
             className={`p-1.5 rounded border transition-colors ${
               wrapLines
                 ? "bg-primary/10 border-primary/30 text-primary"
@@ -182,7 +193,11 @@ export const LogsTab: React.FC<LogsTabProps> = ({ containerId }) => {
             className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
             title="Copy logs"
           >
-            {copied ? <Check className="w-3 h-3 text-status-running" /> : <Copy className="w-3 h-3" />}
+            {copied ? (
+              <Check className="w-3 h-3 text-status-running" />
+            ) : (
+              <Copy className="w-3 h-3" />
+            )}
           </button>
 
           <button
@@ -234,7 +249,9 @@ export const LogsTab: React.FC<LogsTabProps> = ({ containerId }) => {
                 )}
                 <span
                   className={`${
-                    wrapLines ? "break-all whitespace-pre-wrap flex-1 min-w-0" : "whitespace-pre shrink-0"
+                    wrapLines
+                      ? "break-all whitespace-pre-wrap flex-1 min-w-0"
+                      : "whitespace-pre shrink-0"
                   } ${isDark ? "text-slate-200" : "text-slate-800"}`}
                 >
                   {showTimestamps ? parts.slice(2).join(" ") : message}

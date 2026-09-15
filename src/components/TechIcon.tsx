@@ -1,39 +1,71 @@
 import React from "react";
-import {
-  Globe,
-  Layers,
-  Server,
-  Database,
-  Cpu,
-  Box,
-} from "lucide-react";
+import { Globe, Layers, Server, Database, Cpu, Box } from "lucide-react";
 
 export interface TechDetails {
   id: string;
   name: string;
-  category: "database" | "cache" | "backend" | "frontend" | "gateway" | "queue" | "tool";
+  category:
+    | "database"
+    | "cache"
+    | "backend"
+    | "frontend"
+    | "gateway"
+    | "queue"
+    | "tool";
   badgeColor: string;
 }
 
 export function detectTech(image = "", name = ""): string {
   const str = `${image.toLowerCase()} ${name.toLowerCase()}`;
 
-  if (str.includes("redis") || str.includes("valkey") || str.includes("keydb")) return "redis";
-  if (str.includes("postgres") || str.includes("pgsql") || str.includes("timescale")) return "postgres";
-  if (str.includes("node") || str.includes("express") || str.includes("nest") || str.includes("next")) return "node";
+  if (str.includes("redis") || str.includes("valkey") || str.includes("keydb"))
+    return "redis";
+  if (
+    str.includes("postgres") ||
+    str.includes("pgsql") ||
+    str.includes("timescale")
+  )
+    return "postgres";
+  if (
+    str.includes("node") ||
+    str.includes("express") ||
+    str.includes("nest") ||
+    str.includes("next")
+  )
+    return "node";
   if (str.includes("nginx") || str.includes("openresty")) return "nginx";
   if (str.includes("mongo")) return "mongo";
   if (str.includes("mysql") || str.includes("mariadb")) return "mysql";
   if (str.includes("rabbit") || str.includes("amqp")) return "rabbitmq";
-  if (str.includes("python") || str.includes("django") || str.includes("fastapi") || str.includes("flask")) return "python";
-  if (str.includes("golang") || str.includes("go-") || str.includes("/go:")) return "go";
+  if (
+    str.includes("python") ||
+    str.includes("django") ||
+    str.includes("fastapi") ||
+    str.includes("flask")
+  )
+    return "python";
+  if (str.includes("golang") || str.includes("go-") || str.includes("/go:"))
+    return "go";
   if (str.includes("rust") || str.includes("actix")) return "rust";
-  if (str.includes("php") || str.includes("laravel") || str.includes("wordpress")) return "php";
-  if (str.includes("java") || str.includes("spring") || str.includes("openjdk")) return "java";
-  if (str.includes("elastic") || str.includes("opensearch")) return "elasticsearch";
+  if (
+    str.includes("php") ||
+    str.includes("laravel") ||
+    str.includes("wordpress")
+  )
+    return "php";
+  if (str.includes("java") || str.includes("spring") || str.includes("openjdk"))
+    return "java";
+  if (str.includes("elastic") || str.includes("opensearch"))
+    return "elasticsearch";
   if (str.includes("kafka")) return "kafka";
   if (str.includes("minio") || str.includes("s3")) return "minio";
-  if (str.includes("traefik") || str.includes("caddy") || str.includes("envoy") || str.includes("haproxy")) return "traefik";
+  if (
+    str.includes("traefik") ||
+    str.includes("caddy") ||
+    str.includes("envoy") ||
+    str.includes("haproxy")
+  )
+    return "traefik";
   if (str.includes("pdf") || str.includes("stirling")) return "pdf";
   if (str.includes("alpine")) return "alpine";
   if (str.includes("docker")) return "docker";
@@ -41,7 +73,11 @@ export function detectTech(image = "", name = ""): string {
   return "generic";
 }
 
-export function getTechBadgeInfo(image = "", name = "", role = ""): {
+export function getTechBadgeInfo(
+  image = "",
+  name = "",
+  role = "",
+): {
   label: string;
   badgeStyle: string;
 } {
@@ -49,49 +85,113 @@ export function getTechBadgeInfo(image = "", name = "", role = ""): {
 
   switch (tech) {
     case "redis":
-      return { label: "REDIS", badgeStyle: "bg-red-500/15 text-red-400 border-red-500/30" };
+      return {
+        label: "REDIS",
+        badgeStyle: "bg-red-500/15 text-red-400 border-red-500/30",
+      };
     case "postgres":
-      return { label: "POSTGRES", badgeStyle: "bg-sky-500/15 text-sky-400 border-sky-500/30" };
+      return {
+        label: "POSTGRES",
+        badgeStyle: "bg-sky-500/15 text-sky-400 border-sky-500/30",
+      };
     case "node":
-      return { label: "NODE.JS", badgeStyle: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" };
+      return {
+        label: "NODE.JS",
+        badgeStyle: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+      };
     case "nginx":
-      return { label: "NGINX", badgeStyle: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" };
+      return {
+        label: "NGINX",
+        badgeStyle: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+      };
     case "mongo":
-      return { label: "MONGODB", badgeStyle: "bg-green-500/15 text-green-400 border-green-500/30" };
+      return {
+        label: "MONGODB",
+        badgeStyle: "bg-green-500/15 text-green-400 border-green-500/30",
+      };
     case "mysql":
-      return { label: "MYSQL", badgeStyle: "bg-amber-500/15 text-amber-400 border-amber-500/30" };
+      return {
+        label: "MYSQL",
+        badgeStyle: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+      };
     case "rabbitmq":
-      return { label: "RABBITMQ", badgeStyle: "bg-orange-500/15 text-orange-400 border-orange-500/30" };
+      return {
+        label: "RABBITMQ",
+        badgeStyle: "bg-orange-500/15 text-orange-400 border-orange-500/30",
+      };
     case "python":
-      return { label: "PYTHON", badgeStyle: "bg-blue-500/15 text-blue-400 border-blue-500/30" };
+      return {
+        label: "PYTHON",
+        badgeStyle: "bg-blue-500/15 text-blue-400 border-blue-500/30",
+      };
     case "go":
-      return { label: "GO", badgeStyle: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30" };
+      return {
+        label: "GO",
+        badgeStyle: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
+      };
     case "php":
-      return { label: "PHP", badgeStyle: "bg-indigo-500/15 text-indigo-400 border-indigo-500/30" };
+      return {
+        label: "PHP",
+        badgeStyle: "bg-indigo-500/15 text-indigo-400 border-indigo-500/30",
+      };
     case "java":
-      return { label: "JAVA", badgeStyle: "bg-orange-500/15 text-orange-400 border-orange-500/30" };
+      return {
+        label: "JAVA",
+        badgeStyle: "bg-orange-500/15 text-orange-400 border-orange-500/30",
+      };
     case "elasticsearch":
-      return { label: "ELASTIC", badgeStyle: "bg-teal-500/15 text-teal-400 border-teal-500/30" };
+      return {
+        label: "ELASTIC",
+        badgeStyle: "bg-teal-500/15 text-teal-400 border-teal-500/30",
+      };
     case "kafka":
-      return { label: "KAFKA", badgeStyle: "bg-purple-500/15 text-purple-400 border-purple-500/30" };
+      return {
+        label: "KAFKA",
+        badgeStyle: "bg-purple-500/15 text-purple-400 border-purple-500/30",
+      };
     case "minio":
-      return { label: "MINIO", badgeStyle: "bg-rose-500/15 text-rose-400 border-rose-500/30" };
+      return {
+        label: "MINIO",
+        badgeStyle: "bg-rose-500/15 text-rose-400 border-rose-500/30",
+      };
     case "traefik":
-      return { label: "GATEWAY", badgeStyle: "bg-sky-500/15 text-sky-400 border-sky-500/30" };
+      return {
+        label: "GATEWAY",
+        badgeStyle: "bg-sky-500/15 text-sky-400 border-sky-500/30",
+      };
     default:
       switch (role) {
         case "gateway":
-          return { label: "GATEWAY", badgeStyle: "bg-sky-500/15 text-sky-400 border-sky-500/30" };
+          return {
+            label: "GATEWAY",
+            badgeStyle: "bg-sky-500/15 text-sky-400 border-sky-500/30",
+          };
         case "frontend":
-          return { label: "FRONTEND", badgeStyle: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" };
+          return {
+            label: "FRONTEND",
+            badgeStyle:
+              "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+          };
         case "backend":
-          return { label: "BACKEND", badgeStyle: "bg-indigo-500/15 text-indigo-400 border-indigo-500/30" };
+          return {
+            label: "BACKEND",
+            badgeStyle: "bg-indigo-500/15 text-indigo-400 border-indigo-500/30",
+          };
         case "database":
-          return { label: "DATABASE", badgeStyle: "bg-amber-500/15 text-amber-400 border-amber-500/30" };
+          return {
+            label: "DATABASE",
+            badgeStyle: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+          };
         case "cache":
-          return { label: "CACHE", badgeStyle: "bg-rose-500/15 text-rose-400 border-rose-500/30" };
+          return {
+            label: "CACHE",
+            badgeStyle: "bg-rose-500/15 text-rose-400 border-rose-500/30",
+          };
         default:
-          return { label: role ? role.toUpperCase() : "SERVICE", badgeStyle: "bg-primary/15 text-primary border-primary/30" };
+          return {
+            label: role ? role.toUpperCase() : "SERVICE",
+            badgeStyle: "bg-primary/15 text-primary border-primary/30",
+          };
       }
   }
 }
@@ -119,7 +219,6 @@ export const TechIcon: React.FC<TechIconProps> = ({
           fill="none"
           className={`${className} shrink-0 drop-shadow-[0_0_6px_rgba(239,68,68,0.4)]`}
         >
-
           <path
             d="M12 2L2 7l10 5 10-5-10-5z"
             fill="#EF4444"
@@ -143,7 +242,6 @@ export const TechIcon: React.FC<TechIconProps> = ({
           fill="none"
           className={`${className} shrink-0 drop-shadow-[0_0_6px_rgba(56,189,248,0.4)]`}
         >
-
           <path
             fillRule="evenodd"
             clipRule="evenodd"
@@ -160,7 +258,6 @@ export const TechIcon: React.FC<TechIconProps> = ({
           fill="none"
           className={`${className} shrink-0 drop-shadow-[0_0_6px_rgba(34,197,94,0.4)]`}
         >
-
           <path
             d="M12 2l9 5.2v10.4L12 23l-9-5.4V7.2L12 2z"
             fill="#22C55E"
@@ -186,7 +283,6 @@ export const TechIcon: React.FC<TechIconProps> = ({
           fill="none"
           className={`${className} shrink-0 drop-shadow-[0_0_6px_rgba(16,185,129,0.4)]`}
         >
-
           <path
             d="M12 2l8.5 4.9v9.8L12 21.6 3.5 16.7V6.9L12 2z"
             fill="#10B981"
@@ -209,7 +305,6 @@ export const TechIcon: React.FC<TechIconProps> = ({
           fill="none"
           className={`${className} shrink-0 drop-shadow-[0_0_6px_rgba(16,185,129,0.4)]`}
         >
-
           <path
             d="M12 2C9 5 6 9 6 13.5c0 4 3 6.5 6 8.5 3-2 6-4.5 6-8.5C18 9 15 5 12 2z"
             fill="#10B981"
@@ -231,7 +326,6 @@ export const TechIcon: React.FC<TechIconProps> = ({
           fill="none"
           className={`${className} shrink-0 drop-shadow-[0_0_6px_rgba(245,158,11,0.4)]`}
         >
-
           <path
             d="M3 17c3-2 6-2 9 0 3 2 6 2 9 0"
             stroke="#38BDF8"
@@ -256,7 +350,6 @@ export const TechIcon: React.FC<TechIconProps> = ({
           fill="none"
           className={`${className} shrink-0 drop-shadow-[0_0_6px_rgba(249,115,22,0.4)]`}
         >
-
           <path
             d="M19 17c0 2-2 3.5-5 3.5H9c-3 0-5-1.5-5-3.5 0-3 3-5 5-5 .5-1.5 1-4.5 1.5-7 1 0 2 1.5 2 3.5 1-1.5 2-3 3-3 .5 2 .5 5 0 7 2 0 3.5 2 3.5 4.5z"
             fill="#F97316"
@@ -272,7 +365,6 @@ export const TechIcon: React.FC<TechIconProps> = ({
           fill="none"
           className={`${className} shrink-0 drop-shadow-[0_0_6px_rgba(59,130,246,0.4)]`}
         >
-
           <path
             d="M12 2C8 2 7 3 7 5v2h5v1H5C3 8 2 9 2 12s1 4 4 4h2v-2c0-2 1-3 3-3h5V9c0-2-1-3-4-3V2h2z"
             fill="#3B82F6"
@@ -293,7 +385,6 @@ export const TechIcon: React.FC<TechIconProps> = ({
           fill="none"
           className={`${className} shrink-0 drop-shadow-[0_0_6px_rgba(6,182,212,0.4)]`}
         >
-
           <path
             d="M3 12c0-3 2-6 6-6 3 0 5 1.5 5.5 3h-3c-.5-.5-1.5-1-2.5-1-2 0-3.5 1.5-3.5 4s1.5 4 3.5 4c2 0 3-1 3-2.5H9v-2h6v5c-1.5 1-3.5 1.5-6 1.5-4 0-6-3-6-6z"
             fill="#06B6D4"
@@ -309,9 +400,28 @@ export const TechIcon: React.FC<TechIconProps> = ({
           fill="none"
           className={`${className} shrink-0 drop-shadow-[0_0_6px_rgba(129,140,248,0.4)]`}
         >
-          <ellipse cx="12" cy="12" rx="10" ry="7" fill="#6366F1" fillOpacity="0.25" stroke="#6366F1" strokeWidth="2" />
-          <path d="M7 10h2c1 0 1.5.5 1.5 1.5S10 13 9 13H7v3M7 13h2" stroke="#818CF8" strokeWidth="1.8" strokeLinecap="round" />
-          <path d="M12 10v6M12 13h2c1 0 1.5-.5 1.5-1.5s-.5-1.5-1.5-1.5h-2" stroke="#818CF8" strokeWidth="1.8" strokeLinecap="round" />
+          <ellipse
+            cx="12"
+            cy="12"
+            rx="10"
+            ry="7"
+            fill="#6366F1"
+            fillOpacity="0.25"
+            stroke="#6366F1"
+            strokeWidth="2"
+          />
+          <path
+            d="M7 10h2c1 0 1.5.5 1.5 1.5S10 13 9 13H7v3M7 13h2"
+            stroke="#818CF8"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M12 10v6M12 13h2c1 0 1.5-.5 1.5-1.5s-.5-1.5-1.5-1.5h-2"
+            stroke="#818CF8"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
         </svg>
       );
 
@@ -322,10 +432,22 @@ export const TechIcon: React.FC<TechIconProps> = ({
           fill="none"
           className={`${className} shrink-0 drop-shadow-[0_0_6px_rgba(249,115,22,0.4)]`}
         >
-
-          <path d="M4 10h12v6a4 4 0 01-4 4H8a4 4 0 01-4-4v-6z" stroke="#F97316" strokeWidth="2" />
-          <path d="M16 11h2a2 2 0 012 2v1a2 2 0 01-2 2h-2" stroke="#F97316" strokeWidth="1.8" />
-          <path d="M7 5c0 1.5 1 2 1 3M11 4c0 1.5 1 2 1 3" stroke="#FB923C" strokeWidth="1.5" strokeLinecap="round" />
+          <path
+            d="M4 10h12v6a4 4 0 01-4 4H8a4 4 0 01-4-4v-6z"
+            stroke="#F97316"
+            strokeWidth="2"
+          />
+          <path
+            d="M16 11h2a2 2 0 012 2v1a2 2 0 01-2 2h-2"
+            stroke="#F97316"
+            strokeWidth="1.8"
+          />
+          <path
+            d="M7 5c0 1.5 1 2 1 3M11 4c0 1.5 1 2 1 3"
+            stroke="#FB923C"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
         </svg>
       );
 
@@ -336,7 +458,14 @@ export const TechIcon: React.FC<TechIconProps> = ({
           fill="none"
           className={`${className} shrink-0 drop-shadow-[0_0_6px_rgba(20,184,166,0.4)]`}
         >
-          <circle cx="12" cy="12" r="8" stroke="#14B8A6" strokeWidth="2" strokeDasharray="4 2" />
+          <circle
+            cx="12"
+            cy="12"
+            r="8"
+            stroke="#14B8A6"
+            strokeWidth="2"
+            strokeDasharray="4 2"
+          />
           <circle cx="12" cy="12" r="3" fill="#14B8A6" />
         </svg>
       );
@@ -362,7 +491,11 @@ export const TechIcon: React.FC<TechIconProps> = ({
           fill="none"
           className={`${className} shrink-0 drop-shadow-[0_0_6px_rgba(244,63,94,0.4)]`}
         >
-          <path d="M3 16l9-12 9 12-9 4-9-4z" fill="#F43F5E" fillOpacity="0.85" />
+          <path
+            d="M3 16l9-12 9 12-9 4-9-4z"
+            fill="#F43F5E"
+            fillOpacity="0.85"
+          />
           <path d="M12 4v16" stroke="#FFFFFF" strokeWidth="1.5" />
         </svg>
       );
@@ -374,13 +507,27 @@ export const TechIcon: React.FC<TechIconProps> = ({
           fill="none"
           className={`${className} shrink-0 drop-shadow-[0_0_6px_rgba(239,68,68,0.4)]`}
         >
-          <rect x="4" y="3" width="16" height="18" rx="2" fill="#EF4444" fillOpacity="0.2" stroke="#EF4444" strokeWidth="2" />
-          <path d="M8 12h8M8 16h5M8 8h3" stroke="#EF4444" strokeWidth="1.8" strokeLinecap="round" />
+          <rect
+            x="4"
+            y="3"
+            width="16"
+            height="18"
+            rx="2"
+            fill="#EF4444"
+            fillOpacity="0.2"
+            stroke="#EF4444"
+            strokeWidth="2"
+          />
+          <path
+            d="M8 12h8M8 16h5M8 8h3"
+            stroke="#EF4444"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
         </svg>
       );
 
     default:
-
       switch (role) {
         case "gateway":
           return <Globe className={`${className} text-sky-400`} />;

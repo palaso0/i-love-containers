@@ -6,7 +6,9 @@ interface DockerDisconnectedProps {
   icon?: React.ComponentType<{ className?: string }>;
 }
 
-export const DockerDisconnected: React.FC<DockerDisconnectedProps> = ({ icon: Icon = Unplug }) => {
+export const DockerDisconnected: React.FC<DockerDisconnectedProps> = ({
+  icon: Icon = Unplug,
+}) => {
   const { t } = useAppStore();
 
   return (

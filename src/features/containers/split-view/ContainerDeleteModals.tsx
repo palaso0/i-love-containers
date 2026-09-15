@@ -12,12 +12,18 @@ interface ContainerDeleteModalsProps {
   containers: ContainerDetail[];
   composeProjects: ComposeProject[];
   setContainerToDelete: (c: ContainerDetail | null) => void;
-  setStackToDelete: (s: { name: string; containers: ContainerDetail[] } | null) => void;
+  setStackToDelete: (
+    s: { name: string; containers: ContainerDetail[] } | null,
+  ) => void;
   setBulkToDelete: (b: string[] | null) => void;
   setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
   setHiddenStacks: React.Dispatch<React.SetStateAction<Set<string>>>;
   removeContainer: (id: string) => Promise<void>;
-  removeComposeProject: (projectName: string, workingDir?: string, configFile?: string) => Promise<void>;
+  removeComposeProject: (
+    projectName: string,
+    workingDir?: string,
+    configFile?: string,
+  ) => Promise<void>;
   refreshData: () => Promise<void>;
 }
 
@@ -52,7 +58,9 @@ export const ContainerDeleteModals: React.FC<ContainerDeleteModalsProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">{t.containers.removeConfirmTitle}</h3>
+              <h3 className="text-sm font-semibold text-foreground">
+                {t.containers.removeConfirmTitle}
+              </h3>
               <button
                 type="button"
                 onClick={() => setContainerToDelete(null)}
@@ -63,8 +71,10 @@ export const ContainerDeleteModals: React.FC<ContainerDeleteModalsProps> = ({
             </div>
             <p className="text-xs text-muted-foreground font-sans leading-relaxed">
               {t.containers.removeConfirmDesc}{" "}
-              <span className="font-mono text-status-danger font-medium">{containerToDelete.name}</span>?{" "}
-              {t.containers.cannotBeUndone}
+              <span className="font-mono text-status-danger font-medium">
+                {containerToDelete.name}
+              </span>
+              ? {t.containers.cannotBeUndone}
             </p>
             <div className="flex items-center justify-end space-x-2.5 pt-2">
               <button
@@ -83,7 +93,9 @@ export const ContainerDeleteModals: React.FC<ContainerDeleteModalsProps> = ({
                 }}
                 className="px-3 py-1 rounded-md text-xs font-medium bg-status-danger hover:bg-status-danger/90 text-white shadow-xs transition-opacity cursor-pointer flex items-center space-x-1.5"
               >
-                {isActionInProgress && <RotateCw className="w-3 h-3 animate-spin" />}
+                {isActionInProgress && (
+                  <RotateCw className="w-3 h-3 animate-spin" />
+                )}
                 <span>{t.containers.remove}</span>
               </button>
             </div>
@@ -104,7 +116,8 @@ export const ContainerDeleteModals: React.FC<ContainerDeleteModalsProps> = ({
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-foreground">
                 {stackToDelete.containers.length > 0
-                  ? t.containers.removeStackContainersTitle || t.containers.removeStackConfirmTitle
+                  ? t.containers.removeStackContainersTitle ||
+                    t.containers.removeStackConfirmTitle
                   : t.containers.removeStackConfirmTitle}
               </h3>
               <button
@@ -118,16 +131,21 @@ export const ContainerDeleteModals: React.FC<ContainerDeleteModalsProps> = ({
             <p className="text-xs text-muted-foreground font-sans leading-relaxed">
               {stackToDelete.containers.length > 0 ? (
                 <>
-                  {(t.containers.removeStackContainersDesc || t.containers.removeConfirmDesc)}{" "}
-                  <span className="font-mono text-status-danger font-medium">{stackToDelete.name}</span>{" "}
+                  {t.containers.removeStackContainersDesc ||
+                    t.containers.removeConfirmDesc}{" "}
+                  <span className="font-mono text-status-danger font-medium">
+                    {stackToDelete.name}
+                  </span>{" "}
                   ({stackToDelete.containers.length} {t.containers.active})?{" "}
                   {t.containers.removeStackContainersNote}
                 </>
               ) : (
                 <>
                   {t.containers.removeStackConfirmDesc}{" "}
-                  <span className="font-mono text-status-danger font-medium">{stackToDelete.name}</span>?{" "}
-                  {t.containers.cannotBeUndone}
+                  <span className="font-mono text-status-danger font-medium">
+                    {stackToDelete.name}
+                  </span>
+                  ? {t.containers.cannotBeUndone}
                 </>
               )}
             </p>
@@ -144,7 +162,7 @@ export const ContainerDeleteModals: React.FC<ContainerDeleteModalsProps> = ({
                 onClick={async () => {
                   const stackNameLower = stackToDelete.name.toLowerCase();
                   const proj = composeProjects.find(
-                    (p) => p.name.toLowerCase() === stackNameLower
+                    (p) => p.name.toLowerCase() === stackNameLower,
                   );
 
                   if (stackToDelete.containers.length > 0) {
@@ -155,14 +173,18 @@ export const ContainerDeleteModals: React.FC<ContainerDeleteModalsProps> = ({
                         try {
                           localStorage.setItem(
                             "ilc_hidden_container_stacks",
-                            JSON.stringify(Array.from(next))
+                            JSON.stringify(Array.from(next)),
                           );
                         } catch {}
                         return next;
                       }
                       return prev;
                     });
-                    await removeComposeProject(stackToDelete.name, proj?.workingDir, proj?.configFile);
+                    await removeComposeProject(
+                      stackToDelete.name,
+                      proj?.workingDir,
+                      proj?.configFile,
+                    );
                   } else {
                     setHiddenStacks((prev) => {
                       const next = new Set(prev);
@@ -170,7 +192,7 @@ export const ContainerDeleteModals: React.FC<ContainerDeleteModalsProps> = ({
                       try {
                         localStorage.setItem(
                           "ilc_hidden_container_stacks",
-                          JSON.stringify(Array.from(next))
+                          JSON.stringify(Array.from(next)),
                         );
                       } catch {}
                       return next;
@@ -181,7 +203,9 @@ export const ContainerDeleteModals: React.FC<ContainerDeleteModalsProps> = ({
                 }}
                 className="px-3 py-1 rounded-md text-xs font-medium bg-status-danger hover:bg-status-danger/90 text-white shadow-xs transition-opacity cursor-pointer flex items-center space-x-1.5"
               >
-                {isActionInProgress && <RotateCw className="w-3 h-3 animate-spin" />}
+                {isActionInProgress && (
+                  <RotateCw className="w-3 h-3 animate-spin" />
+                )}
                 <span>{t.containers.remove}</span>
               </button>
             </div>
@@ -200,7 +224,10 @@ export const ContainerDeleteModals: React.FC<ContainerDeleteModalsProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">{t.containers.removeBulkConfirmTitle || t.containers.removeConfirmTitle}</h3>
+              <h3 className="text-sm font-semibold text-foreground">
+                {t.containers.removeBulkConfirmTitle ||
+                  t.containers.removeConfirmTitle}
+              </h3>
               <button
                 type="button"
                 onClick={() => setBulkToDelete(null)}
@@ -210,18 +237,26 @@ export const ContainerDeleteModals: React.FC<ContainerDeleteModalsProps> = ({
               </button>
             </div>
             <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-              {(t.containers.removeBulkConfirmDesc || "¿Deseas eliminar permanentemente los contenedores seleccionados?")}{" "}
+              {t.containers.removeBulkConfirmDesc ||
+                "¿Deseas eliminar permanentemente los contenedores seleccionados?"}{" "}
               {t.containers.cannotBeUndone}
             </p>
             <div className="max-h-36 overflow-y-auto space-y-1 p-2 bg-surface/50 rounded-lg border border-border/50 text-2xs font-mono">
               {bulkToDelete.map((id) => {
                 const c = containers.find((item) => item.id === id);
                 return (
-                  <div key={id} className="text-muted-foreground truncate flex items-center space-x-1.5">
+                  <div
+                    key={id}
+                    className="text-muted-foreground truncate flex items-center space-x-1.5"
+                  >
                     <span className="text-status-danger">•</span>
-                    <span className="text-foreground font-medium">{c?.name || id.slice(0, 12)}</span>
+                    <span className="text-foreground font-medium">
+                      {c?.name || id.slice(0, 12)}
+                    </span>
                     {c?.composeProject && (
-                      <span className="text-muted-foreground/60 text-[10px]">({c.composeProject})</span>
+                      <span className="text-muted-foreground/60 text-[10px]">
+                        ({c.composeProject})
+                      </span>
                     )}
                   </div>
                 );
@@ -251,7 +286,9 @@ export const ContainerDeleteModals: React.FC<ContainerDeleteModalsProps> = ({
                 }}
                 className="px-3 py-1 rounded-md text-xs font-medium bg-status-danger hover:bg-status-danger/90 text-white shadow-xs transition-opacity cursor-pointer flex items-center space-x-1.5"
               >
-                {isBulkOperating && <RotateCw className="w-3 h-3 animate-spin" />}
+                {isBulkOperating && (
+                  <RotateCw className="w-3 h-3 animate-spin" />
+                )}
                 <span>{t.containers.remove}</span>
               </button>
             </div>

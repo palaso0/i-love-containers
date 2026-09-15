@@ -64,7 +64,11 @@ export const ContainerNotRunning: React.FC<ContainerNotRunningProps> = ({
 
           {(containerName || featureName) && (
             <div className="pt-2 text-2xs font-mono text-muted-foreground/60">
-              {containerName && <span className="font-medium text-muted-foreground">{containerName}</span>}
+              {containerName && (
+                <span className="font-medium text-muted-foreground">
+                  {containerName}
+                </span>
+              )}
               {containerName && featureName && <span> • </span>}
               {featureName && <span className="capitalize">{featureName}</span>}
             </div>

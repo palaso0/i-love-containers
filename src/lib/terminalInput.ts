@@ -1,5 +1,8 @@
 import { Terminal as XTerm } from "@xterm/xterm";
-import { formatCompletionCandidates, CompletionResult } from "@/lib/terminalCompletion";
+import {
+  formatCompletionCandidates,
+  CompletionResult,
+} from "@/lib/terminalCompletion";
 
 export function getPrevWordIndex(buffer: string, cursorPos: number): number {
   if (cursorPos <= 0) return 0;
@@ -33,7 +36,10 @@ export interface TerminalControllerOptions {
   term: XTerm;
   getPrompt: () => string;
   onExecute: (command: string) => Promise<void>;
-  onComplete?: (buffer: string, cursorPos: number) => Promise<CompletionResult | null>;
+  onComplete?: (
+    buffer: string,
+    cursorPos: number,
+  ) => Promise<CompletionResult | null>;
   initialHistory?: string[];
 }
 
@@ -74,7 +80,6 @@ export function setupTerminalInput({
   };
 
   const handleNavKey = (event: KeyboardEvent): boolean => {
-
     if ((event.metaKey && event.key === "ArrowLeft") || event.key === "Home") {
       cursorPos = 0;
       redraw();
@@ -99,7 +104,12 @@ export function setupTerminalInput({
       return true;
     }
 
-    if (event.key === "ArrowLeft" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+    if (
+      event.key === "ArrowLeft" &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      !event.altKey
+    ) {
       if (cursorPos > 0) {
         cursorPos--;
         redraw();
@@ -107,7 +117,12 @@ export function setupTerminalInput({
       return true;
     }
 
-    if (event.key === "ArrowRight" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+    if (
+      event.key === "ArrowRight" &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      !event.altKey
+    ) {
       if (cursorPos < buffer.length) {
         cursorPos++;
         redraw();
@@ -153,12 +168,18 @@ export function setupTerminalInput({
 
       if (result.replacement !== undefined) {
         buffer = result.replacement;
-        cursorPos = result.newCursorPos !== undefined ? result.newCursorPos : buffer.length;
+        cursorPos =
+          result.newCursorPos !== undefined
+            ? result.newCursorPos
+            : buffer.length;
       }
 
       if (result.candidates && result.candidates.length > 0) {
         term.writeln("");
-        const formattedLines = formatCompletionCandidates(result.candidates, term.cols);
+        const formattedLines = formatCompletionCandidates(
+          result.candidates,
+          term.cols,
+        );
         for (const line of formattedLines) {
           term.writeln(line);
         }

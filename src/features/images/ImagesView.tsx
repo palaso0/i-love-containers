@@ -1,5 +1,14 @@
 import React, { useState, useMemo } from "react";
-import { Layers, Trash2, Search, Check, Copy, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import {
+  Layers,
+  Trash2,
+  Search,
+  Check,
+  Copy,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { formatBytes } from "@/lib/utils";
 import { DockerImage } from "@/types";
@@ -39,7 +48,7 @@ export const ImagesView: React.FC = () => {
       (image) =>
         image.repository.toLowerCase().includes(searchQuery.toLowerCase()) ||
         image.tag.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        image.id.toLowerCase().includes(searchQuery.toLowerCase())
+        image.id.toLowerCase().includes(searchQuery.toLowerCase()),
     );
 
     return list.sort((a, b) => {
@@ -60,7 +69,7 @@ export const ImagesView: React.FC = () => {
           break;
         }
         case "status": {
-          comparison = (a.inUse === b.inUse) ? 0 : a.inUse ? -1 : 1;
+          comparison = a.inUse === b.inUse ? 0 : a.inUse ? -1 : 1;
           break;
         }
       }
@@ -89,7 +98,9 @@ export const ImagesView: React.FC = () => {
 
   const renderSortIndicator = (field: ImageSortField) => {
     if (sortField !== field) {
-      return <ArrowUpDown className="w-3 h-3 opacity-30 group-hover:opacity-70 transition-opacity" />;
+      return (
+        <ArrowUpDown className="w-3 h-3 opacity-30 group-hover:opacity-70 transition-opacity" />
+      );
     }
     return sortOrder === "asc" ? (
       <ArrowUp className="w-3 h-3 text-primary transition-transform" />
@@ -103,7 +114,9 @@ export const ImagesView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/70 pb-3">
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="text-base font-semibold text-foreground tracking-tight">{t.images.title}</h1>
+            <h1 className="text-base font-semibold text-foreground tracking-tight">
+              {t.images.title}
+            </h1>
             <span className="text-xs font-mono text-muted-foreground bg-surface-secondary/70 border border-border/60 px-2 py-0.5 rounded-full">
               {images.length}
             </span>
@@ -155,7 +168,9 @@ export const ImagesView: React.FC = () => {
             <span>{t.images.status}</span>
             {renderSortIndicator("status")}
           </button>
-          <div className="col-span-2 sm:col-span-2 text-right">{t.images.actions}</div>
+          <div className="col-span-2 sm:col-span-2 text-right">
+            {t.images.actions}
+          </div>
         </div>
 
         <div className="divide-y divide-border/60 text-xs">
@@ -178,7 +193,9 @@ export const ImagesView: React.FC = () => {
               </div>
 
               <div className="col-span-3 text-2xs font-mono text-muted-foreground flex items-center space-x-1">
-                <span className="truncate">{image.id.replace("sha256:", "").substring(0, 12)}</span>
+                <span className="truncate">
+                  {image.id.replace("sha256:", "").substring(0, 12)}
+                </span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -231,7 +248,9 @@ export const ImagesView: React.FC = () => {
       {imageToDelete && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-100">
           <div className="bg-popover border border-popover-border rounded-xl p-5 max-w-sm w-full space-y-4 shadow-2xl shadow-black/70 animate-in zoom-in-95 duration-100">
-            <h3 className="text-sm font-semibold text-foreground">{t.images.removeTitle}</h3>
+            <h3 className="text-sm font-semibold text-foreground">
+              {t.images.removeTitle}
+            </h3>
             <p className="text-xs text-muted-foreground font-sans leading-relaxed">
               {t.images.removeDesc}{" "}
               <span className="font-mono text-sky-500 font-medium">

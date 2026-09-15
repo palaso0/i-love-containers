@@ -48,7 +48,9 @@ export const ComposeYamlViewer: React.FC<ComposeYamlViewerProps> = ({
   const [viewerMode, setViewerMode] = useState<"form" | "code">("code");
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
-  const [customConfig, setCustomConfig] = useState(() => getCustomComposeConfig(projectName));
+  const [customConfig, setCustomConfig] = useState(() =>
+    getCustomComposeConfig(projectName),
+  );
   const [copied, setCopied] = useState(false);
   const [isEditingRaw, setIsEditingRaw] = useState(false);
   const [editedYaml, setEditedYaml] = useState(yamlContent);
@@ -126,7 +128,11 @@ export const ComposeYamlViewer: React.FC<ComposeYamlViewerProps> = ({
       return (
         <span>
           <span className="text-muted-foreground">{indent}- </span>
-          <span className={isDark ? "text-emerald-400" : "text-emerald-700 font-medium"}>
+          <span
+            className={
+              isDark ? "text-emerald-400" : "text-emerald-700 font-medium"
+            }
+          >
             {value}
           </span>
         </span>
@@ -138,10 +144,18 @@ export const ComposeYamlViewer: React.FC<ComposeYamlViewerProps> = ({
       const val = line.slice(colonIdx + 1);
       return (
         <span>
-          <span className={isDark ? "text-sky-400 font-medium" : "text-sky-700 font-semibold"}>
+          <span
+            className={
+              isDark ? "text-sky-400 font-medium" : "text-sky-700 font-semibold"
+            }
+          >
             {key}:
           </span>
-          <span className={isDark ? "text-amber-300" : "text-amber-800 font-medium"}>{val}</span>
+          <span
+            className={isDark ? "text-amber-300" : "text-amber-800 font-medium"}
+          >
+            {val}
+          </span>
         </span>
       );
     }
@@ -154,7 +168,8 @@ export const ComposeYamlViewer: React.FC<ComposeYamlViewerProps> = ({
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
             <span className="text-[10px] font-mono text-muted-foreground bg-surface-secondary px-2 py-0.5 rounded-full border border-border/60">
-              {parsedConfig.services.length} {t.compose.servicesCountLabel} • {lines.length} {t.compose.linesCount}
+              {parsedConfig.services.length} {t.compose.servicesCountLabel} •{" "}
+              {lines.length} {t.compose.linesCount}
             </span>
           </div>
 
@@ -199,11 +214,15 @@ export const ComposeYamlViewer: React.FC<ComposeYamlViewerProps> = ({
               {isDeploying ? (
                 <RotateCw className="w-3 h-3 animate-spin text-emerald-400" />
               ) : deploySuccess ? (
-                <span className="text-[11px] font-semibold text-emerald-400">✓ {t.compose.deployed}</span>
+                <span className="text-[11px] font-semibold text-emerald-400">
+                  ✓ {t.compose.deployed}
+                </span>
               ) : (
                 <>
                   <Play className="w-3 h-3 fill-current text-emerald-400" />
-                  <span className="font-sans font-medium">{t.compose.deployStack || "Deploy"}</span>
+                  <span className="font-sans font-medium">
+                    {t.compose.deployStack || "Deploy"}
+                  </span>
                 </>
               )}
             </button>
@@ -220,7 +239,9 @@ export const ComposeYamlViewer: React.FC<ComposeYamlViewerProps> = ({
             title={t.compose.customPlayTitle || "Custom Play"}
           >
             <Play className="w-3 h-3 fill-current text-purple-400" />
-            <span className="font-sans font-medium">{t.compose.customPlay || "Custom"}</span>
+            <span className="font-sans font-medium">
+              {t.compose.customPlay || "Custom"}
+            </span>
             {customConfig.useAsDefault && (
               <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_6px_rgba(168,85,247,0.8)]" />
             )}
@@ -257,7 +278,9 @@ export const ComposeYamlViewer: React.FC<ComposeYamlViewerProps> = ({
                     title={t.compose.editText}
                   >
                     <Edit3 className="w-3 h-3 text-primary" />
-                    <span className="hidden sm:inline">{t.compose.editText}</span>
+                    <span className="hidden sm:inline">
+                      {t.compose.editText}
+                    </span>
                   </button>
                   <button
                     onClick={handleResetToSample}
@@ -304,7 +327,10 @@ export const ComposeYamlViewer: React.FC<ComposeYamlViewerProps> = ({
                 <div className="flex min-h-full font-mono text-xs">
                   <div className=" text-right pr-4 text-muted-foreground/45 text-[11px] font-mono w-10 shrink-0 border-r border-border/40 mr-3 py-0.5">
                     {editedYaml.split("\n").map((_, idx) => (
-                      <div key={idx} className="leading-[21px] text-[11px] h-[21px]">
+                      <div
+                        key={idx}
+                        className="leading-[21px] text-[11px] h-[21px]"
+                      >
                         {idx + 1}
                       </div>
                     ))}
@@ -319,21 +345,29 @@ export const ComposeYamlViewer: React.FC<ComposeYamlViewerProps> = ({
                         const start = target.selectionStart;
                         const end = target.selectionEnd;
                         const val = target.value;
-                        setEditedYaml(val.substring(0, start) + "  " + val.substring(end));
+                        setEditedYaml(
+                          val.substring(0, start) + "  " + val.substring(end),
+                        );
                         setTimeout(() => {
-                          target.selectionStart = target.selectionEnd = start + 2;
+                          target.selectionStart = target.selectionEnd =
+                            start + 2;
                         }, 0);
                       }
                     }}
                     className="flex-1 bg-transparent text-foreground font-mono text-[12px] leading-[21px] focus:outline-none resize-none selection:bg-primary/30 py-0.5 whitespace-pre"
-                    style={{ minHeight: `${Math.max(480, editedYaml.split("\n").length * 21 + 40)}px` }}
+                    style={{
+                      minHeight: `${Math.max(480, editedYaml.split("\n").length * 21 + 40)}px`,
+                    }}
                     spellCheck={false}
                   />
                 </div>
               ) : (
                 <div className="table w-full border-collapse select-text">
                   {lines.map((line, idx) => (
-                    <div key={idx} className="table-row hover:bg-foreground/[0.04] transition-colors">
+                    <div
+                      key={idx}
+                      className="table-row hover:bg-foreground/[0.04] transition-colors"
+                    >
                       <span className="table-cell  text-right pr-4 text-muted-foreground/45 text-[11px] font-mono w-10">
                         {idx + 1}
                       </span>

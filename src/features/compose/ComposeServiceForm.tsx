@@ -36,7 +36,8 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
 }) => {
   const { t } = useAppStore();
 
-  const [draftConfig, setDraftConfig] = useState<ParsedComposeFile>(parsedConfig);
+  const [draftConfig, setDraftConfig] =
+    useState<ParsedComposeFile>(parsedConfig);
   const [hasChanges, setHasChanges] = useState(false);
   const [selectedServiceIndex, setSelectedServiceIndex] = useState(0);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -50,14 +51,18 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
   const services = draftConfig.services;
   const currentService = services[selectedServiceIndex] || services[0];
 
-  const updateCurrentService = (updater: (svc: ComposeServiceConfig) => void) => {
+  const updateCurrentService = (
+    updater: (svc: ComposeServiceConfig) => void,
+  ) => {
     const updatedServices = [...services];
     const original = updatedServices[selectedServiceIndex];
     const target: ComposeServiceConfig = {
       ...original,
       ports: [...(original.ports || [])],
       environment: [...(original.environment || [])],
-      customDirectives: (original.customDirectives || []).map((d) => ({ ...d })),
+      customDirectives: (original.customDirectives || []).map((d) => ({
+        ...d,
+      })),
       networks: [...(original.networks || [])],
       depends_on: [...(original.depends_on || [])],
       volumes: [...(original.volumes || [])],
@@ -85,7 +90,7 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
   };
 
   const handleAddService = () => {
-    let baseName = "new-service";
+    const baseName = "new-service";
     let counter = 1;
     while (services.some((s) => s.name === `${baseName}-${counter}`)) {
       counter++;
@@ -98,7 +103,10 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
       ports: [],
       environment: [],
       depends_on: [],
-      networks: draftConfig.availableNetworks.length > 0 ? [draftConfig.availableNetworks[0]] : [],
+      networks:
+        draftConfig.availableNetworks.length > 0
+          ? [draftConfig.availableNetworks[0]]
+          : [],
       volumes: [],
       customDirectives: [],
     };
@@ -115,10 +123,14 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
   const handleRemoveService = (index: number) => {
     if (services.length <= 1) return;
     const removedName = services[index].name;
-    const updated = services.filter((_, idx) => idx !== index).map((s) => ({
-      ...s,
-      depends_on: s.depends_on ? s.depends_on.filter((dep) => dep !== removedName) : [],
-    }));
+    const updated = services
+      .filter((_, idx) => idx !== index)
+      .map((s) => ({
+        ...s,
+        depends_on: s.depends_on
+          ? s.depends_on.filter((dep) => dep !== removedName)
+          : [],
+      }));
 
     setDraftConfig({
       ...draftConfig,
@@ -132,7 +144,10 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
     return (
       <div className="p-8 text-center text-muted-foreground">
         <Server className="w-8 h-8 mx-auto mb-2 opacity-50" />
-        <p>{t.compose.noServicesFound || "No services found in this Compose file."}</p>
+        <p>
+          {t.compose.noServicesFound ||
+            "No services found in this Compose file."}
+        </p>
         <button
           onClick={handleAddService}
           className="mt-3 px-3 py-1.5 bg-primary text-white text-xs rounded-lg shadow-xs hover:opacity-90"
@@ -145,7 +160,6 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
 
   return (
     <div className="flex-1 min-w-0 w-full flex flex-col md:flex-row h-full overflow-hidden bg-surface/80 backdrop-blur-xl border border-border/80 rounded-2xl shadow-mac-segment">
-
       <div className="w-full md:w-52 border-r border-border/70 flex flex-col bg-surface-secondary/40 shrink-0">
         <div className="p-3 border-b border-border/70 flex items-center justify-between">
           <span className="text-xs font-semibold text-foreground flex items-center gap-1.5 truncate">
@@ -178,8 +192,12 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
                 }`}
               >
                 <div className="flex items-center space-x-2 truncate min-w-0">
-                  <Box className={`w-3.5 h-3.5 shrink-0 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
-                  <span className="truncate font-mono text-2xs">{svc.name}</span>
+                  <Box
+                    className={`w-3.5 h-3.5 shrink-0 ${isSelected ? "text-primary" : "text-muted-foreground"}`}
+                  />
+                  <span className="truncate font-mono text-2xs">
+                    {svc.name}
+                  </span>
                 </div>
                 {svc.restart && (
                   <span className="text-[9px] font-mono text-muted-foreground/70 bg-surface-secondary px-1 rounded shrink-0 ml-1">
@@ -203,13 +221,13 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
       </div>
 
       <div className="flex-1 min-w-0 flex flex-col h-full overflow-y-auto overflow-x-hidden p-5 space-y-5 text-xs bg-background">
-
         {hasChanges && (
           <div className="sticky top-0 z-30 px-5 py-2.5 bg-amber-500/15 border-b border-amber-500/30 backdrop-blur-md flex flex-wrap items-center justify-between gap-2 shadow-xs animate-in fade-in duration-100">
             <div className="flex items-center space-x-2 text-xs">
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
               <span className="text-foreground font-medium">
-                {t.compose.hasUnsavedChanges || "There are unsaved changes in services"}
+                {t.compose.hasUnsavedChanges ||
+                  "There are unsaved changes in services"}
               </span>
             </div>
             <div className="flex items-center space-x-2">
@@ -236,7 +254,9 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
         {saveSuccess && (
           <div className="p-2.5 bg-emerald-500/15 border border-emerald-500/30 rounded-xl flex items-center space-x-2 text-emerald-600 dark:text-emerald-400 text-2xs font-medium animate-in fade-in duration-100">
             <Check className="w-3.5 h-3.5 shrink-0" />
-            <span>{t.compose.savedSuccess || "Changes saved to YAML and diagram!"}</span>
+            <span>
+              {t.compose.savedSuccess || "Changes saved to YAML and diagram!"}
+            </span>
           </div>
         )}
 
@@ -277,10 +297,15 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
               onClick={() => handleRemoveService(selectedServiceIndex)}
               disabled={services.length <= 1}
               className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-2xs font-medium text-status-danger hover:bg-status-danger/10 border border-status-danger/30 transition-colors disabled:opacity-40"
-              title={t.compose.deleteServiceTitle || "Delete this service from Compose"}
+              title={
+                t.compose.deleteServiceTitle ||
+                "Delete this service from Compose"
+              }
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{t.compose.deleteService || "Delete"}</span>
+              <span className="hidden sm:inline">
+                {t.compose.deleteService || "Delete"}
+              </span>
             </button>
           </div>
         </div>
@@ -293,7 +318,9 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
             <input
               type="text"
               value={currentService.name}
-              onChange={(e) => updateCurrentService((s) => (s.name = e.target.value))}
+              onChange={(e) =>
+                updateCurrentService((s) => (s.name = e.target.value))
+              }
               autoComplete="off"
               autoCorrect="off"
               autoCapitalize="off"
@@ -310,7 +337,9 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
             <input
               type="text"
               value={currentService.image || ""}
-              onChange={(e) => updateCurrentService((s) => (s.image = e.target.value))}
+              onChange={(e) =>
+                updateCurrentService((s) => (s.image = e.target.value))
+              }
               autoComplete="off"
               autoCorrect="off"
               autoCapitalize="off"
@@ -327,7 +356,11 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
             <input
               type="text"
               value={currentService.container_name || ""}
-              onChange={(e) => updateCurrentService((s) => (s.container_name = e.target.value || undefined))}
+              onChange={(e) =>
+                updateCurrentService(
+                  (s) => (s.container_name = e.target.value || undefined),
+                )
+              }
               autoComplete="off"
               autoCorrect="off"
               autoCapitalize="off"
@@ -345,7 +378,11 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
             <input
               type="text"
               value={currentService.command || ""}
-              onChange={(e) => updateCurrentService((s) => (s.command = e.target.value || undefined))}
+              onChange={(e) =>
+                updateCurrentService(
+                  (s) => (s.command = e.target.value || undefined),
+                )
+              }
               autoComplete="off"
               autoCorrect="off"
               autoCapitalize="off"
@@ -359,15 +396,18 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
         <div className="p-3.5 bg-surface-secondary/40 border border-border/70 rounded-xl space-y-3 min-w-0">
           <h4 className="text-2xs font-semibold text-foreground tracking-wide uppercase flex items-center gap-1.5">
             <Cpu className="w-3.5 h-3.5 text-sky-400" />
-            <span>{t.compose.runtimePolicies || "Runtime Policies & Platform"}</span>
+            <span>
+              {t.compose.runtimePolicies || "Runtime Policies & Platform"}
+            </span>
           </h4>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0">
-
             <div className="min-w-0">
               <label className="block text-2xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
                 <RotateCw className="w-3 h-3 text-emerald-400" />
-                <span>{t.compose.restartPolicy || "Restart Policy (`restart`)"}</span>
+                <span>
+                  {t.compose.restartPolicy || "Restart Policy (`restart`)"}
+                </span>
               </label>
               <select
                 value={currentService.restart || "no"}
@@ -379,29 +419,46 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
                 }
                 className="w-full px-3 py-1.5 text-xs font-mono bg-surface border border-border/70 rounded-lg text-foreground focus:outline-none focus:border-primary cursor-pointer shadow-xs min-w-0"
               >
-                <option value="always">{t.compose.restartAlways || "always (Always restart)"}</option>
-                <option value="unless-stopped">{t.compose.restartUnlessStopped || "unless-stopped (Unless stopped manually)"}</option>
-                <option value="on-failure">{t.compose.restartOnFailure || "on-failure (On errors only)"}</option>
-                <option value="no">{t.compose.restartNo || "no (Do not restart automatically)"}</option>
-                <option value="none">{t.compose.restartNone || "-- Not specified --"}</option>
+                <option value="always">
+                  {t.compose.restartAlways || "always (Always restart)"}
+                </option>
+                <option value="unless-stopped">
+                  {t.compose.restartUnlessStopped ||
+                    "unless-stopped (Unless stopped manually)"}
+                </option>
+                <option value="on-failure">
+                  {t.compose.restartOnFailure || "on-failure (On errors only)"}
+                </option>
+                <option value="no">
+                  {t.compose.restartNo || "no (Do not restart automatically)"}
+                </option>
+                <option value="none">
+                  {t.compose.restartNone || "-- Not specified --"}
+                </option>
               </select>
             </div>
 
             <div className="min-w-0 space-y-1.5">
               <label className="block text-2xs font-semibold text-muted-foreground flex items-center gap-1">
                 <Cpu className="w-3 h-3 text-sky-400" />
-                <span>{t.compose.platformArch || "Platform / Architecture (`platform`)"}</span>
+                <span>
+                  {t.compose.platformArch ||
+                    "Platform / Architecture (`platform`)"}
+                </span>
               </label>
 
               <select
                 value={
-                  ["linux/amd64", "linux/arm64", "linux/arm/v7", "linux/386"].includes(
-                    currentService.platform || ""
-                  )
+                  [
+                    "linux/amd64",
+                    "linux/arm64",
+                    "linux/arm/v7",
+                    "linux/386",
+                  ].includes(currentService.platform || "")
                     ? currentService.platform
                     : currentService.platform
-                    ? "custom"
-                    : "none"
+                      ? "custom"
+                      : "none"
                 }
                 onChange={(e) => {
                   const val = e.target.value;
@@ -413,23 +470,35 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
                 }}
                 className="w-full px-3 py-1.5 text-xs font-mono bg-surface border border-border/70 rounded-lg text-foreground focus:outline-none focus:border-primary cursor-pointer shadow-xs min-w-0"
               >
-                <option value="none">{t.compose.platformDefault || "-- Default / Native --"}</option>
+                <option value="none">
+                  {t.compose.platformDefault || "-- Default / Native --"}
+                </option>
                 <option value="linux/amd64">linux/amd64 (x86_64)</option>
-                <option value="linux/arm64">linux/arm64 (Apple Silicon / ARM)</option>
+                <option value="linux/arm64">
+                  linux/arm64 (Apple Silicon / ARM)
+                </option>
                 <option value="linux/arm/v7">linux/arm/v7</option>
                 <option value="linux/386">linux/386</option>
-                <option value="custom">{t.compose.platformCustom || "Custom..."}</option>
+                <option value="custom">
+                  {t.compose.platformCustom || "Custom..."}
+                </option>
               </select>
 
-              {(!["none", "linux/amd64", "linux/arm64", "linux/arm/v7", "linux/386"].includes(
-                currentService.platform || "none"
-              ) ||
+              {(![
+                "none",
+                "linux/amd64",
+                "linux/arm64",
+                "linux/arm/v7",
+                "linux/386",
+              ].includes(currentService.platform || "none") ||
                 currentService.platform === "custom") && (
                 <input
                   type="text"
                   value={currentService.platform || ""}
                   onChange={(e) =>
-                    updateCurrentService((s) => (s.platform = e.target.value || undefined))
+                    updateCurrentService(
+                      (s) => (s.platform = e.target.value || undefined),
+                    )
                   }
                   autoComplete="off"
                   autoCorrect="off"
@@ -466,7 +535,9 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
 
           <div className="space-y-1.5">
             {(!currentService.ports || currentService.ports.length === 0) && (
-              <p className="text-2xs text-muted-foreground italic">{t.compose.noPorts || "No exposed ports"}</p>
+              <p className="text-2xs text-muted-foreground italic">
+                {t.compose.noPorts || "No exposed ports"}
+              </p>
             )}
             {currentService.ports?.map((port, pIdx) => (
               <div key={pIdx} className="flex items-center space-x-2 min-w-0">
@@ -505,7 +576,9 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
           <div className="flex items-center justify-between">
             <label className="text-2xs font-semibold text-foreground tracking-wide uppercase flex items-center gap-1.5">
               <Terminal className="w-3.5 h-3.5 text-amber-400" />
-              <span>{t.compose.envVars || "Environment Variables (`environment`)"}</span>
+              <span>
+                {t.compose.envVars || "Environment Variables (`environment`)"}
+              </span>
             </label>
             <button
               type="button"
@@ -523,8 +596,11 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
           </div>
 
           <div className="space-y-1.5">
-            {(!currentService.environment || currentService.environment.length === 0) && (
-              <p className="text-2xs text-muted-foreground italic">{t.compose.noEnvVars || "No environment variables defined"}</p>
+            {(!currentService.environment ||
+              currentService.environment.length === 0) && (
+              <p className="text-2xs text-muted-foreground italic">
+                {t.compose.noEnvVars || "No environment variables defined"}
+              </p>
             )}
             {currentService.environment?.map((envStr, eIdx) => {
               const colonPos = envStr.indexOf("=");
@@ -538,7 +614,8 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
                     value={key}
                     onChange={(e) =>
                       updateCurrentService((s) => {
-                        if (s.environment) s.environment[eIdx] = `${e.target.value}=${val}`;
+                        if (s.environment)
+                          s.environment[eIdx] = `${e.target.value}=${val}`;
                       })
                     }
                     placeholder="KEY"
@@ -554,7 +631,8 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
                     value={val}
                     onChange={(e) =>
                       updateCurrentService((s) => {
-                        if (s.environment) s.environment[eIdx] = `${key}=${e.target.value}`;
+                        if (s.environment)
+                          s.environment[eIdx] = `${key}=${e.target.value}`;
                       })
                     }
                     placeholder="value"
@@ -585,7 +663,9 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
           <div className="flex items-center justify-between">
             <label className="text-2xs font-semibold text-foreground tracking-wide uppercase flex items-center gap-1.5">
               <Sliders className="w-3.5 h-3.5 text-primary" />
-              <span>{t.compose.customDirectivesTitle || "Additional Directives"}</span>
+              <span>
+                {t.compose.customDirectivesTitle || "Additional Directives"}
+              </span>
             </label>
             <button
               type="button"
@@ -603,9 +683,11 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
           </div>
 
           <div className="space-y-1.5 pt-0.5">
-            {(!currentService.customDirectives || currentService.customDirectives.length === 0) && (
+            {(!currentService.customDirectives ||
+              currentService.customDirectives.length === 0) && (
               <p className="text-2xs text-muted-foreground italic">
-                {t.compose.noCustomDirectives || "No additional directives added."}
+                {t.compose.noCustomDirectives ||
+                  "No additional directives added."}
               </p>
             )}
             {currentService.customDirectives?.map((directive, dIdx) => (
@@ -614,7 +696,8 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
                   value={directive.key}
                   onChange={(newKey) =>
                     updateCurrentService((s) => {
-                      if (s.customDirectives) s.customDirectives[dIdx].key = newKey;
+                      if (s.customDirectives)
+                        s.customDirectives[dIdx].key = newKey;
                     })
                   }
                   onSelectSuggestion={(selectedKey, defaultVal) => {
@@ -636,7 +719,8 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
                   value={directive.value}
                   onChange={(e) =>
                     updateCurrentService((s) => {
-                      if (s.customDirectives) s.customDirectives[dIdx].value = e.target.value;
+                      if (s.customDirectives)
+                        s.customDirectives[dIdx].value = e.target.value;
                     })
                   }
                   placeholder="value"
@@ -650,7 +734,8 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
                   type="button"
                   onClick={() =>
                     updateCurrentService((s) => {
-                      if (s.customDirectives) s.customDirectives.splice(dIdx, 1);
+                      if (s.customDirectives)
+                        s.customDirectives.splice(dIdx, 1);
                     })
                   }
                   className="p-1 rounded-md text-muted-foreground hover:text-status-danger transition-colors shrink-0"
@@ -663,7 +748,6 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
-
           <div className="p-3.5 bg-surface-secondary/40 border border-border/70 rounded-xl space-y-2 min-w-0">
             <label className="text-2xs font-semibold text-foreground tracking-wide uppercase flex items-center gap-1.5">
               <Globe className="w-3.5 h-3.5 text-purple-400" />
@@ -703,7 +787,9 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
           <div className="p-3.5 bg-surface-secondary/40 border border-border/70 rounded-xl space-y-2 min-w-0">
             <label className="text-2xs font-semibold text-foreground tracking-wide uppercase flex items-center gap-1.5">
               <Link className="w-3.5 h-3.5 text-emerald-400" />
-              <span>{t.compose.dependsOnTitle || "Dependencies (`depends_on`)"}</span>
+              <span>
+                {t.compose.dependsOnTitle || "Dependencies (`depends_on`)"}
+              </span>
             </label>
             <div className="flex flex-wrap gap-1.5">
               {services
@@ -718,7 +804,9 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
                         updateCurrentService((s) => {
                           s.depends_on = s.depends_on || [];
                           if (s.depends_on.includes(peer.name)) {
-                            s.depends_on = s.depends_on.filter((d) => d !== peer.name);
+                            s.depends_on = s.depends_on.filter(
+                              (d) => d !== peer.name,
+                            );
                           } else {
                             s.depends_on.push(peer.name);
                           }
@@ -743,7 +831,9 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
           <div className="flex items-center justify-between">
             <label className="text-2xs font-semibold text-foreground tracking-wide uppercase flex items-center gap-1.5">
               <HardDrive className="w-3.5 h-3.5 text-amber-500" />
-              <span>{t.compose.volumesTitle || "Mounted Volumes (`volumes`)"}</span>
+              <span>
+                {t.compose.volumesTitle || "Mounted Volumes (`volumes`)"}
+              </span>
             </label>
             <button
               type="button"
@@ -761,8 +851,11 @@ export const ComposeServiceForm: React.FC<ComposeServiceFormProps> = ({
           </div>
 
           <div className="space-y-1.5">
-            {(!currentService.volumes || currentService.volumes.length === 0) && (
-              <p className="text-2xs text-muted-foreground italic">{t.compose.noVolumes || "No volumes mounted"}</p>
+            {(!currentService.volumes ||
+              currentService.volumes.length === 0) && (
+              <p className="text-2xs text-muted-foreground italic">
+                {t.compose.noVolumes || "No volumes mounted"}
+              </p>
             )}
             {currentService.volumes?.map((vol, vIdx) => (
               <div key={vIdx} className="flex items-center space-x-2 min-w-0">

@@ -42,7 +42,9 @@ export const ContainerDetailView: React.FC = () => {
     return (
       <div className="flex-1 p-8 flex flex-col items-center justify-center text-center bg-background">
         <Box className="w-10 h-10 text-muted-foreground mb-3" />
-        <h2 className="text-xs font-semibold text-foreground">Container not found</h2>
+        <h2 className="text-xs font-semibold text-foreground">
+          Container not found
+        </h2>
         <button
           onClick={() => setSelectedContainerId(null)}
           className="mt-3 px-3 py-1.5 text-xs bg-surface-secondary rounded text-foreground hover:bg-surface-hover"
@@ -89,7 +91,11 @@ export const ContainerDetailView: React.FC = () => {
                     : "bg-status-stopped"
                 }`}
               />
-              <TechIcon image={container.image} name={container.name} className="w-4 h-4 shrink-0" />
+              <TechIcon
+                image={container.image}
+                name={container.name}
+                className="w-4 h-4 shrink-0"
+              />
               <h1 className="text-sm font-semibold text-foreground tracking-tight truncate">
                 {container.name}
               </h1>
@@ -146,7 +152,8 @@ export const ContainerDetailView: React.FC = () => {
           <button
             onClick={() => {
               const tabType = containerDetailTab;
-              const tabTitle = tabs.find((t) => t.id === tabType)?.label || tabType;
+              const tabTitle =
+                tabs.find((t) => t.id === tabType)?.label || tabType;
               openRealNativeWindow({
                 id: `${tabType}-${container.id}-${Date.now()}`,
                 title: `${container.name} — ${tabTitle}`,
@@ -159,7 +166,9 @@ export const ContainerDetailView: React.FC = () => {
             title="Pop out into real native OS window"
           >
             <AppWindow className="w-3 h-3 text-primary" />
-            <span>Pop out ({tabs.find((t) => t.id === containerDetailTab)?.label})</span>
+            <span>
+              Pop out ({tabs.find((t) => t.id === containerDetailTab)?.label})
+            </span>
           </button>
         </div>
       </div>
@@ -179,7 +188,9 @@ export const ContainerDetailView: React.FC = () => {
                     : "text-muted-foreground hover:text-foreground hover:bg-surface-hover"
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                <Icon
+                  className={`w-3.5 h-3.5 ${isActive ? "text-primary" : "text-muted-foreground"}`}
+                />
                 <span>{tab.label}</span>
               </button>
             );
@@ -188,26 +199,49 @@ export const ContainerDetailView: React.FC = () => {
       </div>
 
       <div className="pt-1">
-        <div className={containerDetailTab === "overview" || containerDetailTab === "inspect" ? "h-full w-full" : "hidden"}>
+        <div
+          className={
+            containerDetailTab === "overview" ||
+            containerDetailTab === "inspect"
+              ? "h-full w-full"
+              : "hidden"
+          }
+        >
           <OverviewTab container={container} />
         </div>
-        <div className={containerDetailTab === "stats" ? "h-full w-full" : "hidden"}>
+        <div
+          className={
+            containerDetailTab === "stats" ? "h-full w-full" : "hidden"
+          }
+        >
           <StatsTab
             containerId={container.id}
             containerState={container.state}
           />
         </div>
-        <div className={containerDetailTab === "logs" ? "h-full w-full" : "hidden"}>
+        <div
+          className={containerDetailTab === "logs" ? "h-full w-full" : "hidden"}
+        >
           <LogsTab containerId={container.id} />
         </div>
-        <div className={containerDetailTab === "terminal" ? "h-full w-full" : "hidden"}>
+        <div
+          className={
+            containerDetailTab === "terminal" ? "h-full w-full" : "hidden"
+          }
+        >
           <TerminalTab
             containerId={container.id}
             containerName={container.name}
             containerState={container.state}
           />
         </div>
-        <div className={containerDetailTab === "files" ? "h-[600px] border border-border/70 rounded-xl overflow-hidden flex flex-col" : "hidden"}>
+        <div
+          className={
+            containerDetailTab === "files"
+              ? "h-[600px] border border-border/70 rounded-xl overflow-hidden flex flex-col"
+              : "hidden"
+          }
+        >
           <FileManagerTab
             containerId={container.id}
             containerName={container.name}
@@ -219,11 +253,15 @@ export const ContainerDetailView: React.FC = () => {
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-100">
           <div className="bg-popover border border-popover-border rounded-xl p-5 max-w-sm w-full space-y-4 shadow-2xl shadow-black/70 animate-in zoom-in-95 duration-100">
-            <h3 className="text-sm font-semibold text-foreground">Remove Container?</h3>
+            <h3 className="text-sm font-semibold text-foreground">
+              Remove Container?
+            </h3>
             <p className="text-xs text-muted-foreground font-sans leading-relaxed">
               Are you sure you want to permanently remove container{" "}
-              <span className="font-mono text-status-danger font-medium">{container.name}</span>?
-              This action cannot be undone.
+              <span className="font-mono text-status-danger font-medium">
+                {container.name}
+              </span>
+              ? This action cannot be undone.
             </p>
             <div className="flex items-center justify-end space-x-2.5 pt-2">
               <button

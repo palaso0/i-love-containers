@@ -24,14 +24,21 @@ export const StandaloneFilesWindow: React.FC<StandaloneFilesWindowProps> = ({
           <span className="w-2 h-2 rounded-full bg-status-running shadow-[0_0_6px_rgba(48,209,88,0.5)]" />
           <Folder className="w-3.5 h-3.5 text-primary" />
           <span className="font-bold text-foreground">{containerName}</span>
-          <span className="text-muted-foreground">({containerId.substring(0, 12)})</span>
+          <span className="text-muted-foreground">
+            ({containerId.substring(0, 12)})
+          </span>
           <span className="text-muted-foreground/60">•</span>
-          <span className="text-muted-foreground">{t.containers.fileManager.title}</span>
+          <span className="text-muted-foreground">
+            {t.containers.fileManager.title}
+          </span>
         </div>
       </div>
 
       <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-        <FileManagerTab containerId={containerId} containerName={containerName} />
+        <FileManagerTab
+          containerId={containerId}
+          containerName={containerName}
+        />
       </div>
     </div>
   );

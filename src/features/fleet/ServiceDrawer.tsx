@@ -27,15 +27,16 @@ interface ServiceDrawerProps {
   onClose: () => void;
 }
 
-export const ServiceDrawer: React.FC<ServiceDrawerProps> = ({ container, onClose }) => {
-  const {
-    startContainer,
-    stopContainer,
-    restartContainer,
-    removeContainer,
-  } = useAppStore();
+export const ServiceDrawer: React.FC<ServiceDrawerProps> = ({
+  container,
+  onClose,
+}) => {
+  const { startContainer, stopContainer, restartContainer, removeContainer } =
+    useAppStore();
 
-  const [activeTab, setActiveTab] = useState<"logs" | "terminal" | "stats" | "info">("logs");
+  const [activeTab, setActiveTab] = useState<
+    "logs" | "terminal" | "stats" | "info"
+  >("logs");
   const [copiedPort, setCopiedPort] = useState<number | null>(null);
 
   const isRunning = container.state === "running";
@@ -97,26 +98,36 @@ export const ServiceDrawer: React.FC<ServiceDrawerProps> = ({ container, onClose
                   : "bg-status-stopped"
               }`}
             />
-            <TechIcon image={container.image} name={container.name} className="w-4 h-4 shrink-0" />
+            <TechIcon
+              image={container.image}
+              name={container.name}
+              className="w-4 h-4 shrink-0"
+            />
             <div className="flex items-baseline space-x-2 font-mono">
-              <span className="text-xs font-bold text-foreground">{container.name}</span>
-              <span className="text-2xs text-muted-foreground">{container.image}</span>
+              <span className="text-xs font-bold text-foreground">
+                {container.name}
+              </span>
+              <span className="text-2xs text-muted-foreground">
+                {container.image}
+              </span>
             </div>
 
-            {container.ports && container.ports.length > 0 && container.ports[0].publicPort && (
-              <button
-                onClick={() => handleCopyPort(container.ports[0].publicPort!)}
-                className="flex items-center space-x-1 px-2 py-0.5 rounded bg-surface border border-border text-2xs font-mono text-muted-foreground hover:text-foreground transition-colors"
-                title="Click to copy URL"
-              >
-                <span>:{container.ports[0].publicPort}</span>
-                {copiedPort === container.ports[0].publicPort ? (
-                  <Check className="w-2.5 h-2.5 text-status-running" />
-                ) : (
-                  <ExternalLink className="w-2.5 h-2.5" />
-                )}
-              </button>
-            )}
+            {container.ports &&
+              container.ports.length > 0 &&
+              container.ports[0].publicPort && (
+                <button
+                  onClick={() => handleCopyPort(container.ports[0].publicPort!)}
+                  className="flex items-center space-x-1 px-2 py-0.5 rounded bg-surface border border-border text-2xs font-mono text-muted-foreground hover:text-foreground transition-colors"
+                  title="Click to copy URL"
+                >
+                  <span>:{container.ports[0].publicPort}</span>
+                  {copiedPort === container.ports[0].publicPort ? (
+                    <Check className="w-2.5 h-2.5 text-status-running" />
+                  ) : (
+                    <ExternalLink className="w-2.5 h-2.5" />
+                  )}
+                </button>
+              )}
           </div>
 
           <div className="flex items-center space-x-2">
@@ -134,7 +145,9 @@ export const ServiceDrawer: React.FC<ServiceDrawerProps> = ({ container, onClose
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    <Icon className={`w-3 h-3 ${isActive ? "text-primary" : ""}`} />
+                    <Icon
+                      className={`w-3 h-3 ${isActive ? "text-primary" : ""}`}
+                    />
                     <span>{tab.label}</span>
                   </button>
                 );
@@ -205,7 +218,10 @@ export const ServiceDrawer: React.FC<ServiceDrawerProps> = ({ container, onClose
         <div className="flex-1 overflow-y-auto p-4 bg-background">
           {activeTab === "logs" && <LogsTab containerId={container.id} />}
           {activeTab === "terminal" && (
-            <TerminalTab containerId={container.id} containerName={container.name} />
+            <TerminalTab
+              containerId={container.id}
+              containerName={container.name}
+            />
           )}
           {activeTab === "stats" && <StatsTab containerId={container.id} />}
           {activeTab === "info" && <OverviewTab container={container} />}

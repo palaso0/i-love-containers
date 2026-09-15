@@ -99,7 +99,9 @@ export const NewFolderModal: React.FC<NewFolderModalProps> = ({
         className="bg-popover border border-border rounded-xl p-5 max-w-sm w-full space-y-4 shadow-2xl animate-in zoom-in-95 duration-100"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-sm font-semibold text-foreground">{fm.newFolder}</h3>
+        <h3 className="text-sm font-semibold text-foreground">
+          {fm.newFolder}
+        </h3>
         <div>
           <label className="text-2xs text-muted-foreground mb-1 block">
             {fm.folderNamePrompt}
@@ -245,10 +247,23 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
           {fm.confirmDeleteTitle}
         </h3>
         <p className="text-xs text-muted-foreground leading-relaxed">
-          {deleteModal.items.length === 1
-            ? <>{fm.confirmDeleteDesc}{" "}<span className="font-mono text-rose-500 font-semibold">{deleteModal.items[0].name}</span>?</>
-            : <>{fm.confirmDeleteDesc}{" "}<span className="font-mono text-rose-500 font-semibold">{deleteModal.items.length} files</span>?</>
-          }
+          {deleteModal.items.length === 1 ? (
+            <>
+              {fm.confirmDeleteDesc}{" "}
+              <span className="font-mono text-rose-500 font-semibold">
+                {deleteModal.items[0].name}
+              </span>
+              ?
+            </>
+          ) : (
+            <>
+              {fm.confirmDeleteDesc}{" "}
+              <span className="font-mono text-rose-500 font-semibold">
+                {deleteModal.items.length} files
+              </span>
+              ?
+            </>
+          )}
         </p>
         <div className="flex items-center justify-end space-x-2 pt-2">
           <button

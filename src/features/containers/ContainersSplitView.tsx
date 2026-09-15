@@ -109,7 +109,7 @@ export const ContainersSplitView: React.FC = () => {
     unpauseContainer,
     restartContainer,
     upComposeProject,
-    refreshData
+    refreshData,
   );
 
   const tabs: {
@@ -131,7 +131,10 @@ export const ContainersSplitView: React.FC = () => {
   }
 
   return (
-    <div ref={splitViewRef} className="flex-1 flex h-full overflow-hidden bg-background min-w-0">
+    <div
+      ref={splitViewRef}
+      className="flex-1 flex h-full overflow-hidden bg-background min-w-0"
+    >
       <div
         style={{ width: `${leftWidth}px` }}
         className="border-r border-border/80 flex flex-col h-full bg-surface/30 shrink-0 min-w-0 overflow-hidden"
@@ -150,23 +153,26 @@ export const ContainersSplitView: React.FC = () => {
 
           <div className="flex items-center justify-between gap-2 min-w-0">
             <div className="flex items-center bg-surface-secondary/80 border border-border/60 rounded-md p-0.5 text-2xs shrink-0">
-              {(["all", "running", "paused", "stopped"] as const).map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => setStateFilter(filter)}
-                  className={`px-2 py-0.5 rounded capitalize transition-all ${
-                    stateFilter === filter
-                      ? "bg-surface text-foreground font-semibold shadow-mac-segment"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {t.containers[filter]}
-                </button>
-              ))}
+              {(["all", "running", "paused", "stopped"] as const).map(
+                (filter) => (
+                  <button
+                    key={filter}
+                    onClick={() => setStateFilter(filter)}
+                    className={`px-2 py-0.5 rounded capitalize transition-all ${
+                      stateFilter === filter
+                        ? "bg-surface text-foreground font-semibold shadow-mac-segment"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {t.containers[filter]}
+                  </button>
+                ),
+              )}
             </div>
             <div className="flex items-center space-x-1.5 shrink-0">
               <span className="text-[11px] font-mono text-muted-foreground whitespace-nowrap shrink-0">
-                {filteredContainers.filter((c) => c.state === "running").length}/{filteredContainers.length} {t.containers.active}
+                {filteredContainers.filter((c) => c.state === "running").length}
+                /{filteredContainers.length} {t.containers.active}
               </span>
             </div>
           </div>
@@ -202,7 +208,9 @@ export const ContainersSplitView: React.FC = () => {
                 className="p-1 rounded text-muted-foreground hover:text-sky-400 hover:bg-surface/80 transition-colors disabled:opacity-50"
                 title="Reiniciar seleccionados"
               >
-                <RotateCw className={`w-3.5 h-3.5 ${isBulkOperating ? "animate-spin" : ""}`} />
+                <RotateCw
+                  className={`w-3.5 h-3.5 ${isBulkOperating ? "animate-spin" : ""}`}
+                />
               </button>
               <button
                 disabled={isBulkOperating}
@@ -286,7 +294,10 @@ export const ContainersSplitView: React.FC = () => {
         <div className="absolute inset-y-0 -left-1 -right-1" />
       </div>
 
-      <div ref={detailPaneRef} className="flex-1 flex flex-col h-full overflow-hidden bg-background min-w-0">
+      <div
+        ref={detailPaneRef}
+        className="flex-1 flex flex-col h-full overflow-hidden bg-background min-w-0"
+      >
         {activeContainer ? (
           <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
             <ContainerDetailHeader
@@ -324,7 +335,9 @@ export const ContainersSplitView: React.FC = () => {
                       }`}
                       title={tab.label}
                     >
-                      <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                      <Icon
+                        className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-primary" : "text-muted-foreground"}`}
+                      />
                       {!isCompactDetail && <span>{tab.label}</span>}
                     </button>
                   );
@@ -342,26 +355,55 @@ export const ContainersSplitView: React.FC = () => {
               } p-4 bg-background min-h-0`}
             >
               <ErrorBoundary fallbackTitle="Error loading container tab">
-                <div className={containerDetailTab === "overview" || containerDetailTab === "inspect" ? "h-full w-full" : "hidden"}>
+                <div
+                  className={
+                    containerDetailTab === "overview" ||
+                    containerDetailTab === "inspect"
+                      ? "h-full w-full"
+                      : "hidden"
+                  }
+                >
                   <OverviewTab container={activeContainer} />
                 </div>
-                <div className={containerDetailTab === "stats" ? "h-full w-full" : "hidden"}>
+                <div
+                  className={
+                    containerDetailTab === "stats" ? "h-full w-full" : "hidden"
+                  }
+                >
                   <StatsTab
                     containerId={activeContainer.id}
                     containerState={activeContainer.state}
                   />
                 </div>
-                <div className={containerDetailTab === "logs" ? "h-full w-full flex flex-col min-h-0" : "hidden"}>
+                <div
+                  className={
+                    containerDetailTab === "logs"
+                      ? "h-full w-full flex flex-col min-h-0"
+                      : "hidden"
+                  }
+                >
                   <LogsTab containerId={activeContainer.id} />
                 </div>
-                <div className={containerDetailTab === "terminal" ? "h-full w-full flex flex-col min-h-0" : "hidden"}>
+                <div
+                  className={
+                    containerDetailTab === "terminal"
+                      ? "h-full w-full flex flex-col min-h-0"
+                      : "hidden"
+                  }
+                >
                   <TerminalTab
                     containerId={activeContainer.id}
                     containerName={activeContainer.name}
                     containerState={activeContainer.state}
                   />
                 </div>
-                <div className={containerDetailTab === "files" ? "h-full w-full flex flex-col min-h-0" : "hidden"}>
+                <div
+                  className={
+                    containerDetailTab === "files"
+                      ? "h-full w-full flex flex-col min-h-0"
+                      : "hidden"
+                  }
+                >
                   <FileManagerTab
                     containerId={activeContainer.id}
                     containerName={activeContainer.name}
@@ -374,7 +416,9 @@ export const ContainersSplitView: React.FC = () => {
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-muted-foreground text-center">
             <Box className="w-10 h-10 mb-2 opacity-40" />
-            <p className="text-xs font-medium">{t.containers.selectToInspect}</p>
+            <p className="text-xs font-medium">
+              {t.containers.selectToInspect}
+            </p>
           </div>
         )}
       </div>

@@ -64,5 +64,5 @@ const RootComponent: React.FC = () => {
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <RootComponent />
-  </React.StrictMode>
+  </React.StrictMode>,
 );

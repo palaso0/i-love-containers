@@ -1,5 +1,19 @@
 import React from "react";
-import { Server, Keyboard, Sparkles, Check, Box, Globe, Zap, Compass, Layers, RefreshCw, Sun, Moon, Laptop } from "lucide-react";
+import {
+  Server,
+  Keyboard,
+  Sparkles,
+  Check,
+  Box,
+  Globe,
+  Zap,
+  Compass,
+  Layers,
+  RefreshCw,
+  Sun,
+  Moon,
+  Laptop,
+} from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { AppTheme, AccentColor, Language } from "@/types";
 
@@ -110,31 +124,88 @@ export const SettingsView: React.FC = () => {
   ];
 
   const hosts = [
-    { id: "localhost", name: "Local Engine", socket: "unix:///var/run/docker.sock" },
-    { id: "production", name: "Production Swarm", socket: "ssh://root@prod.internal" },
-    { id: "server-01", name: "Staging Cluster", socket: "tcp://192.168.1.100:2375" },
+    {
+      id: "localhost",
+      name: "Local Engine",
+      socket: "unix:///var/run/docker.sock",
+    },
+    {
+      id: "production",
+      name: "Production Swarm",
+      socket: "ssh://root@prod.internal",
+    },
+    {
+      id: "server-01",
+      name: "Staging Cluster",
+      socket: "tcp://192.168.1.100:2375",
+    },
     { id: "raspberrypi", name: "Homelab Pi", socket: "ssh://pi@pi.local" },
   ];
 
   const isEs = language === "es";
 
   const shortcuts = [
-    { key: "⌘K", action: isEs ? "Abrir Paleta de Comandos / Búsqueda" : "Open Command Palette / Search" },
-    { key: "⌘B", action: isEs ? "Alternar barra lateral" : "Toggle Sidebar navigation" },
-    { key: "M", action: isEs ? "Alternar vista Minimalista / Detallada" : "Toggle Minimalist / Detailed view mode" },
-    { key: "R", action: isEs ? "Actualizar recursos y estado" : "Refresh all active runtime states" },
+    {
+      key: "⌘K",
+      action: isEs
+        ? "Abrir Paleta de Comandos / Búsqueda"
+        : "Open Command Palette / Search",
+    },
+    {
+      key: "⌘B",
+      action: isEs ? "Alternar barra lateral" : "Toggle Sidebar navigation",
+    },
+    {
+      key: "M",
+      action: isEs
+        ? "Alternar vista Minimalista / Detallada"
+        : "Toggle Minimalist / Detailed view mode",
+    },
+    {
+      key: "R",
+      action: isEs
+        ? "Actualizar recursos y estado"
+        : "Refresh all active runtime states",
+    },
     { key: "O", action: isEs ? "Ir a Resumen (Overview)" : "Jump to Overview" },
-    { key: "F", action: isEs ? "Ir a Archivos de contenedor (Files)" : "Jump to container Files" },
-    { key: "L", action: isEs ? "Ir a Registros de contenedor (Logs)" : "Jump to container Logs" },
-    { key: "T", action: isEs ? "Ir a Terminal / Shell de contenedor" : "Jump to container Terminal" },
-    { key: "S", action: isEs ? "Ir a Estadísticas de contenedor (Stats)" : "Jump to container Stats" },
-    { key: "Esc", action: isEs ? "Cerrar modales y ventanas emergentes" : "Dismiss modals and overlays" },
+    {
+      key: "F",
+      action: isEs
+        ? "Ir a Archivos de contenedor (Files)"
+        : "Jump to container Files",
+    },
+    {
+      key: "L",
+      action: isEs
+        ? "Ir a Registros de contenedor (Logs)"
+        : "Jump to container Logs",
+    },
+    {
+      key: "T",
+      action: isEs
+        ? "Ir a Terminal / Shell de contenedor"
+        : "Jump to container Terminal",
+    },
+    {
+      key: "S",
+      action: isEs
+        ? "Ir a Estadísticas de contenedor (Stats)"
+        : "Jump to container Stats",
+    },
+    {
+      key: "Esc",
+      action: isEs
+        ? "Cerrar modales y ventanas emergentes"
+        : "Dismiss modals and overlays",
+    },
   ];
 
   return (
     <div className="flex-1 overflow-y-auto p-5 space-y-4 max-w-3xl bg-background">
       <div className="border-b border-border/70 pb-3">
-        <h1 className="text-base font-semibold text-foreground tracking-tight">{t.settings.title}</h1>
+        <h1 className="text-base font-semibold text-foreground tracking-tight">
+          {t.settings.title}
+        </h1>
       </div>
 
       <div className="bg-surface/80 backdrop-blur-sm border border-border/70 rounded-xl p-4 space-y-3 shadow-xs">
@@ -168,7 +239,6 @@ export const SettingsView: React.FC = () => {
       </div>
 
       <div className="bg-surface/80 backdrop-blur-sm border border-border/70 rounded-xl p-4 space-y-4 shadow-xs">
-
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Sun className="w-4 h-4 text-primary" />
@@ -181,7 +251,11 @@ export const SettingsView: React.FC = () => {
             {[
               { id: "light" as const, label: t.settings.lightMode, icon: Sun },
               { id: "dark" as const, label: t.settings.darkMode, icon: Moon },
-              { id: "system" as const, label: t.settings.systemMode, icon: Laptop },
+              {
+                id: "system" as const,
+                label: t.settings.systemMode,
+                icon: Laptop,
+              },
             ].map((mode) => {
               const isSelected = colorMode === mode.id;
               const Icon = mode.icon;
@@ -227,10 +301,16 @@ export const SettingsView: React.FC = () => {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <div className={`w-4 h-4 rounded-full border ${themeItem.colorSwatch} flex items-center justify-center`}>
-                        <div className={`w-2 h-2 rounded-full ${themeItem.accentSwatch}`} />
+                      <div
+                        className={`w-4 h-4 rounded-full border ${themeItem.colorSwatch} flex items-center justify-center`}
+                      >
+                        <div
+                          className={`w-2 h-2 rounded-full ${themeItem.accentSwatch}`}
+                        />
                       </div>
-                      <span className="text-xs font-semibold text-foreground">{themeItem.name}</span>
+                      <span className="text-xs font-semibold text-foreground">
+                        {themeItem.name}
+                      </span>
                     </div>
 
                     <div className="flex items-center space-x-1.5">
@@ -239,7 +319,9 @@ export const SettingsView: React.FC = () => {
                           {themeItem.badge}
                         </span>
                       )}
-                      {isSelected && <Check className="w-3.5 h-3.5 text-primary" />}
+                      {isSelected && (
+                        <Check className="w-3.5 h-3.5 text-primary" />
+                      )}
                     </div>
                   </div>
 
@@ -254,7 +336,9 @@ export const SettingsView: React.FC = () => {
 
         <div className="pt-2 border-t border-border/60">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="text-xs font-semibold text-foreground">{t.settings.accentSection}</div>
+            <div className="text-xs font-semibold text-foreground">
+              {t.settings.accentSection}
+            </div>
 
             <div className="flex items-center space-x-1.5 bg-surface-secondary/80 p-1 rounded-lg border border-border/60">
               {accents.map((acc) => {
@@ -264,12 +348,16 @@ export const SettingsView: React.FC = () => {
                     key={acc.id}
                     onClick={() => setAccentColor(acc.id)}
                     className={`w-6 h-6 rounded-md flex items-center justify-center transition-all ${
-                      isActive ? "scale-110 shadow-mac-segment ring-2 ring-white/30" : "hover:scale-105 opacity-80 hover:opacity-100"
+                      isActive
+                        ? "scale-110 shadow-mac-segment ring-2 ring-white/30"
+                        : "hover:scale-105 opacity-80 hover:opacity-100"
                     }`}
                     style={{ backgroundColor: acc.hex }}
                     title={acc.name}
                   >
-                    {isActive && <Check className="w-3.5 h-3.5 text-white drop-shadow-xs" />}
+                    {isActive && (
+                      <Check className="w-3.5 h-3.5 text-white drop-shadow-xs" />
+                    )}
                   </button>
                 );
               })}
@@ -298,7 +386,9 @@ export const SettingsView: React.FC = () => {
             className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-surface border border-border/70 text-xs font-medium text-foreground hover:bg-surface-secondary transition-colors shadow-xs disabled:opacity-50"
             title={t.engines.rescan}
           >
-            <RefreshCw className={`w-3 h-3 ${isActionInProgress ? "animate-spin text-primary" : ""}`} />
+            <RefreshCw
+              className={`w-3 h-3 ${isActionInProgress ? "animate-spin text-primary" : ""}`}
+            />
             <span>{t.engines.rescan}</span>
           </button>
         </div>
@@ -326,7 +416,9 @@ export const SettingsView: React.FC = () => {
 
                   <div className="min-w-0">
                     <div className="flex items-center space-x-2">
-                      <span className="font-semibold text-foreground text-xs">{engine.name}</span>
+                      <span className="font-semibold text-foreground text-xs">
+                        {engine.name}
+                      </span>
                       {engine.version && (
                         <span className="text-[10px] font-mono text-muted-foreground">
                           v{engine.version}
@@ -350,18 +442,20 @@ export const SettingsView: React.FC = () => {
                       isRunning
                         ? "border-status-running/30 text-status-running bg-status-running/10"
                         : isStopped
-                        ? "border-amber-500/30 text-amber-500 bg-amber-500/10"
-                        : "border-border/60 text-muted-foreground"
+                          ? "border-amber-500/30 text-amber-500 bg-amber-500/10"
+                          : "border-border/60 text-muted-foreground"
                     }`}
                   >
                     {isRunning
                       ? t.engines.running
                       : isStopped
-                      ? t.engines.stopped
-                      : t.engines.notInstalled}
+                        ? t.engines.stopped
+                        : t.engines.notInstalled}
                   </span>
 
-                  {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
+                  {isSelected && (
+                    <Check className="w-4 h-4 text-primary shrink-0" />
+                  )}
                 </div>
               </div>
             );
@@ -385,7 +479,9 @@ export const SettingsView: React.FC = () => {
                 key={host.id}
                 onClick={() => setSelectedHost(host.id)}
                 className={`p-3 flex items-center justify-between cursor-pointer transition-colors ${
-                  isSelected ? "bg-surface-secondary/80 text-foreground" : "hover:bg-surface-hover text-muted-foreground"
+                  isSelected
+                    ? "bg-surface-secondary/80 text-foreground"
+                    : "hover:bg-surface-hover text-muted-foreground"
                 }`}
               >
                 <div className="flex items-center space-x-3">
@@ -397,8 +493,12 @@ export const SettingsView: React.FC = () => {
                     }`}
                   />
                   <div>
-                    <div className="font-medium text-foreground text-xs">{host.name}</div>
-                    <div className="text-[10px] font-mono text-muted-foreground">{host.socket}</div>
+                    <div className="font-medium text-foreground text-xs">
+                      {host.name}
+                    </div>
+                    <div className="text-[10px] font-mono text-muted-foreground">
+                      {host.socket}
+                    </div>
                   </div>
                 </div>
 
@@ -431,7 +531,9 @@ export const SettingsView: React.FC = () => {
               key={shortcut.key}
               className="bg-surface-secondary/50 p-2.5 rounded-lg border border-border/60 flex items-center justify-between"
             >
-              <span className="text-muted-foreground text-xs">{shortcut.action}</span>
+              <span className="text-muted-foreground text-xs">
+                {shortcut.action}
+              </span>
               <kbd className="px-2 py-0.5 rounded-md bg-surface text-foreground border border-border/70 text-2xs font-mono shadow-2xs">
                 {shortcut.key}
               </kbd>
@@ -443,11 +545,19 @@ export const SettingsView: React.FC = () => {
       <div className="bg-surface/80 backdrop-blur-sm border border-border/70 rounded-xl p-3.5 flex items-center justify-between shadow-xs">
         <div className="flex items-center space-x-2.5">
           <div className="w-7 h-7 rounded-lg bg-surface-secondary border border-border/60 flex items-center justify-center overflow-hidden shadow-xs">
-            <img src="/ilc-logo.png" alt="ILC" className="w-5 h-5 rounded object-contain" />
+            <img
+              src="/ilc-logo.png"
+              alt="ILC"
+              className="w-5 h-5 rounded object-contain"
+            />
           </div>
           <div>
-            <div className="text-xs font-semibold text-foreground">{t.settings.aboutTitle}</div>
-            <div className="text-[10px] text-muted-foreground font-mono">{t.settings.aboutSubtitle}</div>
+            <div className="text-xs font-semibold text-foreground">
+              {t.settings.aboutTitle}
+            </div>
+            <div className="text-[10px] text-muted-foreground font-mono">
+              {t.settings.aboutSubtitle}
+            </div>
           </div>
         </div>
 

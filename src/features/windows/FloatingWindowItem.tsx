@@ -24,17 +24,16 @@ import {
 } from "@/stores/useWindowManagerStore";
 import { useAppStore } from "@/stores/useAppStore";
 import { executeContainerCommand, fetchContainerLogs } from "@/lib/api";
-import {
-  getTerminalTheme,
-  formatTerminalPrompt,
-} from "@/lib/terminalTheme";
+import { getTerminalTheme, formatTerminalPrompt } from "@/lib/terminalTheme";
 import { setupTerminalInput, TerminalController } from "@/lib/terminalInput";
 
 interface FloatingWindowItemProps {
   windowData: FloatingWindow;
 }
 
-export const FloatingWindowItem: React.FC<FloatingWindowItemProps> = ({ windowData }) => {
+export const FloatingWindowItem: React.FC<FloatingWindowItemProps> = ({
+  windowData,
+}) => {
   const { theme } = useAppStore();
   const isDark = theme === "dark";
   const {
@@ -94,7 +93,7 @@ export const FloatingWindowItem: React.FC<FloatingWindowItemProps> = ({ windowDa
     const cId = windowData.containerId || "";
 
     term.writeln(
-      `\x1b[1;38;5;205m♥ \x1b[1mI ♥ Containers\x1b[0m \x1b[90m—\x1b[0m \x1b[1;38;5;45m${cName}\x1b[0m \x1b[90m(${cId.substring(0, 12)})\x1b[0m \x1b[90m•\x1b[0m \x1b[38;5;48m● Interactive Window Ready\x1b[0m`
+      `\x1b[1;38;5;205m♥ \x1b[1mI ♥ Containers\x1b[0m \x1b[90m—\x1b[0m \x1b[1;38;5;45m${cName}\x1b[0m \x1b[90m(${cId.substring(0, 12)})\x1b[0m \x1b[90m•\x1b[0m \x1b[38;5;48m● Interactive Window Ready\x1b[0m`,
     );
     term.writeln("");
 
@@ -112,7 +111,7 @@ export const FloatingWindowItem: React.FC<FloatingWindowItemProps> = ({ windowDa
                 cdCmd,
                 term.cols,
                 term.rows,
-                currentCwdRef.current
+                currentCwdRef.current,
               );
               if (res.exitCode === 0 && res.output) {
                 const lines = res.output.trim().split(/\r?\n/);
@@ -133,7 +132,7 @@ export const FloatingWindowItem: React.FC<FloatingWindowItemProps> = ({ windowDa
                 command,
                 term.cols,
                 term.rows,
-                currentCwdRef.current
+                currentCwdRef.current,
               );
               if (res.output) {
                 const formattedOutput = res.output.replace(/\r?\n/g, "\r\n");
@@ -195,7 +194,8 @@ export const FloatingWindowItem: React.FC<FloatingWindowItemProps> = ({ windowDa
   const availableServices = Array.from(new Set(logs.map((l) => l.source)));
 
   useEffect(() => {
-    if (windowData.type !== "logs" || isPaused || !windowData.containerId) return;
+    if (windowData.type !== "logs" || isPaused || !windowData.containerId)
+      return;
     let isMounted = true;
 
     const fetchLogs = async () => {
@@ -208,13 +208,18 @@ export const FloatingWindowItem: React.FC<FloatingWindowItemProps> = ({ windowDa
 
         rawLogs.slice(-100).forEach((line) => {
           const parts = line.split(" ");
-          const hasTimestamp = parts.length > 1 && /^\d{4}-\d{2}-\d{2}/.test(line);
-          const timestamp = hasTimestamp ? parts.slice(0, 2).join(" ").substring(0, 19) : "";
+          const hasTimestamp =
+            parts.length > 1 && /^\d{4}-\d{2}-\d{2}/.test(line);
+          const timestamp = hasTimestamp
+            ? parts.slice(0, 2).join(" ").substring(0, 19)
+            : "";
           const message = hasTimestamp ? parts.slice(2).join(" ") : line;
 
           appendWindowLog(windowData.id, {
             id: `${windowData.containerId}-${timestamp}-${line.substring(0, 40)}`,
-            timestamp: timestamp || new Date().toISOString().substring(0, 19).replace("T", " "),
+            timestamp:
+              timestamp ||
+              new Date().toISOString().substring(0, 19).replace("T", " "),
             source: serviceName,
             color,
             message,
@@ -244,7 +249,8 @@ export const FloatingWindowItem: React.FC<FloatingWindowItemProps> = ({ windowDa
 
   useEffect(() => {
     if (autoScroll && logsEndRef.current?.parentElement) {
-      logsEndRef.current.parentElement.scrollTop = logsEndRef.current.parentElement.scrollHeight;
+      logsEndRef.current.parentElement.scrollTop =
+        logsEndRef.current.parentElement.scrollHeight;
     }
   }, [logs.length, autoScroll]);
 
@@ -273,14 +279,26 @@ export const FloatingWindowItem: React.FC<FloatingWindowItemProps> = ({ windowDa
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging) {
-        const nextX = Math.max(0, Math.min(window.innerWidth - 200, e.clientX - dragOffset.x));
-        const nextY = Math.max(0, Math.min(window.innerHeight - 100, e.clientY - dragOffset.y));
+        const nextX = Math.max(
+          0,
+          Math.min(window.innerWidth - 200, e.clientX - dragOffset.x),
+        );
+        const nextY = Math.max(
+          0,
+          Math.min(window.innerHeight - 100, e.clientY - dragOffset.y),
+        );
         updateWindowBounds(windowData.id, { x: nextX, y: nextY });
       } else if (isResizing) {
         const deltaX = e.clientX - resizeStart.x;
         const deltaY = e.clientY - resizeStart.y;
-        const nextW = Math.max(380, Math.min(window.innerWidth - windowData.x, resizeStart.w + deltaX));
-        const nextH = Math.max(240, Math.min(window.innerHeight - windowData.y, resizeStart.h + deltaY));
+        const nextW = Math.max(
+          380,
+          Math.min(window.innerWidth - windowData.x, resizeStart.w + deltaX),
+        );
+        const nextH = Math.max(
+          240,
+          Math.min(window.innerHeight - windowData.y, resizeStart.h + deltaY),
+        );
         updateWindowBounds(windowData.id, { width: nextW, height: nextH });
       }
     };
@@ -299,11 +317,23 @@ export const FloatingWindowItem: React.FC<FloatingWindowItemProps> = ({ windowDa
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, isResizing, dragOffset, resizeStart, windowData.id, windowData.x, windowData.y, updateWindowBounds]);
+  }, [
+    isDragging,
+    isResizing,
+    dragOffset,
+    resizeStart,
+    windowData.id,
+    windowData.x,
+    windowData.y,
+    updateWindowBounds,
+  ]);
 
   const handleCopyLogs = () => {
     const text = logs
-      .map((l) => `${showTimestamps ? l.timestamp + " " : ""}[${l.source}] ${l.message}`)
+      .map(
+        (l) =>
+          `${showTimestamps ? l.timestamp + " " : ""}[${l.source}] ${l.message}`,
+      )
       .join("\n");
     navigator.clipboard.writeText(text);
     setCopied(true);
@@ -311,7 +341,8 @@ export const FloatingWindowItem: React.FC<FloatingWindowItemProps> = ({ windowDa
   };
 
   const filteredLogs = logs.filter((l) => {
-    if (activeFilters.length > 0 && !activeFilters.includes(l.source)) return false;
+    if (activeFilters.length > 0 && !activeFilters.includes(l.source))
+      return false;
     if (searchQuery.trim() === "") return true;
     return (
       l.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -357,7 +388,9 @@ export const FloatingWindowItem: React.FC<FloatingWindowItemProps> = ({ windowDa
             <button
               onClick={() => toggleMaximizeWindow(windowData.id)}
               className="w-3 h-3 rounded-full bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center transition-colors group"
-              title={windowData.isMaximized ? "Restore window" : "Maximize window"}
+              title={
+                windowData.isMaximized ? "Restore window" : "Maximize window"
+              }
             >
               <Maximize2 className="w-2 h-2 text-emerald-950 opacity-0 group-hover:opacity-100" />
             </button>
@@ -431,7 +464,11 @@ export const FloatingWindowItem: React.FC<FloatingWindowItemProps> = ({ windowDa
                       : "bg-surface-secondary border-border text-muted-foreground"
                   }`}
                 >
-                  {isPaused ? <Play className="w-2.5 h-2.5 fill-current" /> : <Pause className="w-2.5 h-2.5 fill-current" />}
+                  {isPaused ? (
+                    <Play className="w-2.5 h-2.5 fill-current" />
+                  ) : (
+                    <Pause className="w-2.5 h-2.5 fill-current" />
+                  )}
                   <span>{isPaused ? "Resume" : "Pause"}</span>
                 </button>
                 <button
@@ -471,7 +508,11 @@ export const FloatingWindowItem: React.FC<FloatingWindowItemProps> = ({ windowDa
                   className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-surface-hover"
                   title="Copy"
                 >
-                  {copied ? <Check className="w-3 h-3 text-status-running" /> : <Copy className="w-3 h-3" />}
+                  {copied ? (
+                    <Check className="w-3 h-3 text-status-running" />
+                  ) : (
+                    <Copy className="w-3 h-3" />
+                  )}
                 </button>
               </div>
             </div>
@@ -484,7 +525,9 @@ export const FloatingWindowItem: React.FC<FloatingWindowItemProps> = ({ windowDa
                   return (
                     <button
                       key={serviceName}
-                      onClick={() => toggleWindowServiceFilter(windowData.id, serviceName)}
+                      onClick={() =>
+                        toggleWindowServiceFilter(windowData.id, serviceName)
+                      }
                       className={`px-1.5 py-0.5 rounded transition-colors ${
                         isSelected
                           ? "bg-surface-secondary text-foreground font-semibold border border-border"
@@ -516,7 +559,10 @@ export const FloatingWindowItem: React.FC<FloatingWindowItemProps> = ({ windowDa
                       {log.timestamp}
                     </span>
                   )}
-                  <span className="font-semibold mr-2 shrink-0 " style={{ color: log.color }}>
+                  <span
+                    className="font-semibold mr-2 shrink-0 "
+                    style={{ color: log.color }}
+                  >
                     [{log.source}]
                   </span>
                   <span

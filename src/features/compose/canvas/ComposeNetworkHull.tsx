@@ -55,7 +55,8 @@ export const ComposeNetworkHull: React.FC<ComposeNetworkHullProps> = ({
         const isNetHovered =
           hoveredNetworkId === net.id ||
           memberServices.some((s) => s.id === hoveredNodeId) ||
-          (selectedService && memberServices.some((s) => s.id === selectedService.id));
+          (selectedService &&
+            memberServices.some((s) => s.id === selectedService.id));
 
         const isLeft = netIdx % 2 === 0;
         const badgePosStyle = isLeft
@@ -70,8 +71,16 @@ export const ComposeNetworkHull: React.FC<ComposeNetworkHullProps> = ({
               top: minY,
               width,
               height,
-              borderColor: isNetHovered ? net.color : isDark ? `${net.color}45` : `${net.color}65`,
-              backgroundColor: isNetHovered ? `${net.color}0f` : isDark ? `${net.color}04` : `${net.color}0a`,
+              borderColor: isNetHovered
+                ? net.color
+                : isDark
+                  ? `${net.color}45`
+                  : `${net.color}65`,
+              backgroundColor: isNetHovered
+                ? `${net.color}0f`
+                : isDark
+                  ? `${net.color}04`
+                  : `${net.color}0a`,
               boxShadow: isNetHovered ? `0 0 28px ${net.color}25` : "none",
             }}
             className="absolute rounded-3xl border-2 border-dashed pointer-events-none transition-all duration-200"
@@ -82,13 +91,22 @@ export const ComposeNetworkHull: React.FC<ComposeNetworkHullProps> = ({
                 top: -12,
                 color: net.color,
                 backgroundColor: "var(--surface)",
-                borderColor: isNetHovered ? net.color : isDark ? `${net.color}50` : `${net.color}75`,
+                borderColor: isNetHovered
+                  ? net.color
+                  : isDark
+                    ? `${net.color}50`
+                    : `${net.color}75`,
               }}
               className="absolute px-2.5 py-0.5 rounded-md border flex items-center space-x-1.5 text-[10px] font-mono tracking-tight shadow-xs z-10"
             >
-              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: net.color }} />
+              <span
+                className="w-1.5 h-1.5 rounded-full shrink-0"
+                style={{ backgroundColor: net.color }}
+              />
               <span className="font-semibold">{net.name}</span>
-              <span className="text-[9px] opacity-70 font-sans">• {net.driver || "bridge"}</span>
+              <span className="text-[9px] opacity-70 font-sans">
+                • {net.driver || "bridge"}
+              </span>
             </div>
           </div>
         );

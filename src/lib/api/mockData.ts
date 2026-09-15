@@ -1,6 +1,10 @@
 import { ImageAnalysis } from "@/types";
 
-export function getMockImageAnalysis(imageId: string, repository = "node", tag = "20-alpine"): ImageAnalysis {
+export function getMockImageAnalysis(
+  imageId: string,
+  repository = "node",
+  tag = "20-alpine",
+): ImageAnalysis {
   const totalSize = 178 * 1024 * 1024;
   const wastedSize = 28 * 1024 * 1024;
   return {
@@ -26,10 +30,30 @@ export function getMockImageAnalysis(imageId: string, repository = "node", tag =
         emptyLayer: false,
         files: [
           { path: "/bin/sh", size: 124000, type: "file", changeType: "added" },
-          { path: "/etc/alpine-release", size: 14, type: "file", changeType: "added" },
-          { path: "/etc/passwd", size: 1200, type: "file", changeType: "added" },
-          { path: "/lib/ld-musl-aarch64.so.1", size: 680000, type: "file", changeType: "added" },
-          { path: "/usr/bin/busybox", size: 840000, type: "file", changeType: "added" },
+          {
+            path: "/etc/alpine-release",
+            size: 14,
+            type: "file",
+            changeType: "added",
+          },
+          {
+            path: "/etc/passwd",
+            size: 1200,
+            type: "file",
+            changeType: "added",
+          },
+          {
+            path: "/lib/ld-musl-aarch64.so.1",
+            size: 680000,
+            type: "file",
+            changeType: "added",
+          },
+          {
+            path: "/usr/bin/busybox",
+            size: 840000,
+            type: "file",
+            changeType: "added",
+          },
         ],
       },
       {
@@ -55,28 +79,66 @@ export function getMockImageAnalysis(imageId: string, repository = "node", tag =
         created: new Date(Date.now() - 24 * 86400000).toISOString(),
         emptyLayer: false,
         files: [
-          { path: "/usr/lib/libstdc++.so.6", size: 2800000, type: "file", changeType: "added" },
-          { path: "/etc/ssl/certs/ca-certificates.crt", size: 210000, type: "file", changeType: "added" },
-          { path: "/etc/apk/world", size: 45, type: "file", changeType: "modified" },
+          {
+            path: "/usr/lib/libstdc++.so.6",
+            size: 2800000,
+            type: "file",
+            changeType: "added",
+          },
+          {
+            path: "/etc/ssl/certs/ca-certificates.crt",
+            size: 210000,
+            type: "file",
+            changeType: "added",
+          },
+          {
+            path: "/etc/apk/world",
+            size: 45,
+            type: "file",
+            changeType: "modified",
+          },
         ],
       },
       {
         id: "sha256:e1a90c41f712",
         index: 4,
-        command: "RUN wget https://nodejs.org/dist/v20.18.0/node-v20.18.0-linux-arm64.tar.gz && tar -xzf node-v20.18.0-linux-arm64.tar.gz -C /usr/local --strip-components=1",
-        rawCommand: "RUN wget https://nodejs.org/dist/v20.18.0/node-v20.18.0-linux-arm64.tar.gz",
+        command:
+          "RUN wget https://nodejs.org/dist/v20.18.0/node-v20.18.0-linux-arm64.tar.gz && tar -xzf node-v20.18.0-linux-arm64.tar.gz -C /usr/local --strip-components=1",
+        rawCommand:
+          "RUN wget https://nodejs.org/dist/v20.18.0/node-v20.18.0-linux-arm64.tar.gz",
         instructionType: "RUN",
         size: 92.4 * 1024 * 1024,
         sizePercent: 51.9,
         created: new Date(Date.now() - 22 * 86400000).toISOString(),
         emptyLayer: false,
         isBloat: true,
-        bloatReason: "Tarball downloaded without removing archive in same layer",
+        bloatReason:
+          "Tarball downloaded without removing archive in same layer",
         files: [
-          { path: "/usr/local/bin/node", size: 84000000, type: "file", changeType: "added" },
-          { path: "/usr/local/bin/npm", size: 12000, type: "symlink", changeType: "added" },
-          { path: "/usr/local/lib/node_modules", size: 8000000, type: "dir", changeType: "added" },
-          { path: "/tmp/node-v20.18.0-linux-arm64.tar.gz", size: 28000000, type: "file", changeType: "added" },
+          {
+            path: "/usr/local/bin/node",
+            size: 84000000,
+            type: "file",
+            changeType: "added",
+          },
+          {
+            path: "/usr/local/bin/npm",
+            size: 12000,
+            type: "symlink",
+            changeType: "added",
+          },
+          {
+            path: "/usr/local/lib/node_modules",
+            size: 8000000,
+            type: "dir",
+            changeType: "added",
+          },
+          {
+            path: "/tmp/node-v20.18.0-linux-arm64.tar.gz",
+            size: 28000000,
+            type: "file",
+            changeType: "added",
+          },
         ],
       },
       {
@@ -102,8 +164,18 @@ export function getMockImageAnalysis(imageId: string, repository = "node", tag =
         created: new Date(Date.now() - 5 * 86400000).toISOString(),
         emptyLayer: false,
         files: [
-          { path: "/app/package.json", size: 1820, type: "file", changeType: "added" },
-          { path: "/app/package-lock.json", size: 22500, type: "file", changeType: "added" },
+          {
+            path: "/app/package.json",
+            size: 1820,
+            type: "file",
+            changeType: "added",
+          },
+          {
+            path: "/app/package-lock.json",
+            size: 22500,
+            type: "file",
+            changeType: "added",
+          },
         ],
       },
       {
@@ -119,8 +191,18 @@ export function getMockImageAnalysis(imageId: string, repository = "node", tag =
         isBloat: true,
         bloatReason: "npm cache left in /root/.npm",
         files: [
-          { path: "/app/node_modules", size: 42000000, type: "dir", changeType: "added" },
-          { path: "/root/.npm", size: 16200000, type: "dir", changeType: "added" },
+          {
+            path: "/app/node_modules",
+            size: 42000000,
+            type: "dir",
+            changeType: "added",
+          },
+          {
+            path: "/root/.npm",
+            size: 16200000,
+            type: "dir",
+            changeType: "added",
+          },
         ],
       },
       {
@@ -134,30 +216,48 @@ export function getMockImageAnalysis(imageId: string, repository = "node", tag =
         created: new Date(Date.now() - 1 * 86400000).toISOString(),
         emptyLayer: false,
         files: [
-          { path: "/app/src/index.ts", size: 4500, type: "file", changeType: "added" },
-          { path: "/app/src/server.ts", size: 12800, type: "file", changeType: "added" },
-          { path: "/app/dist", size: 4800000, type: "dir", changeType: "added" },
+          {
+            path: "/app/src/index.ts",
+            size: 4500,
+            type: "file",
+            changeType: "added",
+          },
+          {
+            path: "/app/src/server.ts",
+            size: 12800,
+            type: "file",
+            changeType: "added",
+          },
+          {
+            path: "/app/dist",
+            size: 4800000,
+            type: "dir",
+            changeType: "added",
+          },
         ],
       },
     ],
     recommendations: [
       {
         title: "Clean NPM and package cache",
-        description: "Layer 7 leaves 16.2 MB in /root/.npm. Run 'npm cache clean --force' in the same RUN command.",
+        description:
+          "Layer 7 leaves 16.2 MB in /root/.npm. Run 'npm cache clean --force' in the same RUN command.",
         severity: "medium",
         layerIndex: 7,
         potentialSavings: 16.2 * 1024 * 1024,
       },
       {
         title: "Remove intermediate download archive",
-        description: "Layer 4 downloads a 28 MB archive that is extracted and not deleted in the same command.",
+        description:
+          "Layer 4 downloads a 28 MB archive that is extracted and not deleted in the same command.",
         severity: "high",
         layerIndex: 4,
         potentialSavings: 28 * 1024 * 1024,
       },
       {
         title: "Multi-stage build opportunity",
-        description: "Use a builder stage for dependencies and copy only compiled assets into a lean final runtime image.",
+        description:
+          "Use a builder stage for dependencies and copy only compiled assets into a lean final runtime image.",
         severity: "high",
         potentialSavings: 65 * 1024 * 1024,
       },

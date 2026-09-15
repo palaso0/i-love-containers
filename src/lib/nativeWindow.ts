@@ -44,7 +44,11 @@ export async function openRealNativeWindow(options: NativeWindowOptions) {
       width,
       height,
     });
-  } catch (tauriError) {
-    window.open(fullUrl, sanitizedId, `width=${width},height=${height},menubar=no,toolbar=no,location=no`);
+  } catch (_tauriError) {
+    window.open(
+      fullUrl,
+      sanitizedId,
+      `width=${width},height=${height},menubar=no,toolbar=no,location=no`,
+    );
   }
 }

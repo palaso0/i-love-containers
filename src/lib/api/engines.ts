@@ -23,13 +23,19 @@ export async function fetchDetectedEngines(): Promise<{
       const data = await response.json();
       if (data.engines) {
         localEngines = data.engines;
-        localActiveEngine = data.activeEngine || localEngines.find((e) => e.isActive) || localEngines[0];
+        localActiveEngine =
+          data.activeEngine ||
+          localEngines.find((e) => e.isActive) ||
+          localEngines[0];
         return data;
       }
     }
   } catch {}
 
-  if (typeof window !== "undefined" && ("__TAURI_INTERNALS__" in window || "__TAURI__" in window)) {
+  if (
+    typeof window !== "undefined" &&
+    ("__TAURI_INTERNALS__" in window || "__TAURI__" in window)
+  ) {
     try {
       const { invoke } = await import("@tauri-apps/api/core");
       const nativeEngines = await invoke<any[]>("detect_container_engines");
@@ -44,7 +50,8 @@ export async function fetchDetectedEngines(): Promise<{
           isDefault: e.is_default,
           isActive: e.id === (localActiveEngine?.id || "docker-desktop"),
         }));
-        localActiveEngine = localEngines.find((e) => e.isActive) || localEngines[0];
+        localActiveEngine =
+          localEngines.find((e) => e.isActive) || localEngines[0];
         return {
           engines: localEngines,
           activeEngine: localActiveEngine,

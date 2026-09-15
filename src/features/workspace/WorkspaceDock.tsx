@@ -11,7 +11,10 @@ import {
   ChevronUp,
   FolderGit2,
 } from "lucide-react";
-import { useWorkspaceStore, WorkspaceSession } from "@/stores/useWorkspaceStore";
+import {
+  useWorkspaceStore,
+  WorkspaceSession,
+} from "@/stores/useWorkspaceStore";
 import { useAppStore } from "@/stores/useAppStore";
 import { PersistentTerminal } from "./PersistentTerminal";
 import { UnifiedLogsViewer } from "./UnifiedLogsViewer";
@@ -47,7 +50,10 @@ export const WorkspaceDock: React.FC = () => {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (newMenuRef.current && !newMenuRef.current.contains(event.target as Node)) {
+      if (
+        newMenuRef.current &&
+        !newMenuRef.current.contains(event.target as Node)
+      ) {
         setIsNewMenuOpen(false);
       }
     };
@@ -79,13 +85,19 @@ export const WorkspaceDock: React.FC = () => {
     };
   }, [isResizing, setDockHeight]);
 
-  const activeSession = sessions.find((s: WorkspaceSession) => s.id === activeSessionId) || sessions[0];
+  const activeSession =
+    sessions.find((s: WorkspaceSession) => s.id === activeSessionId) ||
+    sessions[0];
   const secondarySession =
     sessions.find((s: WorkspaceSession) => s.id === secondarySessionId) ||
     sessions.find((s: WorkspaceSession) => s.id !== activeSession?.id);
 
-  const terminalCount = sessions.filter((s: WorkspaceSession) => s.type === "terminal").length;
-  const logCount = sessions.filter((s: WorkspaceSession) => s.type === "logs").length;
+  const terminalCount = sessions.filter(
+    (s: WorkspaceSession) => s.type === "terminal",
+  ).length;
+  const logCount = sessions.filter(
+    (s: WorkspaceSession) => s.type === "logs",
+  ).length;
 
   if (sessions.length === 0) {
     return null;
@@ -156,7 +168,9 @@ export const WorkspaceDock: React.FC = () => {
                     : "bg-surface/40 text-muted-foreground hover:text-foreground hover:bg-surface border-transparent"
                 }`}
               >
-                <Icon className={`w-3 h-3 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                <Icon
+                  className={`w-3 h-3 ${isActive ? "text-primary" : "text-muted-foreground"}`}
+                />
                 <span className="truncate max-w-[120px]">{session.title}</span>
                 <button
                   onClick={(e) => {
@@ -201,7 +215,9 @@ export const WorkspaceDock: React.FC = () => {
                         <Terminal className="w-3 h-3 text-primary shrink-0" />
                         <span className="truncate">{c.name}</span>
                       </div>
-                      <span className="text-[10px] text-muted-foreground shrink-0">{c.state}</span>
+                      <span className="text-[10px] text-muted-foreground shrink-0">
+                        {c.state}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -232,7 +248,10 @@ export const WorkspaceDock: React.FC = () => {
                   {composeProjects.map((p) => {
                     const projectServices = containers
                       .filter((c) => c.composeProject === p.name)
-                      .map((c) => ({ id: c.id, name: c.composeService || c.name }));
+                      .map((c) => ({
+                        id: c.id,
+                        name: c.composeService || c.name,
+                      }));
                     return (
                       <button
                         key={p.name}
@@ -276,7 +295,11 @@ export const WorkspaceDock: React.FC = () => {
             className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-surface transition-colors"
             title={isMaximized ? "Restore height" : "Maximize dock"}
           >
-            {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+            {isMaximized ? (
+              <Minimize2 className="w-3.5 h-3.5" />
+            ) : (
+              <Maximize2 className="w-3.5 h-3.5" />
+            )}
           </button>
 
           <button
@@ -289,7 +312,9 @@ export const WorkspaceDock: React.FC = () => {
         </div>
       </div>
 
-      <div className={`flex-1 flex overflow-hidden ${isDark ? "bg-[#090b10]" : "bg-[#f8fafc]"}`}>
+      <div
+        className={`flex-1 flex overflow-hidden ${isDark ? "bg-[#090b10]" : "bg-[#f8fafc]"}`}
+      >
         {splitMode === "vertical" && secondarySession ? (
           <>
             <div className="flex-1 flex flex-col border-r border-border overflow-hidden">

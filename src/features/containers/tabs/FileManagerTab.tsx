@@ -194,13 +194,19 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
               dropStatus.type === "loading"
                 ? "bg-surface/90 border-border text-foreground"
                 : dropStatus.type === "success"
-                ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
-                : "bg-rose-500/15 border-rose-500/30 text-rose-600 dark:text-rose-400"
+                  ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                  : "bg-rose-500/15 border-rose-500/30 text-rose-600 dark:text-rose-400"
             }`}
           >
-            {dropStatus.type === "loading" && <Loader2 className="w-4 h-4 animate-spin shrink-0 text-primary" />}
-            {dropStatus.type === "success" && <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />}
-            {dropStatus.type === "error" && <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />}
+            {dropStatus.type === "loading" && (
+              <Loader2 className="w-4 h-4 animate-spin shrink-0 text-primary" />
+            )}
+            {dropStatus.type === "success" && (
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
+            )}
+            {dropStatus.type === "error" && (
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+            )}
             <span className="text-xs font-medium">{dropStatus.message}</span>
             <button
               onClick={() => setDropStatus(null)}
@@ -261,7 +267,9 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
       {isDraggingOver && (
         <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-background/80 backdrop-blur-md border-2 border-dashed border-primary pointer-events-none animate-in fade-in duration-150">
           <Upload className="w-12 h-12 text-primary animate-bounce mb-2" />
-          <p className="text-sm font-semibold text-primary">{fm.dragDropHint}</p>
+          <p className="text-sm font-semibold text-primary">
+            {fm.dragDropHint}
+          </p>
         </div>
       )}
 
@@ -269,7 +277,9 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
         <div className="flex items-center space-x-2">
           <span>{fm.itemsCount.replace("{count}", String(files.length))}</span>
           {selectedPaths.size > 0 && (
-            <span className="font-semibold text-primary">• {selectedPaths.size} selected</span>
+            <span className="font-semibold text-primary">
+              • {selectedPaths.size} selected
+            </span>
           )}
         </div>
         <div>{currentPath}</div>
@@ -321,7 +331,9 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
           fm={fm}
           onClose={() => setViewerModal(null)}
           onDiscardChanges={() =>
-            setViewerModal((prev) => (prev ? { ...prev, content: prev.originalContent } : null))
+            setViewerModal((prev) =>
+              prev ? { ...prev, content: prev.originalContent } : null,
+            )
           }
           onSaveAndClose={handleSaveAndClose}
           onContentChange={(val) =>
@@ -386,7 +398,9 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
           setIsDeleting(true);
           try {
             const paths = deleteModal.items.map((i) =>
-              i.path.startsWith("/") ? i.path : `${currentPath === "/" ? "" : currentPath}/${i.path}`
+              i.path.startsWith("/")
+                ? i.path
+                : `${currentPath === "/" ? "" : currentPath}/${i.path}`,
             );
             await deleteContainerFiles(containerId, paths);
           } finally {

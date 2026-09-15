@@ -1,10 +1,17 @@
 import { ContainerSummary } from "@/types";
 
 export interface ComposeServiceNode {
-  id: string; 
+  id: string;
   name: string;
   image: string;
-  role: "gateway" | "frontend" | "backend" | "database" | "cache" | "worker" | "service";
+  role:
+    | "gateway"
+    | "frontend"
+    | "backend"
+    | "database"
+    | "cache"
+    | "worker"
+    | "service";
   ports: string[];
   networks: string[];
   volumes: string[];
@@ -38,8 +45,8 @@ export interface ComposeVolumeNode {
 
 export interface ComposeEdge {
   id: string;
-  from: string; 
-  to: string; 
+  from: string;
+  to: string;
   type: "depends_on" | "network" | "volume";
   label?: string;
   active: boolean;
@@ -56,8 +63,10 @@ export interface ComposeTopology {
 
 export const sampleComposeYaml = "";
 
-
-function inferServiceRole(name: string, image: string): ComposeServiceNode["role"] {
+function inferServiceRole(
+  name: string,
+  image: string,
+): ComposeServiceNode["role"] {
   const lowerName = name.toLowerCase();
   const lowerImg = image.toLowerCase();
 
@@ -169,17 +178,20 @@ function inferServiceRole(name: string, image: string): ComposeServiceNode["role
 
 export function parseComposeYaml(
   yamlContent: string,
-  liveContainers: ContainerSummary[] = []
+  liveContainers: ContainerSummary[] = [],
 ): ComposeTopology {
-  const serviceBlocks: Record<string, {
-    image?: string;
-    ports?: string[];
-    volumes?: string[];
-    networks?: string[];
-    depends_on?: string[];
-    environment?: string[];
-    command?: string;
-  }> = {};
+  const serviceBlocks: Record<
+    string,
+    {
+      image?: string;
+      ports?: string[];
+      volumes?: string[];
+      networks?: string[];
+      depends_on?: string[];
+      environment?: string[];
+      command?: string;
+    }
+  > = {};
 
   const networkList: Record<string, string> = {};
   const volumeList: Record<string, string> = {};
@@ -241,7 +253,10 @@ export function parseComposeYaml(
         if (indent === 4 && trimmed.includes(":")) {
           const colonIdx = trimmed.indexOf(":");
           const k = trimmed.slice(0, colonIdx).trim();
-          const v = trimmed.slice(colonIdx + 1).trim().replace(/^['"]|['"]$/g, "");
+          const v = trimmed
+            .slice(colonIdx + 1)
+            .trim()
+            .replace(/^['"]|['"]$/g, "");
           if (k === "image") s.image = v;
           if (k === "command") s.command = v;
           currentKey = null;
@@ -249,13 +264,20 @@ export function parseComposeYaml(
         }
 
         if (indent >= 6 && trimmed.startsWith("- ") && currentKey) {
-          const item = trimmed.slice(2).trim().replace(/^['"]|['"]$/g, "");
+          const item = trimmed
+            .slice(2)
+            .trim()
+            .replace(/^['"]|['"]$/g, "");
           if (currentKey === "ports") s.ports?.push(item);
           if (currentKey === "volumes") s.volumes?.push(item);
           if (currentKey === "networks") s.networks?.push(item);
           if (currentKey === "depends_on") s.depends_on?.push(item);
           if (currentKey === "environment") s.environment?.push(item);
-        } else if (indent >= 6 && currentKey === "environment" && trimmed.includes("=")) {
+        } else if (
+          indent >= 6 &&
+          currentKey === "environment" &&
+          trimmed.includes("=")
+        ) {
           s.environment?.push(trimmed.replace(/^['"]|['"]$/g, ""));
         }
       }
@@ -277,7 +299,10 @@ export function parseComposeYaml(
       const sName = c.composeService || c.name;
       serviceBlocks[sName] = {
         image: c.image,
-        ports: c.ports?.map((p) => `${p.publicPort ? `${p.publicPort}:` : ""}${p.privatePort}`) || [],
+        ports:
+          c.ports?.map(
+            (p) => `${p.publicPort ? `${p.publicPort}:` : ""}${p.privatePort}`,
+          ) || [],
         volumes: [],
         networks: ["default"],
         depends_on: [],
@@ -287,28 +312,33 @@ export function parseComposeYaml(
 
   const networkColors = ["#007aff", "#a855f7", "#30d158", "#ff9f0a", "#38bdf8"];
   let netColorIdx = 0;
-  const networks: ComposeNetworkNode[] = Object.keys(networkList).map((netName) => ({
-    id: netName,
-    name: netName,
-    driver: networkList[netName] || "bridge",
-    services: [],
-    color: networkColors[netColorIdx++ % networkColors.length],
-  }));
+  const networks: ComposeNetworkNode[] = Object.keys(networkList).map(
+    (netName) => ({
+      id: netName,
+      name: netName,
+      driver: networkList[netName] || "bridge",
+      services: [],
+      color: networkColors[netColorIdx++ % networkColors.length],
+    }),
+  );
 
-  const volumes: ComposeVolumeNode[] = Object.keys(volumeList).map((volName) => ({
-    id: volName,
-    name: volName,
-    driver: volumeList[volName] || "local",
-    services: [],
-    x: 0,
-    y: 0,
-  }));
+  const volumes: ComposeVolumeNode[] = Object.keys(volumeList).map(
+    (volName) => ({
+      id: volName,
+      name: volName,
+      driver: volumeList[volName] || "local",
+      services: [],
+      x: 0,
+      y: 0,
+    }),
+  );
 
   const rawServices = Object.entries(serviceBlocks).map(([name, data]) => {
     const liveMatch = liveContainers.find(
       (c) =>
-        (c.composeService && c.composeService.toLowerCase() === name.toLowerCase()) ||
-        c.name.toLowerCase().includes(name.toLowerCase())
+        (c.composeService &&
+          c.composeService.toLowerCase() === name.toLowerCase()) ||
+        c.name.toLowerCase().includes(name.toLowerCase()),
     );
 
     const image = data.image || liveMatch?.image || "alpine:latest";
@@ -319,13 +349,25 @@ export function parseComposeYaml(
       name,
       image,
       role,
-      ports: data.ports && data.ports.length > 0 ? data.ports : liveMatch?.ports?.map((p) => `${p.publicPort ? `${p.publicPort}:` : ""}${p.privatePort}`) || [],
-      networks: data.networks && data.networks.length > 0 ? data.networks : ["default"],
+      ports:
+        data.ports && data.ports.length > 0
+          ? data.ports
+          : liveMatch?.ports?.map(
+              (p) =>
+                `${p.publicPort ? `${p.publicPort}:` : ""}${p.privatePort}`,
+            ) || [],
+      networks:
+        data.networks && data.networks.length > 0 ? data.networks : ["default"],
       volumes: data.volumes || [],
       dependsOn: data.depends_on || [],
       environment: data.environment || [],
       command: data.command,
-      state: liveMatch?.state === "running" ? "running" : liveMatch?.state === "paused" ? "paused" : "stopped",
+      state:
+        liveMatch?.state === "running"
+          ? "running"
+          : liveMatch?.state === "paused"
+            ? "paused"
+            : "stopped",
       containerId: liveMatch?.id,
       x: 0,
       y: 0,
@@ -421,7 +463,8 @@ export function parseComposeYaml(
 
   let maxRowWidth = 0;
   rows.forEach((row) => {
-    const w = row.items.length * nodeWidth + (row.items.length - 1) * horizontalGap;
+    const w =
+      row.items.length * nodeWidth + (row.items.length - 1) * horizontalGap;
     if (w > maxRowWidth) maxRowWidth = w;
   });
 
@@ -455,7 +498,9 @@ export function parseComposeYaml(
     const volHeight = 44;
     const volGap = 28;
     const volPerRow = Math.min(4, Math.max(2, Math.ceil(volumes.length / 2)));
-    const sortedVolumes = [...volumes].sort((a, b) => a.name.localeCompare(b.name));
+    const sortedVolumes = [...volumes].sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
 
     for (let i = 0; i < sortedVolumes.length; i += volPerRow) {
       const chunk = sortedVolumes.slice(i, i + volPerRow);

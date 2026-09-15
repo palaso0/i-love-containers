@@ -7,34 +7,86 @@ export interface DirectiveItem {
 }
 
 export const COMPOSE_DIRECTIVES: DirectiveItem[] = [
-  { key: "privileged", defaultValue: "true", desc: "Extended container privileges" },
-  { key: "shm_size", defaultValue: "2gb", desc: "Shared memory size (/dev/shm)" },
+  {
+    key: "privileged",
+    defaultValue: "true",
+    desc: "Extended container privileges",
+  },
+  {
+    key: "shm_size",
+    defaultValue: "2gb",
+    desc: "Shared memory size (/dev/shm)",
+  },
   { key: "user", defaultValue: "1000:1000", desc: "UID:GID to run container" },
   { key: "mem_limit", defaultValue: "512m", desc: "Memory limit constraint" },
-  { key: "mem_reservation", defaultValue: "256m", desc: "Memory soft reservation" },
+  {
+    key: "mem_reservation",
+    defaultValue: "256m",
+    desc: "Memory soft reservation",
+  },
   { key: "cpus", defaultValue: "1.5", desc: "Number of CPUs limit" },
   { key: "cpu_shares", defaultValue: "1024", desc: "CPU shares weight" },
   { key: "stdin_open", defaultValue: "true", desc: "Keep STDIN open (-i)" },
   { key: "tty", defaultValue: "true", desc: "Allocate pseudo-TTY (-t)" },
-  { key: "working_dir", defaultValue: "/app", desc: "Working directory inside container" },
+  {
+    key: "working_dir",
+    defaultValue: "/app",
+    desc: "Working directory inside container",
+  },
   { key: "hostname", defaultValue: "my-service", desc: "Container hostname" },
   { key: "domainname", defaultValue: "local", desc: "NIS domain name" },
-  { key: "entrypoint", defaultValue: "/entrypoint.sh", desc: "Override container entrypoint" },
-  { key: "stop_grace_period", defaultValue: "30s", desc: "Wait time before SIGKILL" },
+  {
+    key: "entrypoint",
+    defaultValue: "/entrypoint.sh",
+    desc: "Override container entrypoint",
+  },
+  {
+    key: "stop_grace_period",
+    defaultValue: "30s",
+    desc: "Wait time before SIGKILL",
+  },
   { key: "stop_signal", defaultValue: "SIGTERM", desc: "Stop signal" },
-  { key: "init", defaultValue: "true", desc: "Use init process inside container" },
+  {
+    key: "init",
+    defaultValue: "true",
+    desc: "Use init process inside container",
+  },
   { key: "read_only", defaultValue: "true", desc: "Mount rootfs read-only" },
   { key: "ipc", defaultValue: "host", desc: "IPC namespace mode" },
   { key: "pid", defaultValue: "host", desc: "PID namespace mode" },
-  { key: "pull_policy", defaultValue: "always", desc: "always | missing | never" },
-  { key: "security_opt", defaultValue: "no-new-privileges:true", desc: "Security options" },
-  { key: "cap_add", defaultValue: "NET_ADMIN", desc: "Add kernel capabilities" },
+  {
+    key: "pull_policy",
+    defaultValue: "always",
+    desc: "always | missing | never",
+  },
+  {
+    key: "security_opt",
+    defaultValue: "no-new-privileges:true",
+    desc: "Security options",
+  },
+  {
+    key: "cap_add",
+    defaultValue: "NET_ADMIN",
+    desc: "Add kernel capabilities",
+  },
   { key: "cap_drop", defaultValue: "ALL", desc: "Drop kernel capabilities" },
-  { key: "healthcheck", defaultValue: "CMD curl -f http://localhost/ || exit 1", desc: "Health check" },
-  { key: "extra_hosts", defaultValue: "host.docker.internal:host-gateway", desc: "Host mappings" },
+  {
+    key: "healthcheck",
+    defaultValue: "CMD curl -f http://localhost/ || exit 1",
+    desc: "Health check",
+  },
+  {
+    key: "extra_hosts",
+    defaultValue: "host.docker.internal:host-gateway",
+    desc: "Host mappings",
+  },
   { key: "dns", defaultValue: "8.8.8.8", desc: "DNS servers" },
   { key: "logging.driver", defaultValue: "json-file", desc: "Logging driver" },
-  { key: "sysctls", defaultValue: "net.core.somaxconn: 1024", desc: "Kernel sysctl options" },
+  {
+    key: "sysctls",
+    defaultValue: "net.core.somaxconn: 1024",
+    desc: "Kernel sysctl options",
+  },
 ];
 
 interface DirectiveAutocompleteInputProps {
@@ -45,7 +97,9 @@ interface DirectiveAutocompleteInputProps {
   className?: string;
 }
 
-export const DirectiveAutocompleteInput: React.FC<DirectiveAutocompleteInputProps> = ({
+export const DirectiveAutocompleteInput: React.FC<
+  DirectiveAutocompleteInputProps
+> = ({
   value,
   onChange,
   onSelectSuggestion,
@@ -62,11 +116,15 @@ export const DirectiveAutocompleteInput: React.FC<DirectiveAutocompleteInputProp
     ? COMPOSE_DIRECTIVES.filter((d) => d.key.toLowerCase().includes(trimmed))
     : COMPOSE_DIRECTIVES.slice(0, 10);
 
-  const isExactSingleMatch = matches.length === 1 && matches[0].key.toLowerCase() === trimmed;
+  const isExactSingleMatch =
+    matches.length === 1 && matches[0].key.toLowerCase() === trimmed;
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setIsOpen(false);
       }
     };

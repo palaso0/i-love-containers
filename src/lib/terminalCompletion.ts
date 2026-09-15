@@ -1,13 +1,71 @@
 import { fetchContainerFiles, executeContainerCommand } from "@/lib/api";
 
 const COMMON_COMMANDS = [
-  "apt", "apt-get", "awk", "cat", "cd", "chmod", "chown", "clear", "cp", "curl",
-  "df", "diff", "docker", "dpkg", "echo", "env", "exit", "export", "find", "git",
-  "grep", "head", "history", "hostname", "id", "ip", "kill", "less", "ln", "ls",
-  "man", "mkdir", "more", "mv", "nano", "netstat", "node", "npm", "pkill", "pnpm",
-  "printenv", "ps", "pwd", "rm", "rmdir", "sed", "sh", "sleep", "source", "ssh",
-  "stat", "sudo", "tail", "tar", "tee", "top", "touch", "uname", "vi", "vim",
-  "wc", "wget", "which", "whoami", "yarn"
+  "apt",
+  "apt-get",
+  "awk",
+  "cat",
+  "cd",
+  "chmod",
+  "chown",
+  "clear",
+  "cp",
+  "curl",
+  "df",
+  "diff",
+  "docker",
+  "dpkg",
+  "echo",
+  "env",
+  "exit",
+  "export",
+  "find",
+  "git",
+  "grep",
+  "head",
+  "history",
+  "hostname",
+  "id",
+  "ip",
+  "kill",
+  "less",
+  "ln",
+  "ls",
+  "man",
+  "mkdir",
+  "more",
+  "mv",
+  "nano",
+  "netstat",
+  "node",
+  "npm",
+  "pkill",
+  "pnpm",
+  "printenv",
+  "ps",
+  "pwd",
+  "rm",
+  "rmdir",
+  "sed",
+  "sh",
+  "sleep",
+  "source",
+  "ssh",
+  "stat",
+  "sudo",
+  "tail",
+  "tar",
+  "tee",
+  "top",
+  "touch",
+  "uname",
+  "vi",
+  "vim",
+  "wc",
+  "wget",
+  "which",
+  "whoami",
+  "yarn",
 ];
 
 export interface CompletionCandidate {
@@ -29,7 +87,11 @@ export function findLongestCommonPrefix(strings: string[]): string {
   for (let i = 1; i < strings.length; i++) {
     const current = strings[i];
     let j = 0;
-    while (j < prefix.length && j < current.length && prefix[j] === current[j]) {
+    while (
+      j < prefix.length &&
+      j < current.length &&
+      prefix[j] === current[j]
+    ) {
       j++;
     }
     prefix = prefix.slice(0, j);
@@ -38,7 +100,10 @@ export function findLongestCommonPrefix(strings: string[]): string {
   return prefix;
 }
 
-export function formatCompletionCandidates(candidates: CompletionCandidate[], termCols: number = 80): string[] {
+export function formatCompletionCandidates(
+  candidates: CompletionCandidate[],
+  termCols: number = 80,
+): string[] {
   if (candidates.length === 0) return [];
 
   const sorted = [...candidates].sort((a, b) => {
@@ -47,7 +112,8 @@ export function formatCompletionCandidates(candidates: CompletionCandidate[], te
     return a.name.localeCompare(b.name);
   });
 
-  const maxLen = Math.max(...sorted.map((c) => c.name.length + (c.isDirectory ? 1 : 0))) + 2;
+  const maxLen =
+    Math.max(...sorted.map((c) => c.name.length + (c.isDirectory ? 1 : 0))) + 2;
   const colWidth = Math.max(maxLen, 12);
   const numCols = Math.max(1, Math.floor(termCols / colWidth));
 
@@ -82,7 +148,7 @@ export async function resolveContainerCompletion(
   containerId: string,
   cwd: string,
   buffer: string,
-  cursorPos: number
+  cursorPos: number,
 ): Promise<CompletionResult | null> {
   const textBeforeCursor = buffer.slice(0, cursorPos);
   const textAfterCursor = buffer.slice(cursorPos);
@@ -108,7 +174,7 @@ export async function resolveContainerCompletion(
       targetDir = dirPart || "/";
     } else {
       const base = cwd.endsWith("/") ? cwd.slice(0, -1) : cwd;
-      targetDir = dirPart ? `${base}/${dirPart}` : (base || "/");
+      targetDir = dirPart ? `${base}/${dirPart}` : base || "/";
     }
   }
 
@@ -117,7 +183,9 @@ export async function resolveContainerCompletion(
     const res = await fetchContainerFiles(containerId, targetDir);
     if (res && Array.isArray(res.entries) && res.entries.length > 0) {
       fileCandidates = res.entries
-        .filter((e) => e.name.startsWith(prefix) && e.name !== "." && e.name !== "..")
+        .filter(
+          (e) => e.name.startsWith(prefix) && e.name !== "." && e.name !== "..",
+        )
         .map((e) => ({
           name: e.name,
           isDirectory: e.isDirectory,
@@ -133,10 +201,13 @@ export async function resolveContainerCompletion(
         `ls -1pa '${safeDir}' 2>/dev/null`,
         undefined,
         undefined,
-        cwd
+        cwd,
       );
       if (cmdRes.exitCode === 0 && cmdRes.output) {
-        const rawNames = cmdRes.output.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+        const rawNames = cmdRes.output
+          .split(/\r?\n/)
+          .map((s) => s.trim())
+          .filter(Boolean);
         fileCandidates = rawNames
           .filter((raw) => {
             const clean = raw.endsWith("/") ? raw.slice(0, -1) : raw;
@@ -152,9 +223,9 @@ export async function resolveContainerCompletion(
 
   let commandCandidates: CompletionCandidate[] = [];
   if (isFirstWord && !hasSlash && prefix.length > 0) {
-    commandCandidates = COMMON_COMMANDS
-      .filter((cmd) => cmd.startsWith(prefix))
-      .map((cmd) => ({ name: cmd, isDirectory: false }));
+    commandCandidates = COMMON_COMMANDS.filter((cmd) =>
+      cmd.startsWith(prefix),
+    ).map((cmd) => ({ name: cmd, isDirectory: false }));
   }
 
   const candidateMap = new Map<string, CompletionCandidate>();
@@ -185,7 +256,8 @@ export async function resolveContainerCompletion(
       completedToken += " ";
     }
 
-    const newBuffer = buffer.slice(0, tokenStartIndex) + completedToken + textAfterCursor;
+    const newBuffer =
+      buffer.slice(0, tokenStartIndex) + completedToken + textAfterCursor;
     const newCursorPos = tokenStartIndex + completedToken.length;
 
     return {
@@ -204,7 +276,8 @@ export async function resolveContainerCompletion(
     const completedToken = hasSlash
       ? currentToken.slice(0, currentToken.lastIndexOf("/") + 1) + lcp
       : lcp;
-    newBuffer = buffer.slice(0, tokenStartIndex) + completedToken + textAfterCursor;
+    newBuffer =
+      buffer.slice(0, tokenStartIndex) + completedToken + textAfterCursor;
     newCursorPos = tokenStartIndex + completedToken.length;
   }
 

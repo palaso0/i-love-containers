@@ -9,12 +9,12 @@ export const VolumesView: React.FC = () => {
   const { t, volumes, systemOverview, removeVolume } = useAppStore();
   const isConnected = systemOverview?.dockerConnected ?? false;
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"name" | "size" | "inUse" | "created">("name");
-  const [volumeToDelete, setVolumeToDelete] = useState<DockerVolume | null>(null);
-
-  if (!isConnected) {
-    return <DockerDisconnected icon={HardDrive} />;
-  }
+  const [sortBy, setSortBy] = useState<"name" | "size" | "inUse" | "created">(
+    "name",
+  );
+  const [volumeToDelete, setVolumeToDelete] = useState<DockerVolume | null>(
+    null,
+  );
 
   const filteredVolumes = useMemo(() => {
     return volumes
@@ -22,30 +22,48 @@ export const VolumesView: React.FC = () => {
         (volume) =>
           volume.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           volume.driver.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          volume.mountpoint.toLowerCase().includes(searchQuery.toLowerCase())
+          volume.mountpoint.toLowerCase().includes(searchQuery.toLowerCase()),
       )
       .sort((a, b) => {
         if (sortBy === "size") {
-          return (b.size || 0) - (a.size || 0) || a.name.localeCompare(b.name, undefined, { numeric: true });
+          return (
+            (b.size || 0) - (a.size || 0) ||
+            a.name.localeCompare(b.name, undefined, { numeric: true })
+          );
         }
         if (sortBy === "inUse") {
-          return (b.inUse ? 1 : 0) - (a.inUse ? 1 : 0) || a.name.localeCompare(b.name, undefined, { numeric: true });
+          return (
+            (b.inUse ? 1 : 0) - (a.inUse ? 1 : 0) ||
+            a.name.localeCompare(b.name, undefined, { numeric: true })
+          );
         }
         if (sortBy === "created") {
           const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
           const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-          return dateB - dateA || a.name.localeCompare(b.name, undefined, { numeric: true });
+          return (
+            dateB - dateA ||
+            a.name.localeCompare(b.name, undefined, { numeric: true })
+          );
         }
-        return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" });
+        return a.name.localeCompare(b.name, undefined, {
+          numeric: true,
+          sensitivity: "base",
+        });
       });
   }, [volumes, searchQuery, sortBy]);
+
+  if (!isConnected) {
+    return <DockerDisconnected icon={HardDrive} />;
+  }
 
   return (
     <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-background">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/70 pb-3">
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="text-base font-semibold text-foreground tracking-tight">{t.volumes.title}</h1>
+            <h1 className="text-base font-semibold text-foreground tracking-tight">
+              {t.volumes.title}
+            </h1>
             <span className="text-xs font-mono text-muted-foreground bg-surface-secondary/70 border border-border/60 px-2 py-0.5 rounded-full">
               {volumes.length}
             </span>
@@ -75,10 +93,18 @@ export const VolumesView: React.FC = () => {
               className="bg-transparent text-xs text-foreground focus:outline-none cursor-pointer pr-1"
               aria-label={t.volumes.sortBy}
             >
-              <option value="name" className="bg-surface text-foreground">{t.volumes.sortByName}</option>
-              <option value="inUse" className="bg-surface text-foreground">{t.volumes.sortByInUse}</option>
-              <option value="size" className="bg-surface text-foreground">{t.volumes.sortBySize}</option>
-              <option value="created" className="bg-surface text-foreground">{t.volumes.sortByCreated}</option>
+              <option value="name" className="bg-surface text-foreground">
+                {t.volumes.sortByName}
+              </option>
+              <option value="inUse" className="bg-surface text-foreground">
+                {t.volumes.sortByInUse}
+              </option>
+              <option value="size" className="bg-surface text-foreground">
+                {t.volumes.sortBySize}
+              </option>
+              <option value="created" className="bg-surface text-foreground">
+                {t.volumes.sortByCreated}
+              </option>
             </select>
           </div>
         </div>
@@ -113,11 +139,15 @@ export const VolumesView: React.FC = () => {
 
               <div className="mt-3 space-y-1.5 text-2xs font-mono">
                 <div className="text-muted-foreground">
-                  {t.volumes.driver}: <span className="text-foreground">{volume.driver}</span>
+                  {t.volumes.driver}:{" "}
+                  <span className="text-foreground">{volume.driver}</span>
                 </div>
                 <div className="text-muted-foreground truncate">
                   {t.volumes.path}:{" "}
-                  <span className="text-foreground truncate" title={volume.mountpoint}>
+                  <span
+                    className="text-foreground truncate"
+                    title={volume.mountpoint}
+                  >
                     {volume.mountpoint}
                   </span>
                 </div>
@@ -134,14 +164,20 @@ export const VolumesView: React.FC = () => {
 
             <div className="mt-4 pt-3 border-t border-border/60 flex items-center justify-between text-2xs">
               <span className="text-muted-foreground font-mono">
-                {volume.createdAt ? new Date(volume.createdAt).toLocaleDateString() : t.volumes.active}
+                {volume.createdAt
+                  ? new Date(volume.createdAt).toLocaleDateString()
+                  : t.volumes.active}
               </span>
 
               <button
                 onClick={() => setVolumeToDelete(volume)}
                 disabled={volume.inUse}
                 className="p-1.5 rounded-md text-muted-foreground hover:text-status-danger hover:bg-status-danger/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
-                title={volume.inUse ? t.volumes.cannotDeleteInUse : t.volumes.deleteAction}
+                title={
+                  volume.inUse
+                    ? t.volumes.cannotDeleteInUse
+                    : t.volumes.deleteAction
+                }
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -153,11 +189,15 @@ export const VolumesView: React.FC = () => {
       {volumeToDelete && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-100">
           <div className="bg-popover border border-popover-border rounded-xl p-5 max-w-sm w-full space-y-4 shadow-2xl shadow-black/70 animate-in zoom-in-95 duration-100">
-            <h3 className="text-sm font-semibold text-foreground">{t.volumes.removeTitle}</h3>
+            <h3 className="text-sm font-semibold text-foreground">
+              {t.volumes.removeTitle}
+            </h3>
             <p className="text-xs text-muted-foreground font-sans leading-relaxed">
               {t.volumes.removeDesc}{" "}
-              <span className="font-mono text-amber-500 font-medium">{volumeToDelete.name}</span>?{" "}
-              {t.volumes.removeWarning}
+              <span className="font-mono text-amber-500 font-medium">
+                {volumeToDelete.name}
+              </span>
+              ? {t.volumes.removeWarning}
             </p>
             <div className="flex items-center justify-end space-x-2.5 pt-2">
               <button

@@ -1,9 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { FolderGit2 } from "lucide-react";
-import {
-  ComposeTopology,
-  ComposeServiceNode,
-} from "@/lib/composeParser";
+import { ComposeTopology, ComposeServiceNode } from "@/lib/composeParser";
 import { useAppStore } from "@/stores/useAppStore";
 import { ComposeServiceDrawer } from "./canvas/ComposeServiceDrawer";
 import { useCanvasInteraction } from "./canvas/useCanvasInteraction";
@@ -34,9 +31,13 @@ export const ComposeDiagramCanvas: React.FC<ComposeDiagramCanvasProps> = ({
 
   const isDark = theme === "dark";
 
-  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(
+    null,
+  );
   const [actionLoading, setActionLoading] = useState(false);
-  const [optimisticStates, setOptimisticStates] = useState<Record<string, "running" | "stopped" | "paused">>({});
+  const [optimisticStates, setOptimisticStates] = useState<
+    Record<string, "running" | "stopped" | "paused">
+  >({});
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [hoveredNetworkId, setHoveredNetworkId] = useState<string | null>(null);
 
@@ -66,7 +67,8 @@ export const ComposeDiagramCanvas: React.FC<ComposeDiagramCanvasProps> = ({
 
   const selectedService = useMemo<ComposeServiceNode | null>(() => {
     if (!selectedServiceId) return null;
-    const base = topology.services.find((s) => s.id === selectedServiceId) || null;
+    const base =
+      topology.services.find((s) => s.id === selectedServiceId) || null;
     if (!base) return null;
     const overridden = optimisticStates[base.id];
     return overridden ? { ...base, state: overridden } : base;
@@ -90,7 +92,7 @@ export const ComposeDiagramCanvas: React.FC<ComposeDiagramCanvasProps> = ({
   const handleServiceAction = async (
     serviceId: string,
     containerId: string,
-    action: "start" | "stop" | "restart"
+    action: "start" | "stop" | "restart",
   ) => {
     setActionLoading(true);
 
@@ -195,7 +197,9 @@ export const ComposeDiagramCanvas: React.FC<ComposeDiagramCanvasProps> = ({
               isSelected={isSelected}
               isHovered={isHovered}
               effectiveState={effectiveState}
-              onMouseDown={(e) => handleNodeMouseDown(e, svc.id, "service", pos)}
+              onMouseDown={(e) =>
+                handleNodeMouseDown(e, svc.id, "service", pos)
+              }
               onMouseEnter={() => setHoveredNodeId(svc.id)}
               onMouseLeave={() => setHoveredNodeId(null)}
             />
@@ -218,9 +222,13 @@ export const ComposeDiagramCanvas: React.FC<ComposeDiagramCanvasProps> = ({
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <div className="bg-surface/90 backdrop-blur-md border border-border/80 rounded-2xl p-6 text-center max-w-sm shadow-lg pointer-events-auto">
               <FolderGit2 className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-40" />
-              <h3 className="text-sm font-semibold text-foreground mb-1">Sin servicios en el YAML</h3>
+              <h3 className="text-sm font-semibold text-foreground mb-1">
+                Sin servicios en el YAML
+              </h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Define servicios en la pestaña <span className="font-semibold text-foreground">YAML</span> o levanta un stack con Docker Compose.
+                Define servicios en la pestaña{" "}
+                <span className="font-semibold text-foreground">YAML</span> o
+                levanta un stack con Docker Compose.
               </p>
             </div>
           </div>

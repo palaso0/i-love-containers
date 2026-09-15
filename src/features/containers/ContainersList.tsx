@@ -36,8 +36,11 @@ export const ContainersList: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [stateFilter, setStateFilter] = useState<"all" | ContainerState>("all");
-  const [activeMenuContainerId, setActiveMenuContainerId] = useState<string | null>(null);
-  const [containerToDelete, setContainerToDelete] = useState<ContainerDetail | null>(null);
+  const [activeMenuContainerId, setActiveMenuContainerId] = useState<
+    string | null
+  >(null);
+  const [containerToDelete, setContainerToDelete] =
+    useState<ContainerDetail | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   if (!isConnected) {
@@ -49,9 +52,12 @@ export const ContainersList: React.FC = () => {
       container.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       container.image.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (container.composeProject &&
-        container.composeProject.toLowerCase().includes(searchQuery.toLowerCase()));
+        container.composeProject
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()));
 
-    const matchesState = stateFilter === "all" || container.state === stateFilter;
+    const matchesState =
+      stateFilter === "all" || container.state === stateFilter;
     return matchesSearch && matchesState;
   });
 
@@ -90,9 +96,12 @@ export const ContainersList: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/70 pb-3">
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="text-base font-semibold text-foreground tracking-tight">Containers</h1>
+            <h1 className="text-base font-semibold text-foreground tracking-tight">
+              Containers
+            </h1>
             <span className="text-xs font-mono text-muted-foreground bg-surface-secondary/70 border border-border/60 px-2 py-0.5 rounded-full">
-              {containers.filter((c) => c.state === "running").length}/{containers.length}
+              {containers.filter((c) => c.state === "running").length}/
+              {containers.length}
             </span>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -132,7 +141,9 @@ export const ContainersList: React.FC = () => {
 
       {filteredContainers.length === 0 ? (
         <div className="bg-surface/50 border border-border/60 rounded-xl p-12 text-center flex flex-col items-center justify-center">
-          <p className="text-sm font-medium text-muted-foreground">No containers match the filter criteria</p>
+          <p className="text-sm font-medium text-muted-foreground">
+            No containers match the filter criteria
+          </p>
         </div>
       ) : viewMode === "minimal" ? (
         <div className="bg-surface/80 backdrop-blur-sm border border-border/70 rounded-xl overflow-hidden shadow-xs divide-y divide-border/60">
@@ -145,8 +156,14 @@ export const ContainersList: React.FC = () => {
                 className="px-4 py-2.5 flex items-center justify-between hover:bg-surface-hover transition-colors cursor-pointer"
               >
                 <div className="flex items-center space-x-3 truncate mr-4">
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDot(container.state)}`} />
-                  <TechIcon image={container.image} name={container.name} className="w-4 h-4 shrink-0" />
+                  <span
+                    className={`w-2 h-2 rounded-full shrink-0 ${getStatusDot(container.state)}`}
+                  />
+                  <TechIcon
+                    image={container.image}
+                    name={container.name}
+                    className="w-4 h-4 shrink-0"
+                  />
                   <span className="font-medium text-foreground text-xs truncate">
                     {container.name}
                   </span>
@@ -156,7 +173,9 @@ export const ContainersList: React.FC = () => {
                 </div>
 
                 <div className="flex items-center space-x-3 shrink-0">
-                  {container.ports && container.ports.length > 0 && container.ports[0].publicPort ? (
+                  {container.ports &&
+                  container.ports.length > 0 &&
+                  container.ports[0].publicPort ? (
                     <span className="text-2xs font-mono font-medium text-muted-foreground px-1.5 py-0.5 rounded bg-surface-secondary/60 border border-border/50">
                       :{container.ports[0].publicPort}
                     </span>
@@ -181,7 +200,11 @@ export const ContainersList: React.FC = () => {
                         : "text-status-running hover:bg-status-running/10 border border-status-running/30 bg-surface"
                     }`}
                   >
-                    {isRunning ? <Square className="w-2.5 h-2.5 fill-current" /> : <Play className="w-2.5 h-2.5 fill-current" />}
+                    {isRunning ? (
+                      <Square className="w-2.5 h-2.5 fill-current" />
+                    ) : (
+                      <Play className="w-2.5 h-2.5 fill-current" />
+                    )}
                     <span>{isRunning ? "Stop" : "Start"}</span>
                   </button>
                 </div>
@@ -196,7 +219,9 @@ export const ContainersList: React.FC = () => {
             <div className="col-span-3 sm:col-span-3">Image</div>
             <div className="col-span-2 hidden sm:block">CPU / Memory</div>
             <div className="col-span-2 hidden md:block">Ports</div>
-            <div className="col-span-4 sm:col-span-3 md:col-span-1 text-right">Actions</div>
+            <div className="col-span-4 sm:col-span-3 md:col-span-1 text-right">
+              Actions
+            </div>
           </div>
 
           <div className="divide-y divide-border/60">
@@ -211,8 +236,14 @@ export const ContainersList: React.FC = () => {
                   className="grid grid-cols-12 px-4 py-2.5 items-center hover:bg-surface-hover transition-colors text-xs cursor-pointer group"
                 >
                   <div className="col-span-5 sm:col-span-4 flex items-center space-x-2.5 truncate pr-2">
-                    <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDot(container.state)}`} />
-                    <TechIcon image={container.image} name={container.name} className="w-4 h-4 shrink-0" />
+                    <span
+                      className={`w-2 h-2 rounded-full shrink-0 ${getStatusDot(container.state)}`}
+                    />
+                    <TechIcon
+                      image={container.image}
+                      name={container.name}
+                      className="w-4 h-4 shrink-0"
+                    />
                     <div className="truncate">
                       <span className="font-semibold text-foreground group-hover:text-primary transition-colors truncate block">
                         {container.name}
@@ -234,9 +265,13 @@ export const ContainersList: React.FC = () => {
                   <div className="col-span-2 hidden sm:block text-2xs font-mono text-foreground">
                     {isRunning ? (
                       <div className="flex items-center space-x-1.5">
-                        <span className="text-status-running font-medium">{container.cpuPercent ?? 0}%</span>
+                        <span className="text-status-running font-medium">
+                          {container.cpuPercent ?? 0}%
+                        </span>
                         <span className="text-muted-foreground">•</span>
-                        <span className="text-muted-foreground">{formatBytes(container.memoryUsage ?? 0)}</span>
+                        <span className="text-muted-foreground">
+                          {formatBytes(container.memoryUsage ?? 0)}
+                        </span>
                       </div>
                     ) : (
                       <span className="text-muted-foreground">-</span>
@@ -249,8 +284,12 @@ export const ContainersList: React.FC = () => {
                         new Set(
                           (container.ports || [])
                             .filter((p) => p.publicPort)
-                            .map((p) => (p.publicPort === p.privatePort ? `:${p.publicPort}` : `${p.publicPort}:${p.privatePort}`))
-                        )
+                            .map((p) =>
+                              p.publicPort === p.privatePort
+                                ? `:${p.publicPort}`
+                                : `${p.publicPort}:${p.privatePort}`,
+                            ),
+                        ),
                       );
                       if (publicPorts.length === 0) {
                         return <span className="text-muted-foreground">-</span>;
@@ -261,7 +300,9 @@ export const ContainersList: React.FC = () => {
                             {publicPorts[0]}
                           </span>
                           {publicPorts.length > 1 && (
-                            <span className="text-muted-foreground">+{publicPorts.length - 1}</span>
+                            <span className="text-muted-foreground">
+                              +{publicPorts.length - 1}
+                            </span>
                           )}
                         </span>
                       );
@@ -285,14 +326,22 @@ export const ContainersList: React.FC = () => {
                       }`}
                       title={isRunning ? "Stop Container" : "Start Container"}
                     >
-                      {isRunning ? <Square className="w-2.5 h-2.5 fill-current" /> : <Play className="w-2.5 h-2.5 fill-current" />}
-                      <span className="hidden sm:inline text-2xs">{isRunning ? "Stop" : "Start"}</span>
+                      {isRunning ? (
+                        <Square className="w-2.5 h-2.5 fill-current" />
+                      ) : (
+                        <Play className="w-2.5 h-2.5 fill-current" />
+                      )}
+                      <span className="hidden sm:inline text-2xs">
+                        {isRunning ? "Stop" : "Start"}
+                      </span>
                     </button>
 
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setActiveMenuContainerId(isMenuOpen ? null : container.id);
+                        setActiveMenuContainerId(
+                          isMenuOpen ? null : container.id,
+                        );
                       }}
                       className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-secondary border border-transparent hover:border-border/60 transition-colors"
                       title="More actions"
@@ -358,8 +407,16 @@ export const ContainersList: React.FC = () => {
                           onClick={(e) => handleCopyId(container.id, e)}
                           className="w-full flex items-center space-x-2 px-2.5 py-1 text-xs rounded-lg text-muted-foreground hover:bg-surface-hover transition-colors"
                         >
-                          {copiedId === container.id ? <Check className="w-3.5 h-3.5 text-status-running" /> : <Copy className="w-3.5 h-3.5" />}
-                          <span>{copiedId === container.id ? "ID Copied" : "Copy ID"}</span>
+                          {copiedId === container.id ? (
+                            <Check className="w-3.5 h-3.5 text-status-running" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5" />
+                          )}
+                          <span>
+                            {copiedId === container.id
+                              ? "ID Copied"
+                              : "Copy ID"}
+                          </span>
                         </button>
 
                         <div className="h-[1px] bg-border/70 my-1" />
@@ -387,11 +444,15 @@ export const ContainersList: React.FC = () => {
       {containerToDelete && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-100">
           <div className="bg-popover border border-popover-border rounded-xl p-5 max-w-sm w-full space-y-4 shadow-2xl shadow-black/70 animate-in zoom-in-95 duration-100">
-            <h3 className="text-sm font-semibold text-foreground">Remove Container?</h3>
+            <h3 className="text-sm font-semibold text-foreground">
+              Remove Container?
+            </h3>
             <p className="text-xs text-muted-foreground font-sans leading-relaxed">
               Are you sure you want to remove container{" "}
-              <span className="font-mono text-status-danger font-medium">{containerToDelete.name}</span>?
-              This action cannot be undone.
+              <span className="font-mono text-status-danger font-medium">
+                {containerToDelete.name}
+              </span>
+              ? This action cannot be undone.
             </p>
             <div className="flex items-center justify-end space-x-2.5 pt-2">
               <button

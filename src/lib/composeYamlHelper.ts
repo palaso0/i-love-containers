@@ -1,10 +1,4 @@
-import {
-  parseDocument,
-  Document,
-  isMap,
-  isSeq,
-  YAMLMap,
-} from "yaml";
+import { parseDocument, Document, isMap, isSeq, YAMLMap } from "yaml";
 
 export interface ComposeServiceConfig {
   name: string;
@@ -35,7 +29,9 @@ export interface ParsedComposeFile {
   _rawDoc?: Document;
 }
 
-export function parseComposeYamlToConfig(yamlString: string): ParsedComposeFile {
+export function parseComposeYamlToConfig(
+  yamlString: string,
+): ParsedComposeFile {
   let doc: Document;
   try {
     doc = parseDocument(yamlString);
@@ -204,7 +200,11 @@ export function parseComposeYamlToConfig(yamlString: string): ParsedComposeFile 
         const k = String((p.key as any)?.valueOf() || "");
         if (knownKeys.has(k)) continue;
         const v = (p.value as any)?.valueOf();
-        if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
+        if (
+          typeof v === "string" ||
+          typeof v === "number" ||
+          typeof v === "boolean"
+        ) {
           customDirectives.push({ key: k, value: String(v) });
         }
       }
@@ -212,9 +212,14 @@ export function parseComposeYamlToConfig(yamlString: string): ParsedComposeFile 
       services.push({
         name: serviceName,
         image: image != null ? String((image as any).valueOf()) : undefined,
-        container_name: containerName != null ? String((containerName as any).valueOf()) : undefined,
-        restart: restart != null ? String((restart as any).valueOf()) : undefined,
-        platform: platform != null ? String((platform as any).valueOf()) : undefined,
+        container_name:
+          containerName != null
+            ? String((containerName as any).valueOf())
+            : undefined,
+        restart:
+          restart != null ? String((restart as any).valueOf()) : undefined,
+        platform:
+          platform != null ? String((platform as any).valueOf()) : undefined,
         command:
           command != null
             ? Array.isArray((command as any).valueOf())
@@ -240,8 +245,12 @@ export function parseComposeYamlToConfig(yamlString: string): ParsedComposeFile 
   };
 }
 
-export function serializeConfigToComposeYaml(config: ParsedComposeFile): string {
-  const doc: Document = config._rawDoc ? config._rawDoc.clone() : new Document();
+export function serializeConfigToComposeYaml(
+  config: ParsedComposeFile,
+): string {
+  const doc: Document = config._rawDoc
+    ? config._rawDoc.clone()
+    : new Document();
 
   if (!config._rawDoc) {
     if (config.version) {
@@ -405,7 +414,7 @@ export function applyBulkServiceConfig(
     field: "platform" | "restart" | "environment" | "network" | "custom";
     value: string;
     customKey?: string;
-  }
+  },
 ): string {
   const doc = parseDocument(yamlString);
   const servicesNode = doc.get("services") as any;
@@ -420,7 +429,7 @@ export function applyBulkServiceConfig(
   }
 
   const targets = new Set(
-    targetServices.length > 0 ? targetServices : allServiceNames
+    targetServices.length > 0 ? targetServices : allServiceNames,
   );
 
   for (const svcName of targets) {
@@ -448,10 +457,10 @@ export function applyBulkServiceConfig(
         const envItem = action.value.trim();
         if (envItem) {
           const [varName] = envItem.split("=");
-          let envNode = svcMap.get("environment") as any;
+          const envNode = svcMap.get("environment") as any;
           if (isSeq(envNode)) {
             const idx = envNode.items.findIndex((item: any) =>
-              String(item?.valueOf() || "").startsWith(`${varName}=`)
+              String(item?.valueOf() || "").startsWith(`${varName}=`),
             );
             if (idx >= 0) {
               envNode.items[idx] = envItem;
@@ -471,10 +480,10 @@ export function applyBulkServiceConfig(
       case "network": {
         const netName = action.value.trim();
         if (netName) {
-          let netNode = svcMap.get("networks") as any;
+          const netNode = svcMap.get("networks") as any;
           if (isSeq(netNode)) {
             const exists = netNode.items.some(
-              (item: any) => String(item?.valueOf() || "") === netName
+              (item: any) => String(item?.valueOf() || "") === netName,
             );
             if (!exists) {
               netNode.add(netName);

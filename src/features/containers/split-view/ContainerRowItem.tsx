@@ -58,12 +58,18 @@ export const ContainerRowItem: React.FC<ContainerRowItemProps> = ({
           title="Seleccionar para acciones en lote"
         />
         <span className={getStatusDot(container.state)} />
-        <TechIcon image={container.image} name={container.name} className="w-4 h-4 shrink-0" />
+        <TechIcon
+          image={container.image}
+          name={container.name}
+          className="w-4 h-4 shrink-0"
+        />
         <div className="min-w-0">
           <div className="flex items-center space-x-1.5">
             <span
               className={`text-xs truncate ${
-                isSelected ? "text-primary font-semibold" : "font-medium text-foreground"
+                isSelected
+                  ? "text-primary font-semibold"
+                  : "font-medium text-foreground"
               }`}
             >
               {container.name}
@@ -74,8 +80,8 @@ export const ContainerRowItem: React.FC<ContainerRowItemProps> = ({
                 new Set(
                   container.ports
                     .filter((p) => p.publicPort)
-                    .map((p) => p.publicPort!)
-                )
+                    .map((p) => p.publicPort!),
+                ),
               );
               if (publicPorts.length > 0) {
                 return (
@@ -83,7 +89,10 @@ export const ContainerRowItem: React.FC<ContainerRowItemProps> = ({
                     className="text-[10px] font-mono text-primary font-medium bg-primary/10 border border-primary/25 px-1.5 py-0.2 rounded"
                     title={`Host port: ${publicPorts.map((p) => `:${p}`).join(", ")}`}
                   >
-                    {publicPorts.slice(0, 2).map((p) => `:${p}`).join(" ")}
+                    {publicPorts
+                      .slice(0, 2)
+                      .map((p) => `:${p}`)
+                      .join(" ")}
                     {publicPorts.length > 2 && ` +${publicPorts.length - 2}`}
                   </span>
                 );
@@ -93,9 +102,14 @@ export const ContainerRowItem: React.FC<ContainerRowItemProps> = ({
           </div>
           <div className="text-[11px] font-mono text-muted-foreground truncate flex items-center gap-1.5 mt-0.5">
             {isRunning && container.cpuPercent !== undefined ? (
-              <span>{container.cpuPercent}% CPU • {formatBytes(container.memoryUsage ?? 0)}</span>
+              <span>
+                {container.cpuPercent}% CPU •{" "}
+                {formatBytes(container.memoryUsage ?? 0)}
+              </span>
             ) : isPaused ? (
-              <span className="text-amber-400 font-medium">{t.containers.paused}</span>
+              <span className="text-amber-400 font-medium">
+                {t.containers.paused}
+              </span>
             ) : (
               <span>{container.image}</span>
             )}

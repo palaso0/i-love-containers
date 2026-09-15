@@ -69,8 +69,7 @@ export const Sidebar: React.FC = () => {
         const fs = await invoke<boolean>("check_fullscreen");
         setIsFullscreen(fs);
         return;
-      } catch {
-      }
+      } catch {}
 
       if (document.fullscreenElement) {
         setIsFullscreen(true);
@@ -107,8 +106,7 @@ export const Sidebar: React.FC = () => {
         unlistenEvent = await listen<boolean>("fullscreen-changed", (event) => {
           setIsFullscreen(event.payload);
         });
-      } catch {
-      }
+      } catch {}
     })();
 
     return () => {
@@ -166,14 +164,19 @@ export const Sidebar: React.FC = () => {
     window.addEventListener("mouseup", handleMouseUp);
   };
 
-  const runningContainersCount = containers.filter((c) => c.state === "running").length;
+  const runningContainersCount = containers.filter(
+    (c) => c.state === "running",
+  ).length;
 
   const runtimeItems: NavItem[] = [
     {
       id: "containers",
       label: t.nav.containers,
       icon: Box,
-      count: runningContainersCount > 0 ? `${runningContainersCount}/${containers.length}` : containers.length,
+      count:
+        runningContainersCount > 0
+          ? `${runningContainersCount}/${containers.length}`
+          : containers.length,
     },
     {
       id: "images",
@@ -241,22 +244,32 @@ export const Sidebar: React.FC = () => {
             onClick={() => handleSelectTab(item.id)}
             title={`${item.label}${item.count !== undefined ? ` (${item.count})` : ""}`}
             className={`w-full group flex items-center ${
-              isCompact ? "justify-center px-1.5 py-2 relative" : "justify-start px-2.5 py-1.5"
+              isCompact
+                ? "justify-center px-1.5 py-2 relative"
+                : "justify-start px-2.5 py-1.5"
             } rounded-lg text-xs transition-all ${
               isActive
                 ? "bg-white/[0.08] text-primary font-medium shadow-2xs"
                 : "text-foreground/80 hover:text-foreground hover:bg-white/[0.04]"
             }`}
           >
-            <div className={`flex items-center ${isCompact ? "justify-center" : "space-x-2"} min-w-0 flex-1`}>
+            <div
+              className={`flex items-center ${isCompact ? "justify-center" : "space-x-2"} min-w-0 flex-1`}
+            >
               <Icon
                 className={`w-4 h-4 shrink-0 transition-colors ${
-                  isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                  isActive
+                    ? "text-primary"
+                    : "text-muted-foreground group-hover:text-foreground"
                 }`}
               />
               {!isCompact && (
                 <>
-                  <span className={`truncate ${isActive ? "text-primary font-semibold" : ""}`}>{item.label}</span>
+                  <span
+                    className={`truncate ${isActive ? "text-primary font-semibold" : ""}`}
+                  >
+                    {item.label}
+                  </span>
                   {item.count !== undefined && (
                     <span
                       className={`text-[11px] font-mono px-1.5 py-0.2 rounded-full shrink-0 ml-1.5 ${
@@ -286,7 +299,9 @@ export const Sidebar: React.FC = () => {
     <aside
       style={{ width: `${sidebarWidth}px` }}
       className={`relative h-full border-r border-sidebar-border bg-sidebar backdrop-blur-xl flex flex-col justify-between  z-10 shrink-0 ${
-        isDragging ? "transition-none" : "transition-[width] duration-150 ease-out"
+        isDragging
+          ? "transition-none"
+          : "transition-[width] duration-150 ease-out"
       }`}
     >
       <div className="flex flex-col flex-1 overflow-y-auto">
@@ -297,8 +312,8 @@ export const Sidebar: React.FC = () => {
             isFullscreen
               ? "justify-center px-2"
               : isCompact
-              ? "justify-center"
-              : "pl-20 pr-3 justify-start"
+                ? "justify-center"
+                : "pl-20 pr-3 justify-start"
           }`}
         >
           {(!isCompact || isFullscreen) && (
@@ -318,7 +333,9 @@ export const Sidebar: React.FC = () => {
         </div>
       </div>
 
-      <div className={`${isCompact ? "p-1.5" : "p-2.5"} border-t border-sidebar-border/60`}>
+      <div
+        className={`${isCompact ? "p-1.5" : "p-2.5"} border-t border-sidebar-border/60`}
+      >
         {isCompact ? (
           <div
             className="bg-surface/50 rounded-lg p-2 border border-border/40 flex flex-col items-center justify-center cursor-default"
@@ -332,7 +349,9 @@ export const Sidebar: React.FC = () => {
               }`}
             />
             <span className="font-mono text-[9px] text-muted-foreground font-semibold">
-              {isConnected ? `${systemOverview?.systemCpuPercent ?? 0}%` : t.header.offline}
+              {isConnected
+                ? `${systemOverview?.systemCpuPercent ?? 0}%`
+                : t.header.offline}
             </span>
           </div>
         ) : (
@@ -349,7 +368,9 @@ export const Sidebar: React.FC = () => {
                 {t.nav.daemonStatus}
               </span>
               <span className="font-mono text-[10px]">
-                {isConnected ? (systemOverview?.engineVersion ?? "v27") : t.header.offline}
+                {isConnected
+                  ? (systemOverview?.engineVersion ?? "v27")
+                  : t.header.offline}
               </span>
             </div>
             {isConnected && (
@@ -364,14 +385,18 @@ export const Sidebar: React.FC = () => {
                 <div className="w-full bg-surface-secondary/80 h-1 rounded-full overflow-hidden">
                   <div
                     className="bg-primary h-full rounded-full transition-all duration-300"
-                    style={{ width: `${Math.min(100, systemOverview?.systemCpuPercent ?? 0)}%` }}
+                    style={{
+                      width: `${Math.min(100, systemOverview?.systemCpuPercent ?? 0)}%`,
+                    }}
                   />
                 </div>
               </>
             )}
           </div>
         )}
-        <p className="text-sm font-bold text-foreground/60 text-center mt-2 truncate px-1">{isCompact ? "ILC" : "I Love Containers"}</p>
+        <p className="text-sm font-bold text-foreground/60 text-center mt-2 truncate px-1">
+          {isCompact ? "ILC" : "I Love Containers"}
+        </p>
       </div>
 
       <div

@@ -23,7 +23,10 @@ export async function fetchVolumes(): Promise<DockerVolume[]> {
 
 export async function removeVolume(name: string): Promise<boolean> {
   try {
-    const response = await apiFetch(`/api/volumes/${encodeURIComponent(name)}`, { method: "DELETE" });
+    const response = await apiFetch(
+      `/api/volumes/${encodeURIComponent(name)}`,
+      { method: "DELETE" },
+    );
     if (response.ok) return true;
   } catch {}
 

@@ -66,7 +66,7 @@ export const ComposeCustomRunModal: React.FC<ComposeCustomRunModalProps> = ({
         projectName,
         workingDir,
         configFile,
-        trimmed
+        trimmed,
       );
       if (res.ok) {
         await refreshData();
@@ -118,7 +118,10 @@ export const ComposeCustomRunModal: React.FC<ComposeCustomRunModalProps> = ({
             <textarea
               value={command}
               onChange={(e) => setCommand(e.target.value)}
-              placeholder={t.compose.customPlayPlaceholder || "docker compose -f docker-compose.yml -f override.yml up -d --build"}
+              placeholder={
+                t.compose.customPlayPlaceholder ||
+                "docker compose -f docker-compose.yml -f override.yml up -d --build"
+              }
               rows={3}
               className="w-full p-2.5 text-xs font-mono bg-surface border border-border/70 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/50 transition-all shadow-xs resize-none"
             />
@@ -132,14 +135,19 @@ export const ComposeCustomRunModal: React.FC<ComposeCustomRunModalProps> = ({
                 onChange={(e) => setUseAsDefault(e.target.checked)}
                 className="w-4 h-4 rounded border-border/80 bg-surface text-purple-600 focus:ring-purple-500 accent-purple-600 cursor-pointer"
               />
-              <span>{t.compose.applyToComposeActions || "Aplicar a las acciones de Compose"}</span>
+              <span>
+                {t.compose.applyToComposeActions ||
+                  "Aplicar a las acciones de Compose"}
+              </span>
             </label>
           </div>
 
           {errorMsg && (
             <div className="p-3 bg-status-danger/10 border border-status-danger/30 rounded-lg text-xs font-mono text-status-danger flex items-start space-x-2 max-h-32 overflow-y-auto">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <pre className="whitespace-pre-wrap break-all leading-tight">{errorMsg}</pre>
+              <pre className="whitespace-pre-wrap break-all leading-tight">
+                {errorMsg}
+              </pre>
             </div>
           )}
         </div>

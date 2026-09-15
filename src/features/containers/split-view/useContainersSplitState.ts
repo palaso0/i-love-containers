@@ -11,12 +11,16 @@ export function useContainersSplitState(
   unpauseContainer: (id: string) => Promise<boolean | void>,
   restartContainer: (id: string) => Promise<boolean | void>,
   upComposeProject: (name: string, dir?: string, file?: string) => Promise<any>,
-  refreshData: () => Promise<void>
+  refreshData: () => Promise<void>,
 ) {
   const [searchQuery, setSearchQuery] = useState("");
   const [stateFilter, setStateFilter] = useState<"all" | ContainerState>("all");
-  const [containerToDelete, setContainerToDelete] = useState<ContainerDetail | null>(null);
-  const [stackToDelete, setStackToDelete] = useState<{ name: string; containers: ContainerDetail[] } | null>(null);
+  const [containerToDelete, setContainerToDelete] =
+    useState<ContainerDetail | null>(null);
+  const [stackToDelete, setStackToDelete] = useState<{
+    name: string;
+    containers: ContainerDetail[];
+  } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkToDelete, setBulkToDelete] = useState<string[] | null>(null);
   const [isBulkOperating, setIsBulkOperating] = useState(false);
@@ -24,7 +28,9 @@ export function useContainersSplitState(
   const [hiddenStacks, setHiddenStacks] = useState<Set<string>>(() => {
     try {
       const saved = localStorage.getItem("ilc_hidden_container_stacks");
-      return saved ? new Set(JSON.parse(saved).map((s: string) => s.toLowerCase())) : new Set();
+      return saved
+        ? new Set(JSON.parse(saved).map((s: string) => s.toLowerCase()))
+        : new Set();
     } catch {
       return new Set();
     }
@@ -34,7 +40,7 @@ export function useContainersSplitState(
     const activeStacks = new Set(
       containers
         .map((c) => c.composeProject?.toLowerCase())
-        .filter((name): name is string => Boolean(name))
+        .filter((name): name is string => Boolean(name)),
     );
     if (activeStacks.size > 0) {
       setHiddenStacks((prev) => {
@@ -48,7 +54,10 @@ export function useContainersSplitState(
         }
         if (changed) {
           try {
-            localStorage.setItem("ilc_hidden_container_stacks", JSON.stringify(Array.from(next)));
+            localStorage.setItem(
+              "ilc_hidden_container_stacks",
+              JSON.stringify(Array.from(next)),
+            );
           } catch {}
           return next;
         }
@@ -75,7 +84,10 @@ export function useContainersSplitState(
         next.add(stackName);
       }
       try {
-        localStorage.setItem("ilc_collapsed_stacks", JSON.stringify(Array.from(next)));
+        localStorage.setItem(
+          "ilc_collapsed_stacks",
+          JSON.stringify(Array.from(next)),
+        );
       } catch {}
       return next;
     });
@@ -128,9 +140,15 @@ export function useContainersSplitState(
       if (splitViewRef.current) {
         const rect = splitViewRef.current.getBoundingClientRect();
         const maxW = Math.max(360, rect.width - 320);
-        const finalWidth = Math.max(280, Math.min(maxW, ev.clientX - rect.left));
+        const finalWidth = Math.max(
+          280,
+          Math.min(maxW, ev.clientX - rect.left),
+        );
         try {
-          localStorage.setItem("ilc_containers_split_width", String(finalWidth));
+          localStorage.setItem(
+            "ilc_containers_split_width",
+            String(finalWidth),
+          );
         } catch {}
       }
     };
@@ -161,22 +179,29 @@ export function useContainersSplitState(
       container.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       container.image.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (container.composeProject &&
-        container.composeProject.toLowerCase().includes(searchQuery.toLowerCase()));
+        container.composeProject
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()));
 
-    const matchesState = stateFilter === "all" || container.state === stateFilter;
+    const matchesState =
+      stateFilter === "all" || container.state === stateFilter;
     return matchesSearch && matchesState;
   });
 
   useEffect(() => {
     if (filteredContainers.length > 0) {
-      const exists = filteredContainers.some((c) => c.id === selectedContainerId);
+      const exists = filteredContainers.some(
+        (c) => c.id === selectedContainerId,
+      );
       if (!selectedContainerId || !exists) {
         setSelectedContainerId(filteredContainers[0].id);
       }
     }
   }, [filteredContainers, selectedContainerId, setSelectedContainerId]);
 
-  const activeContainer = containers.find((c) => c.id === selectedContainerId) || filteredContainers[0];
+  const activeContainer =
+    containers.find((c) => c.id === selectedContainerId) ||
+    filteredContainers[0];
 
   const composeGroups = useMemo(() => {
     const groups: Record<string, ContainerDetail[]> = {};
@@ -199,7 +224,7 @@ export function useContainersSplitState(
     for (const c of filteredContainers) {
       const rawGroupName = c.composeProject || "__standalone__";
       const existingKey = Object.keys(groups).find(
-        (k) => k.toLowerCase() === rawGroupName.toLowerCase()
+        (k) => k.toLowerCase() === rawGroupName.toLowerCase(),
       );
       const targetKey = existingKey || rawGroupName;
       if (!groups[targetKey]) groups[targetKey] = [];
@@ -207,9 +232,18 @@ export function useContainersSplitState(
     }
 
     return groups;
-  }, [composeProjects, filteredContainers, searchQuery, stateFilter, hiddenStacks]);
+  }, [
+    composeProjects,
+    filteredContainers,
+    searchQuery,
+    stateFilter,
+    hiddenStacks,
+  ]);
 
-  const handleStopAll = async (groupContainers: ContainerDetail[], e: React.MouseEvent) => {
+  const handleStopAll = async (
+    groupContainers: ContainerDetail[],
+    e: React.MouseEvent,
+  ) => {
     e.stopPropagation();
     for (const c of groupContainers) {
       if (c.state === "paused") {
@@ -222,14 +256,21 @@ export function useContainersSplitState(
     await refreshData();
   };
 
-  const handleStartAll = async (groupName: string, groupContainers: ContainerDetail[], e: React.MouseEvent) => {
+  const handleStartAll = async (
+    groupName: string,
+    groupContainers: ContainerDetail[],
+    e: React.MouseEvent,
+  ) => {
     e.stopPropagation();
     setHiddenStacks((prev) => {
       if (prev.has(groupName.toLowerCase())) {
         const next = new Set(prev);
         next.delete(groupName.toLowerCase());
         try {
-          localStorage.setItem("ilc_hidden_container_stacks", JSON.stringify(Array.from(next)));
+          localStorage.setItem(
+            "ilc_hidden_container_stacks",
+            JSON.stringify(Array.from(next)),
+          );
         } catch {}
         return next;
       }
@@ -237,7 +278,7 @@ export function useContainersSplitState(
     });
 
     const proj = composeProjects.find(
-      (p) => p.name.toLowerCase() === groupName.toLowerCase()
+      (p) => p.name.toLowerCase() === groupName.toLowerCase(),
     );
     if (groupContainers.length === 0 && proj) {
       await upComposeProject(proj.name, proj.workingDir, proj.configFile);
@@ -253,14 +294,21 @@ export function useContainersSplitState(
     await refreshData();
   };
 
-  const handleRestartAll = async (groupName: string, groupContainers: ContainerDetail[], e: React.MouseEvent) => {
+  const handleRestartAll = async (
+    groupName: string,
+    groupContainers: ContainerDetail[],
+    e: React.MouseEvent,
+  ) => {
     e.stopPropagation();
     setHiddenStacks((prev) => {
       if (prev.has(groupName.toLowerCase())) {
         const next = new Set(prev);
         next.delete(groupName.toLowerCase());
         try {
-          localStorage.setItem("ilc_hidden_container_stacks", JSON.stringify(Array.from(next)));
+          localStorage.setItem(
+            "ilc_hidden_container_stacks",
+            JSON.stringify(Array.from(next)),
+          );
         } catch {}
         return next;
       }
@@ -268,7 +316,7 @@ export function useContainersSplitState(
     });
 
     const proj = composeProjects.find(
-      (p) => p.name.toLowerCase() === groupName.toLowerCase()
+      (p) => p.name.toLowerCase() === groupName.toLowerCase(),
     );
     if (groupContainers.length === 0 && proj) {
       await upComposeProject(proj.name, proj.workingDir, proj.configFile);
@@ -313,7 +361,8 @@ export function useContainersSplitState(
 
   const toggleGroupSelect = (groupContainers: ContainerDetail[]) => {
     const groupIds = groupContainers.map((c) => c.id);
-    const allInGroupSelected = groupIds.length > 0 && groupIds.every((id) => selectedIds.has(id));
+    const allInGroupSelected =
+      groupIds.length > 0 && groupIds.every((id) => selectedIds.has(id));
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (allInGroupSelected) {

@@ -97,15 +97,20 @@ export const CommandPalette: React.FC = () => {
       id: "engine-rescan",
       category: "Container Engines",
       title: "Rescan Container Engine Sockets",
-      description: "Probe host for Docker Desktop, OrbStack, Rancher, Colima, Podman",
+      description:
+        "Probe host for Docker Desktop, OrbStack, Rancher, Colima, Podman",
       icon: RotateCw,
       action: () => rescanEngines(),
     },
     {
       id: "action-view-mode",
       category: "View",
-      title: viewMode === "minimal" ? "Switch to Detailed Mode (M)" : "Switch to Minimal Mode (M)",
-      description: "Toggle between lightweight essentials and full metrics view",
+      title:
+        viewMode === "minimal"
+          ? "Switch to Detailed Mode (M)"
+          : "Switch to Minimal Mode (M)",
+      description:
+        "Toggle between lightweight essentials and full metrics view",
       icon: viewMode === "minimal" ? Maximize2 : Minimize2,
       action: () => toggleViewMode(),
     },
@@ -285,7 +290,7 @@ export const CommandPalette: React.FC = () => {
     (item) =>
       item.title.toLowerCase().includes(query.toLowerCase()) ||
       item.description.toLowerCase().includes(query.toLowerCase()) ||
-      item.category.toLowerCase().includes(query.toLowerCase())
+      item.category.toLowerCase().includes(query.toLowerCase()),
   );
 
   const handleSelect = (item: PaletteItem) => {
@@ -296,10 +301,15 @@ export const CommandPalette: React.FC = () => {
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      setSelectedIndex((prev) => (prev + 1) % Math.max(1, filteredItems.length));
+      setSelectedIndex(
+        (prev) => (prev + 1) % Math.max(1, filteredItems.length),
+      );
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
-      setSelectedIndex((prev) => (prev - 1 + filteredItems.length) % Math.max(1, filteredItems.length));
+      setSelectedIndex(
+        (prev) =>
+          (prev - 1 + filteredItems.length) % Math.max(1, filteredItems.length),
+      );
     } else if (event.key === "Enter" && filteredItems[selectedIndex]) {
       event.preventDefault();
       handleSelect(filteredItems[selectedIndex]);
@@ -366,7 +376,9 @@ export const CommandPalette: React.FC = () => {
                     <div className="truncate">
                       <div
                         className={`text-xs truncate ${
-                          isSelected ? "text-white font-semibold" : "text-foreground font-medium"
+                          isSelected
+                            ? "text-white font-semibold"
+                            : "text-foreground font-medium"
                         }`}
                       >
                         {item.title}
@@ -416,7 +428,9 @@ export const CommandPalette: React.FC = () => {
               <span>close</span>
             </span>
           </div>
-          <span className="text-[11px] font-medium text-foreground/60">Spotlight</span>
+          <span className="text-[11px] font-medium text-foreground/60">
+            Spotlight
+          </span>
         </div>
       </div>
     </div>

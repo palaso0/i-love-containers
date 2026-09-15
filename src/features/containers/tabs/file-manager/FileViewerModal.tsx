@@ -1,12 +1,5 @@
 import React, { useRef } from "react";
-import {
-  FileText,
-  RotateCcw,
-  Save,
-  Download,
-  X,
-  File,
-} from "lucide-react";
+import { FileText, RotateCcw, Save, Download, X, File } from "lucide-react";
 import { ContainerFileItem } from "@/types";
 
 export interface ViewerModalState {
@@ -61,24 +54,32 @@ export const FileViewerModal: React.FC<FileViewerModalProps> = ({
             </span>
             {!viewerModal.isBinary && (
               <span className="text-2xs font-mono text-muted-foreground/60 shrink-0 hidden sm:inline">
-                • {fm.linesCount.replace("{count}", String((viewerModal.content || "").split("\n").length))}
+                •{" "}
+                {fm.linesCount.replace(
+                  "{count}",
+                  String((viewerModal.content || "").split("\n").length),
+                )}
               </span>
             )}
             {viewerModal.content !== viewerModal.originalContent && (
-              <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" title="Unsaved changes" />
+              <span
+                className="w-2 h-2 rounded-full bg-amber-400 shrink-0"
+                title="Unsaved changes"
+              />
             )}
           </div>
           <div className="flex items-center space-x-2">
-            {!viewerModal.isBinary && viewerModal.content !== viewerModal.originalContent && (
-              <button
-                onClick={onDiscardChanges}
-                className="flex items-center space-x-1 px-2.5 py-1 rounded bg-surface-secondary border border-border text-xs text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors shadow-xs"
-                title={fm.discardChanges}
-              >
-                <RotateCcw className="w-3.5 h-3.5 text-amber-500" />
-                <span>{fm.discardChanges}</span>
-              </button>
-            )}
+            {!viewerModal.isBinary &&
+              viewerModal.content !== viewerModal.originalContent && (
+                <button
+                  onClick={onDiscardChanges}
+                  className="flex items-center space-x-1 px-2.5 py-1 rounded bg-surface-secondary border border-border text-xs text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors shadow-xs"
+                  title={fm.discardChanges}
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-amber-500" />
+                  <span>{fm.discardChanges}</span>
+                </button>
+              )}
             {!viewerModal.isBinary && (
               <button
                 onClick={onSaveAndClose}
@@ -94,7 +95,7 @@ export const FileViewerModal: React.FC<FileViewerModalProps> = ({
                 onDownload(
                   containerId,
                   viewerModal.item.path,
-                  viewerModal.item.name
+                  viewerModal.item.name,
                 )
               }
               className="flex items-center space-x-1 px-2.5 py-1 rounded bg-surface-secondary border border-border text-xs text-foreground hover:bg-surface-hover transition-colors shadow-xs"
@@ -127,8 +128,13 @@ export const FileViewerModal: React.FC<FileViewerModalProps> = ({
               >
                 <pre className="font-mono text-xs leading-relaxed m-0 p-0 text-muted-foreground/40">
                   {Array.from(
-                    { length: Math.max(1, (viewerModal.content || "").split("\n").length) },
-                    (_, i) => i + 1
+                    {
+                      length: Math.max(
+                        1,
+                        (viewerModal.content || "").split("\n").length,
+                      ),
+                    },
+                    (_, i) => i + 1,
                   ).join("\n")}
                 </pre>
               </div>
@@ -138,7 +144,8 @@ export const FileViewerModal: React.FC<FileViewerModalProps> = ({
                 onChange={(e) => onContentChange(e.target.value)}
                 onScroll={(e) => {
                   if (editorGutterRef.current) {
-                    editorGutterRef.current.scrollTop = e.currentTarget.scrollTop;
+                    editorGutterRef.current.scrollTop =
+                      e.currentTarget.scrollTop;
                   }
                 }}
                 wrap="off"

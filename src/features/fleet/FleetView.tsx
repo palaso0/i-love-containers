@@ -32,7 +32,8 @@ export const FleetView: React.FC = () => {
 
   const isConnected = systemOverview?.dockerConnected ?? false;
 
-  const [selectedService, setSelectedService] = useState<ContainerDetail | null>(null);
+  const [selectedService, setSelectedService] =
+    useState<ContainerDetail | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedPort, setCopiedPort] = useState<number | null>(null);
 
@@ -54,7 +55,10 @@ export const FleetView: React.FC = () => {
     }
   };
 
-  const handleRestartAll = async (containerIds: string[], e: React.MouseEvent) => {
+  const handleRestartAll = async (
+    containerIds: string[],
+    e: React.MouseEvent,
+  ) => {
     e.stopPropagation();
     for (const id of containerIds) {
       await restartContainer(id);
@@ -65,10 +69,13 @@ export const FleetView: React.FC = () => {
     (c) =>
       c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.image.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (c.composeProject && c.composeProject.toLowerCase().includes(searchQuery.toLowerCase()))
+      (c.composeProject &&
+        c.composeProject.toLowerCase().includes(searchQuery.toLowerCase())),
   );
 
-  const standaloneContainers = filteredContainers.filter((c) => !c.composeProject);
+  const standaloneContainers = filteredContainers.filter(
+    (c) => !c.composeProject,
+  );
 
   const runningCount = containers.filter((c) => c.state === "running").length;
 
@@ -101,68 +108,216 @@ export const FleetView: React.FC = () => {
           </div>
         </div>
 
-      <div className="space-y-4">
-        {composeProjects.map((project) => {
-          const projectContainers = filteredContainers.filter(
-            (c) => c.composeProject === project.name
-          );
-          if (projectContainers.length === 0) return null;
+        <div className="space-y-4">
+          {composeProjects.map((project) => {
+            const projectContainers = filteredContainers.filter(
+              (c) => c.composeProject === project.name,
+            );
+            if (projectContainers.length === 0) return null;
 
-          const projectRunningCount = projectContainers.filter((c) => c.state === "running").length;
-          const containerIds = projectContainers.map((c) => c.id);
+            const projectRunningCount = projectContainers.filter(
+              (c) => c.state === "running",
+            ).length;
+            const containerIds = projectContainers.map((c) => c.id);
 
-          return (
-            <div
-              key={project.name}
-              className="bg-surface/80 backdrop-blur-sm border border-border/70 rounded-xl overflow-hidden shadow-xs"
-            >
-              <div className="px-4 py-2.5 bg-surface-secondary/50 border-b border-border/70 flex items-center justify-between ">
-                <div className="flex items-center space-x-2">
-                  <FolderGit2 className="w-4 h-4 text-primary" />
-                  <span className="text-xs font-semibold text-foreground font-mono">{project.name}</span>
-                  <span className="text-2xs font-mono text-muted-foreground hidden sm:inline">
-                    ({projectRunningCount}/{projectContainers.length} running)
-                  </span>
+            return (
+              <div
+                key={project.name}
+                className="bg-surface/80 backdrop-blur-sm border border-border/70 rounded-xl overflow-hidden shadow-xs"
+              >
+                <div className="px-4 py-2.5 bg-surface-secondary/50 border-b border-border/70 flex items-center justify-between ">
+                  <div className="flex items-center space-x-2">
+                    <FolderGit2 className="w-4 h-4 text-primary" />
+                    <span className="text-xs font-semibold text-foreground font-mono">
+                      {project.name}
+                    </span>
+                    <span className="text-2xs font-mono text-muted-foreground hidden sm:inline">
+                      ({projectRunningCount}/{projectContainers.length} running)
+                    </span>
+                  </div>
+
+                  <div className="flex items-center space-x-1 text-xs">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openRealNativeWindow({
+                          id: `stack-logs-${project.name}-${Date.now()}`,
+                          title: `${project.name} — Unified Logs`,
+                          type: "logs",
+                          composeProject: project.name,
+                        });
+                      }}
+                      className="flex items-center space-x-1 px-2 py-0.5 rounded-md text-sky-400 hover:text-sky-300 hover:bg-surface transition-colors"
+                      title="Open unified live log stream in native OS window"
+                    >
+                      <FileText className="w-3 h-3" />
+                      <span>Logs</span>
+                    </button>
+                    <button
+                      onClick={(e) => handleRestartAll(containerIds, e)}
+                      className="flex items-center space-x-1 px-2 py-0.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface transition-colors"
+                      title="Restart all services in stack"
+                    >
+                      <RotateCw className="w-3 h-3" />
+                      <span>Restart</span>
+                    </button>
+                    <button
+                      onClick={(e) => handleStopAll(containerIds, e)}
+                      className="flex items-center space-x-1 px-2 py-0.5 rounded-md text-muted-foreground hover:text-status-restarting hover:bg-surface transition-colors"
+                      title="Stop all services in stack"
+                    >
+                      <Square className="w-3 h-3 fill-current" />
+                      <span>Stop</span>
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex items-center space-x-1 text-xs">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openRealNativeWindow({
-                        id: `stack-logs-${project.name}-${Date.now()}`,
-                        title: `${project.name} — Unified Logs`,
-                        type: "logs",
-                        composeProject: project.name,
-                      });
-                    }}
-                    className="flex items-center space-x-1 px-2 py-0.5 rounded-md text-sky-400 hover:text-sky-300 hover:bg-surface transition-colors"
-                    title="Open unified live log stream in native OS window"
-                  >
-                    <FileText className="w-3 h-3" />
-                    <span>Logs</span>
-                  </button>
-                  <button
-                    onClick={(e) => handleRestartAll(containerIds, e)}
-                    className="flex items-center space-x-1 px-2 py-0.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface transition-colors"
-                    title="Restart all services in stack"
-                  >
-                    <RotateCw className="w-3 h-3" />
-                    <span>Restart</span>
-                  </button>
-                  <button
-                    onClick={(e) => handleStopAll(containerIds, e)}
-                    className="flex items-center space-x-1 px-2 py-0.5 rounded-md text-muted-foreground hover:text-status-restarting hover:bg-surface transition-colors"
-                    title="Stop all services in stack"
-                  >
-                    <Square className="w-3 h-3 fill-current" />
-                    <span>Stop</span>
-                  </button>
+                <div className="divide-y divide-border/60 text-xs">
+                  {projectContainers.map((container) => {
+                    const isRunning = container.state === "running";
+                    const primaryPort =
+                      container.ports && container.ports.length > 0
+                        ? container.ports[0].publicPort
+                        : null;
+
+                    return (
+                      <div
+                        key={container.id}
+                        onClick={() => setSelectedService(container)}
+                        className="px-4 py-2.5 flex items-center justify-between hover:bg-surface-hover transition-colors cursor-pointer group"
+                      >
+                        <div className="flex items-center space-x-3 truncate mr-3 flex-1">
+                          <span
+                            className={`w-2 h-2 rounded-full shrink-0 ${
+                              isRunning
+                                ? "bg-status-running shadow-[0_0_6px_rgba(48,209,88,0.6)]"
+                                : "bg-status-stopped"
+                            }`}
+                          />
+                          <TechIcon
+                            image={container.image}
+                            name={container.composeService || container.name}
+                            className="w-4 h-4 shrink-0"
+                          />
+                          <span className="font-semibold text-foreground group-hover:text-primary transition-colors text-xs truncate">
+                            {container.composeService || container.name}
+                          </span>
+                          <span className="text-2xs font-mono text-muted-foreground truncate hidden md:inline">
+                            {container.image}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center space-x-3 shrink-0">
+                          {primaryPort && (
+                            <button
+                              onClick={(e) => handleCopyPort(primaryPort, e)}
+                              className="flex items-center space-x-1 px-2 py-0.5 rounded bg-surface-secondary border border-border text-2xs text-muted-foreground hover:text-foreground transition-colors"
+                              title="Click to copy http://localhost URL"
+                            >
+                              <span>:{primaryPort}</span>
+                              {copiedPort === primaryPort ? (
+                                <Check className="w-2.5 h-2.5 text-status-running" />
+                              ) : (
+                                <ExternalLink className="w-2.5 h-2.5" />
+                              )}
+                            </button>
+                          )}
+
+                          {viewMode === "detailed" && isRunning && (
+                            <span className="text-2xs text-muted-foreground hidden sm:inline">
+                              {formatBytes(container.memoryUsage ?? 0)} •{" "}
+                              {container.cpuPercent ?? 0}%
+                            </span>
+                          )}
+
+                          <span className="text-2xs text-muted-foreground hidden lg:inline">
+                            {container.status}
+                          </span>
+
+                          <div className="flex items-center space-x-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openRealNativeWindow({
+                                  id: `term-${container.id}-${Date.now()}`,
+                                  title: `${container.composeService || container.name} — Terminal`,
+                                  type: "terminal",
+                                  containerId: container.id,
+                                  containerName:
+                                    container.composeService || container.name,
+                                });
+                              }}
+                              className="p-1 rounded text-muted-foreground hover:text-primary hover:bg-surface-secondary transition-colors"
+                              title="Open interactive shell in native OS window"
+                            >
+                              <Terminal className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openRealNativeWindow({
+                                  id: `logs-${container.id}-${Date.now()}`,
+                                  title: `${container.composeService || container.name} — Logs`,
+                                  type: "logs",
+                                  containerId: container.id,
+                                  containerName:
+                                    container.composeService || container.name,
+                                });
+                              }}
+                              className="p-1 rounded text-muted-foreground hover:text-sky-400 hover:bg-surface-secondary transition-colors"
+                              title="Open live logs in native OS window"
+                            >
+                              <FileText className="w-3 h-3" />
+                            </button>
+                          </div>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (isRunning) {
+                                stopContainer(container.id);
+                              } else {
+                                startContainer(container.id);
+                              }
+                            }}
+                            className={`px-2 py-0.5 rounded text-2xs font-mono transition-colors flex items-center space-x-1 ${
+                              isRunning
+                                ? "text-amber-500 hover:bg-amber-500/10 border border-amber-500/30"
+                                : "text-status-running hover:bg-status-running/10 border border-status-running/30"
+                            }`}
+                          >
+                            {isRunning ? (
+                              <Square className="w-2.5 h-2.5 fill-current" />
+                            ) : (
+                              <Play className="w-2.5 h-2.5 fill-current" />
+                            )}
+                            <span>{isRunning ? "Stop" : "Start"}</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+
+          {standaloneContainers.length > 0 && (
+            <div className="bg-surface border border-border rounded-lg overflow-hidden shadow-xs">
+              <div className="px-3.5 py-2 bg-surface-secondary/50 border-b border-border flex items-center justify-between ">
+                <div className="flex items-center space-x-2 font-mono">
+                  <Layers className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="text-xs font-bold text-foreground">
+                    Standalone Services
+                  </span>
+                  <span className="text-2xs text-muted-foreground">
+                    ({standaloneContainers.length})
+                  </span>
                 </div>
               </div>
 
-              <div className="divide-y divide-border/60 text-xs">
-                {projectContainers.map((container) => {
+              <div className="divide-y divide-border font-mono text-xs">
+                {standaloneContainers.map((container) => {
                   const isRunning = container.state === "running";
                   const primaryPort =
                     container.ports && container.ports.length > 0
@@ -173,21 +328,25 @@ export const FleetView: React.FC = () => {
                     <div
                       key={container.id}
                       onClick={() => setSelectedService(container)}
-                      className="px-4 py-2.5 flex items-center justify-between hover:bg-surface-hover transition-colors cursor-pointer group"
+                      className="px-3.5 py-2.5 flex items-center justify-between hover:bg-surface-hover transition-colors cursor-pointer group"
                     >
                       <div className="flex items-center space-x-3 truncate mr-3 flex-1">
                         <span
                           className={`w-2 h-2 rounded-full shrink-0 ${
                             isRunning
-                              ? "bg-status-running shadow-[0_0_6px_rgba(48,209,88,0.6)]"
+                              ? "bg-status-running shadow-[0_0_6px_rgba(16,185,129,0.4)]"
                               : "bg-status-stopped"
                           }`}
                         />
-                        <TechIcon image={container.image} name={container.composeService || container.name} className="w-4 h-4 shrink-0" />
-                        <span className="font-semibold text-foreground group-hover:text-primary transition-colors text-xs truncate">
-                          {container.composeService || container.name}
+                        <TechIcon
+                          image={container.image}
+                          name={container.name}
+                          className="w-4 h-4 shrink-0"
+                        />
+                        <span className="font-semibold text-foreground text-xs truncate">
+                          {container.name}
                         </span>
-                        <span className="text-2xs font-mono text-muted-foreground truncate hidden md:inline">
+                        <span className="text-2xs text-muted-foreground truncate hidden md:inline">
                           {container.image}
                         </span>
                       </div>
@@ -197,7 +356,7 @@ export const FleetView: React.FC = () => {
                           <button
                             onClick={(e) => handleCopyPort(primaryPort, e)}
                             className="flex items-center space-x-1 px-2 py-0.5 rounded bg-surface-secondary border border-border text-2xs text-muted-foreground hover:text-foreground transition-colors"
-                            title="Click to copy http://localhost URL"
+                            title="Click to copy URL"
                           >
                             <span>:{primaryPort}</span>
                             {copiedPort === primaryPort ? (
@@ -206,12 +365,6 @@ export const FleetView: React.FC = () => {
                               <ExternalLink className="w-2.5 h-2.5" />
                             )}
                           </button>
-                        )}
-
-                        {viewMode === "detailed" && isRunning && (
-                          <span className="text-2xs text-muted-foreground hidden sm:inline">
-                            {formatBytes(container.memoryUsage ?? 0)} • {container.cpuPercent ?? 0}%
-                          </span>
                         )}
 
                         <span className="text-2xs text-muted-foreground hidden lg:inline">
@@ -224,10 +377,10 @@ export const FleetView: React.FC = () => {
                               e.stopPropagation();
                               openRealNativeWindow({
                                 id: `term-${container.id}-${Date.now()}`,
-                                title: `${container.composeService || container.name} — Terminal`,
+                                title: `${container.name} — Terminal`,
                                 type: "terminal",
                                 containerId: container.id,
-                                containerName: container.composeService || container.name,
+                                containerName: container.name,
                               });
                             }}
                             className="p-1 rounded text-muted-foreground hover:text-primary hover:bg-surface-secondary transition-colors"
@@ -240,10 +393,10 @@ export const FleetView: React.FC = () => {
                               e.stopPropagation();
                               openRealNativeWindow({
                                 id: `logs-${container.id}-${Date.now()}`,
-                                title: `${container.composeService || container.name} — Logs`,
+                                title: `${container.name} — Logs`,
                                 type: "logs",
                                 containerId: container.id,
-                                containerName: container.composeService || container.name,
+                                containerName: container.name,
                               });
                             }}
                             className="p-1 rounded text-muted-foreground hover:text-sky-400 hover:bg-surface-secondary transition-colors"
@@ -268,7 +421,11 @@ export const FleetView: React.FC = () => {
                               : "text-status-running hover:bg-status-running/10 border border-status-running/30"
                           }`}
                         >
-                          {isRunning ? <Square className="w-2.5 h-2.5 fill-current" /> : <Play className="w-2.5 h-2.5 fill-current" />}
+                          {isRunning ? (
+                            <Square className="w-2.5 h-2.5 fill-current" />
+                          ) : (
+                            <Play className="w-2.5 h-2.5 fill-current" />
+                          )}
                           <span>{isRunning ? "Stop" : "Start"}</span>
                         </button>
                       </div>
@@ -277,136 +434,12 @@ export const FleetView: React.FC = () => {
                 })}
               </div>
             </div>
-          );
-        })}
-
-        {standaloneContainers.length > 0 && (
-          <div className="bg-surface border border-border rounded-lg overflow-hidden shadow-xs">
-            <div className="px-3.5 py-2 bg-surface-secondary/50 border-b border-border flex items-center justify-between ">
-              <div className="flex items-center space-x-2 font-mono">
-                <Layers className="w-3.5 h-3.5 text-muted-foreground" />
-                <span className="text-xs font-bold text-foreground">Standalone Services</span>
-                <span className="text-2xs text-muted-foreground">
-                  ({standaloneContainers.length})
-                </span>
-              </div>
-            </div>
-
-            <div className="divide-y divide-border font-mono text-xs">
-              {standaloneContainers.map((container) => {
-                const isRunning = container.state === "running";
-                const primaryPort =
-                  container.ports && container.ports.length > 0
-                    ? container.ports[0].publicPort
-                    : null;
-
-                return (
-                  <div
-                    key={container.id}
-                    onClick={() => setSelectedService(container)}
-                    className="px-3.5 py-2.5 flex items-center justify-between hover:bg-surface-hover transition-colors cursor-pointer group"
-                  >
-                    <div className="flex items-center space-x-3 truncate mr-3 flex-1">
-                      <span
-                        className={`w-2 h-2 rounded-full shrink-0 ${
-                          isRunning
-                            ? "bg-status-running shadow-[0_0_6px_rgba(16,185,129,0.4)]"
-                            : "bg-status-stopped"
-                        }`}
-                      />
-                      <TechIcon image={container.image} name={container.name} className="w-4 h-4 shrink-0" />
-                      <span className="font-semibold text-foreground text-xs truncate">
-                        {container.name}
-                      </span>
-                      <span className="text-2xs text-muted-foreground truncate hidden md:inline">
-                        {container.image}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center space-x-3 shrink-0">
-                      {primaryPort && (
-                        <button
-                          onClick={(e) => handleCopyPort(primaryPort, e)}
-                          className="flex items-center space-x-1 px-2 py-0.5 rounded bg-surface-secondary border border-border text-2xs text-muted-foreground hover:text-foreground transition-colors"
-                          title="Click to copy URL"
-                        >
-                          <span>:{primaryPort}</span>
-                          {copiedPort === primaryPort ? (
-                            <Check className="w-2.5 h-2.5 text-status-running" />
-                          ) : (
-                            <ExternalLink className="w-2.5 h-2.5" />
-                          )}
-                        </button>
-                      )}
-
-                      <span className="text-2xs text-muted-foreground hidden lg:inline">
-                        {container.status}
-                      </span>
-
-                      <div className="flex items-center space-x-1">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openRealNativeWindow({
-                              id: `term-${container.id}-${Date.now()}`,
-                              title: `${container.name} — Terminal`,
-                              type: "terminal",
-                              containerId: container.id,
-                              containerName: container.name,
-                            });
-                          }}
-                          className="p-1 rounded text-muted-foreground hover:text-primary hover:bg-surface-secondary transition-colors"
-                          title="Open interactive shell in native OS window"
-                        >
-                          <Terminal className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openRealNativeWindow({
-                              id: `logs-${container.id}-${Date.now()}`,
-                              title: `${container.name} — Logs`,
-                              type: "logs",
-                              containerId: container.id,
-                              containerName: container.name,
-                            });
-                          }}
-                          className="p-1 rounded text-muted-foreground hover:text-sky-400 hover:bg-surface-secondary transition-colors"
-                          title="Open live logs in native OS window"
-                        >
-                          <FileText className="w-3 h-3" />
-                        </button>
-                      </div>
-
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (isRunning) {
-                            stopContainer(container.id);
-                          } else {
-                            startContainer(container.id);
-                          }
-                        }}
-                        className={`px-2 py-0.5 rounded text-2xs font-mono transition-colors flex items-center space-x-1 ${
-                          isRunning
-                            ? "text-amber-500 hover:bg-amber-500/10 border border-amber-500/30"
-                            : "text-status-running hover:bg-status-running/10 border border-status-running/30"
-                        }`}
-                      >
-                        {isRunning ? <Square className="w-2.5 h-2.5 fill-current" /> : <Play className="w-2.5 h-2.5 fill-current" />}
-                        <span>{isRunning ? "Stop" : "Start"}</span>
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
         <div className="py-2 text-center  font-mono text-[11px] text-muted-foreground">
-          Click any service row to inspect logs, interactive shell, and resource metrics
+          Click any service row to inspect logs, interactive shell, and resource
+          metrics
         </div>
       </div>
 

@@ -59,12 +59,26 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
         if (composeProject) {
           const containers = await api.fetchContainers();
           const projectContainers = containers.filter(
-            (c) => c.composeProject === composeProject
+            (c) => c.composeProject === composeProject,
           );
           if (projectContainers.length === 0) return;
 
-          const colorPaletteDark = ["#38bdf8", "#a78bfa", "#34d399", "#f472b6", "#fbbf24", "#fb7185"];
-          const colorPaletteLight = ["#0284c7", "#7c3aed", "#059669", "#db2777", "#d97706", "#e11d48"];
+          const colorPaletteDark = [
+            "#38bdf8",
+            "#a78bfa",
+            "#34d399",
+            "#f472b6",
+            "#fbbf24",
+            "#fb7185",
+          ];
+          const colorPaletteLight = [
+            "#0284c7",
+            "#7c3aed",
+            "#059669",
+            "#db2777",
+            "#d97706",
+            "#e11d48",
+          ];
 
           const logsByContainer = await Promise.all(
             projectContainers.map(async (c, idx) => {
@@ -76,22 +90,29 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
 
               return rawLogs.map((line) => {
                 const parts = line.split(" ");
-                const hasTimestamp = parts.length > 1 && /^\d{4}-\d{2}-\d{2}/.test(line);
-                const timestamp = hasTimestamp ? parts.slice(0, 2).join(" ").substring(0, 19) : "";
+                const hasTimestamp =
+                  parts.length > 1 && /^\d{4}-\d{2}-\d{2}/.test(line);
+                const timestamp = hasTimestamp
+                  ? parts.slice(0, 2).join(" ").substring(0, 19)
+                  : "";
                 const message = hasTimestamp ? parts.slice(2).join(" ") : line;
 
                 return {
                   id: `${c.id}-${timestamp}-${line.substring(0, 40)}`,
-                  timestamp: timestamp || new Date().toISOString().substring(0, 19).replace("T", " "),
+                  timestamp:
+                    timestamp ||
+                    new Date().toISOString().substring(0, 19).replace("T", " "),
                   source: serviceName,
                   color,
                   message,
                 };
               });
-            })
+            }),
           );
 
-          const combined = logsByContainer.flat().sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+          const combined = logsByContainer
+            .flat()
+            .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
           if (isMounted && combined.length > 0) {
             setLogs(combined.slice(-1000));
           }
@@ -104,13 +125,18 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
 
           const parsed = rawLogs.map((line) => {
             const parts = line.split(" ");
-            const hasTimestamp = parts.length > 1 && /^\d{4}-\d{2}-\d{2}/.test(line);
-            const timestamp = hasTimestamp ? parts.slice(0, 2).join(" ").substring(0, 19) : "";
+            const hasTimestamp =
+              parts.length > 1 && /^\d{4}-\d{2}-\d{2}/.test(line);
+            const timestamp = hasTimestamp
+              ? parts.slice(0, 2).join(" ").substring(0, 19)
+              : "";
             const message = hasTimestamp ? parts.slice(2).join(" ") : line;
 
             return {
               id: `${containerId}-${timestamp}-${line.substring(0, 40)}`,
-              timestamp: timestamp || new Date().toISOString().substring(0, 19).replace("T", " "),
+              timestamp:
+                timestamp ||
+                new Date().toISOString().substring(0, 19).replace("T", " "),
               source: serviceName,
               color,
               message,
@@ -137,13 +163,17 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
 
   useEffect(() => {
     if (autoScroll && logsEndRef.current?.parentElement) {
-      logsEndRef.current.parentElement.scrollTop = logsEndRef.current.parentElement.scrollHeight;
+      logsEndRef.current.parentElement.scrollTop =
+        logsEndRef.current.parentElement.scrollHeight;
     }
   }, [logs.length, autoScroll]);
 
   const handleCopyLogs = () => {
     const text = logs
-      .map((l) => `${showTimestamps ? l.timestamp + " " : ""}[${l.source}] ${l.message}`)
+      .map(
+        (l) =>
+          `${showTimestamps ? l.timestamp + " " : ""}[${l.source}] ${l.message}`,
+      )
       .join("\n");
     navigator.clipboard.writeText(text);
     setCopied(true);
@@ -151,7 +181,9 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
   };
 
   const handleDownload = () => {
-    const text = logs.map((l) => `${l.timestamp} [${l.source}] ${l.message}`).join("\n");
+    const text = logs
+      .map((l) => `${l.timestamp} [${l.source}] ${l.message}`)
+      .join("\n");
     const blob = new Blob([text], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -163,12 +195,13 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
 
   const toggleServiceFilter = (name: string) => {
     setActiveFilters((prev) =>
-      prev.includes(name) ? prev.filter((s) => s !== name) : [...prev, name]
+      prev.includes(name) ? prev.filter((s) => s !== name) : [...prev, name],
     );
   };
 
   const filteredLogs = logs.filter((l) => {
-    if (activeFilters.length > 0 && !activeFilters.includes(l.source)) return false;
+    if (activeFilters.length > 0 && !activeFilters.includes(l.source))
+      return false;
     if (searchQuery.trim() === "") return true;
     return (
       l.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -190,7 +223,9 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
           <span className="w-2 h-2 rounded-full bg-status-running shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
           <FileText className="w-3.5 h-3.5 text-sky-400" />
           <span className="font-bold text-foreground">
-            {composeProject ? `${composeProject} (All Services)` : containerName}
+            {composeProject
+              ? `${composeProject} (All Services)`
+              : containerName}
           </span>
           {containerId && (
             <span className="text-muted-foreground hidden sm:inline">
@@ -219,7 +254,11 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
                 : "bg-surface-secondary border-border text-muted-foreground hover:text-foreground"
             }`}
           >
-            {isPaused ? <Play className="w-3 h-3 fill-current" /> : <Pause className="w-3 h-3 fill-current" />}
+            {isPaused ? (
+              <Play className="w-3 h-3 fill-current" />
+            ) : (
+              <Pause className="w-3 h-3 fill-current" />
+            )}
             <span>{isPaused ? "Resume" : "Pause"}</span>
           </button>
 
@@ -260,7 +299,11 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
             className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-surface-secondary"
             title="Copy logs"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-status-running" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? (
+              <Check className="w-3.5 h-3.5 text-status-running" />
+            ) : (
+              <Copy className="w-3.5 h-3.5" />
+            )}
           </button>
 
           <button
@@ -278,7 +321,8 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
           <Filter className="w-3 h-3 text-muted-foreground" />
           <span className="text-muted-foreground mr-1">Services:</span>
           {availableServices.map((name) => {
-            const active = activeFilters.length === 0 || activeFilters.includes(name);
+            const active =
+              activeFilters.length === 0 || activeFilters.includes(name);
             return (
               <button
                 key={name}
@@ -327,7 +371,10 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
                   {log.timestamp}
                 </span>
               )}
-              <span className="font-semibold mr-2 shrink-0 " style={{ color: log.color }}>
+              <span
+                className="font-semibold mr-2 shrink-0 "
+                style={{ color: log.color }}
+              >
                 [{log.source}]
               </span>
               <span

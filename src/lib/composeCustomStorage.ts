@@ -5,9 +5,13 @@ export interface CustomComposeConfig {
 
 const STORAGE_PREFIX = "ilc_compose_custom_";
 
-export function getCustomComposeConfig(projectName: string): CustomComposeConfig {
+export function getCustomComposeConfig(
+  projectName: string,
+): CustomComposeConfig {
   try {
-    const raw = localStorage.getItem(`${STORAGE_PREFIX}${projectName.toLowerCase()}`);
+    const raw = localStorage.getItem(
+      `${STORAGE_PREFIX}${projectName.toLowerCase()}`,
+    );
     if (raw) {
       const parsed = JSON.parse(raw);
       return {
@@ -21,12 +25,12 @@ export function getCustomComposeConfig(projectName: string): CustomComposeConfig
 
 export function saveCustomComposeConfig(
   projectName: string,
-  config: CustomComposeConfig
+  config: CustomComposeConfig,
 ): void {
   try {
     localStorage.setItem(
       `${STORAGE_PREFIX}${projectName.toLowerCase()}`,
-      JSON.stringify(config)
+      JSON.stringify(config),
     );
   } catch {}
 }

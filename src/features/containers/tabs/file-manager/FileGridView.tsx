@@ -33,7 +33,10 @@ export const FileGridView: React.FC<FileGridViewProps> = ({
   onContextMenu,
 }) => {
   return (
-    <div ref={gridContainerRef} className="grid grid-cols-[repeat(auto-fill,minmax(84px,1fr))] gap-2 p-2">
+    <div
+      ref={gridContainerRef}
+      className="grid grid-cols-[repeat(auto-fill,minmax(84px,1fr))] gap-2 p-2"
+    >
       {sortedFiles.map((file) => {
         const Icon = getFileIcon(file);
         const isSelected = selectedPaths.has(file.path);
@@ -54,8 +57,8 @@ export const FileGridView: React.FC<FileGridViewProps> = ({
               isDropTarget
                 ? "bg-primary/30 border-primary ring-2 ring-primary scale-[1.03]"
                 : isSelected
-                ? "bg-primary/20 border-primary ring-2 ring-primary/60 shadow-md scale-[1.02]"
-                : "bg-surface/50 hover:bg-surface border-border/60 hover:border-border"
+                  ? "bg-primary/20 border-primary ring-2 ring-primary/60 shadow-md scale-[1.02]"
+                  : "bg-surface/50 hover:bg-surface border-border/60 hover:border-border"
             }`}
             title={`${file.name}${file.isDirectory ? "" : `\n${formatBytes(file.size)}`}\n${file.mtime}`}
           >
@@ -64,8 +67,8 @@ export const FileGridView: React.FC<FileGridViewProps> = ({
                 isSelected
                   ? "text-primary fill-primary/20 scale-105"
                   : file.isDirectory
-                  ? "text-amber-400 fill-amber-400/20"
-                  : "text-muted-foreground"
+                    ? "text-amber-400 fill-amber-400/20"
+                    : "text-muted-foreground"
               }`}
             />
             <span
@@ -80,7 +83,9 @@ export const FileGridView: React.FC<FileGridViewProps> = ({
             {!file.isDirectory && (
               <span
                 className={`text-[10px] font-mono mt-0.5 truncate max-w-full ${
-                  isSelected ? "text-primary font-semibold" : "text-muted-foreground"
+                  isSelected
+                    ? "text-primary font-semibold"
+                    : "text-muted-foreground"
                 }`}
               >
                 {formatBytes(file.size)}

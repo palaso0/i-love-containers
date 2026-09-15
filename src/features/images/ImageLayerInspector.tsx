@@ -22,7 +22,11 @@ interface ImageLayerInspectorProps {
   onBack: () => void;
 }
 
-function formatDockerCommand(cmd: string): { instruction: string; rest: string; tokens: string[] } {
+function formatDockerCommand(cmd: string): {
+  instruction: string;
+  rest: string;
+  tokens: string[];
+} {
   const trimmed = cmd.trim();
   const match = trimmed.match(/^([A-Z]+)\s+([\s\S]*)$/);
   if (!match) {
@@ -48,9 +52,13 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
   const [analysis, setAnalysis] = useState<ImageAnalysis | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedLayerIndex, setSelectedLayerIndex] = useState<number>(1);
-  const [activeRightTab, setActiveRightTab] = useState<"command" | "files">("command");
+  const [activeRightTab, setActiveRightTab] = useState<"command" | "files">(
+    "command",
+  );
   const [fileSearch, setFileSearch] = useState("");
-  const [changeTypeFilter, setChangeTypeFilter] = useState<"all" | LayerFileChangeType>("all");
+  const [changeTypeFilter, setChangeTypeFilter] = useState<
+    "all" | LayerFileChangeType
+  >("all");
   const [copiedCmd, setCopiedCmd] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
 
@@ -89,9 +97,15 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
       if (splitViewRef.current) {
         const rect = splitViewRef.current.getBoundingClientRect();
         const maxW = Math.max(280, rect.width - 280);
-        const finalWidth = Math.max(260, Math.min(maxW, ev.clientX - rect.left));
+        const finalWidth = Math.max(
+          260,
+          Math.min(maxW, ev.clientX - rect.left),
+        );
         try {
-          localStorage.setItem("ilc_image_layers_split_width", String(finalWidth));
+          localStorage.setItem(
+            "ilc_image_layers_split_width",
+            String(finalWidth),
+          );
         } catch {}
       }
     };
@@ -114,7 +128,9 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
         setAnalysis(data);
         if (data && data.layers.length > 0) {
           const firstNonEmpty = data.layers.find((l) => !l.emptyLayer);
-          setSelectedLayerIndex(firstNonEmpty ? firstNonEmpty.index : data.layers[0].index);
+          setSelectedLayerIndex(
+            firstNonEmpty ? firstNonEmpty.index : data.layers[0].index,
+          );
         }
       })
       .catch(() => {
@@ -131,18 +147,25 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
 
   const selectedLayer: ImageLayerDetail | undefined = useMemo(() => {
     if (!analysis) return undefined;
-    return analysis.layers.find((l) => l.index === selectedLayerIndex) || analysis.layers[0];
+    return (
+      analysis.layers.find((l) => l.index === selectedLayerIndex) ||
+      analysis.layers[0]
+    );
   }, [analysis, selectedLayerIndex]);
 
-  const displayTotalSize = currentImage?.size && currentImage.size > 0
-    ? currentImage.size
-    : (analysis?.totalSize ?? 0);
+  const displayTotalSize =
+    currentImage?.size && currentImage.size > 0
+      ? currentImage.size
+      : (analysis?.totalSize ?? 0);
 
   const filteredFiles = useMemo(() => {
     if (!selectedLayer || !selectedLayer.files) return [];
     return selectedLayer.files.filter((file) => {
-      const matchesSearch = file.path.toLowerCase().includes(fileSearch.toLowerCase());
-      const matchesType = changeTypeFilter === "all" || file.changeType === changeTypeFilter;
+      const matchesSearch = file.path
+        .toLowerCase()
+        .includes(fileSearch.toLowerCase());
+      const matchesType =
+        changeTypeFilter === "all" || file.changeType === changeTypeFilter;
       return matchesSearch && matchesType;
     });
   }, [selectedLayer, fileSearch, changeTypeFilter]);
@@ -195,7 +218,9 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 space-y-4 bg-background">
         <AlertTriangle className="w-8 h-8 text-amber-500" />
-        <p className="text-sm font-medium text-foreground">Could not load image analysis</p>
+        <p className="text-sm font-medium text-foreground">
+          Could not load image analysis
+        </p>
         <button
           onClick={onBack}
           className="px-3 py-1.5 text-xs rounded-lg bg-surface border border-border/80 text-foreground hover:bg-surface-secondary transition-colors"
@@ -209,7 +234,9 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
   const repo = currentImage ? currentImage.repository : analysis.repository;
   const tag = currentImage ? currentImage.tag : analysis.tag;
 
-  const parsedCommand = selectedLayer ? formatDockerCommand(selectedLayer.command) : null;
+  const parsedCommand = selectedLayer
+    ? formatDockerCommand(selectedLayer.command)
+    : null;
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
@@ -230,7 +257,9 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
                   {repo}:{tag}
                 </span>
                 <span className="text-2xs font-mono text-muted-foreground bg-surface-secondary/80 border border-border/60 px-2 py-0.5 rounded-md flex items-center space-x-1 shrink-0">
-                  <span>{analysis.imageId.replace("sha256:", "").substring(0, 12)}</span>
+                  <span>
+                    {analysis.imageId.replace("sha256:", "").substring(0, 12)}
+                  </span>
                   <button
                     onClick={() => handleCopyId(analysis.imageId)}
                     className="hover:text-foreground p-0.5"
@@ -245,7 +274,8 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
                 </span>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                {analysis.architecture || "arm64"}/{analysis.os || "linux"} • {analysis.layerCount} {t.images.layersTab.toLowerCase()}
+                {analysis.architecture || "arm64"}/{analysis.os || "linux"} •{" "}
+                {analysis.layerCount} {t.images.layersTab.toLowerCase()}
               </p>
             </div>
           </div>
@@ -266,7 +296,10 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
         </div>
       </div>
 
-      <div ref={splitViewRef} className="flex-1 flex min-h-0 overflow-hidden relative">
+      <div
+        ref={splitViewRef}
+        className="flex-1 flex min-h-0 overflow-hidden relative"
+      >
         <div
           style={{ width: `${leftWidth}px` }}
           className="shrink-0 flex flex-col min-h-0 bg-surface/30 border-r border-border/70"
@@ -274,7 +307,9 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
           <div className="px-4 py-2.5 border-b border-border/70 flex items-center justify-between text-xs text-muted-foreground bg-surface-secondary/40 font-medium shrink-0">
             <div className="flex items-center space-x-2">
               <Layers className="w-3.5 h-3.5 text-primary" />
-              <span>{t.images.layersTab} ({analysis.layers.length})</span>
+              <span>
+                {t.images.layersTab} ({analysis.layers.length})
+              </span>
             </div>
             <span className="text-2xs font-mono text-muted-foreground/80">
               base (#1) → top
@@ -297,12 +332,14 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center space-x-2 min-w-0">
-                      <span className={`text-2xs font-mono shrink-0 w-5 font-medium ${isSelected ? "text-primary font-bold" : "text-muted-foreground"}`}>
+                      <span
+                        className={`text-2xs font-mono shrink-0 w-5 font-medium ${isSelected ? "text-primary font-bold" : "text-muted-foreground"}`}
+                      >
                         #{layer.index}
                       </span>
                       <span
                         className={`text-[10px] font-mono px-1.5 py-0.5 rounded border uppercase font-bold shrink-0 ${getInstructionBadge(
-                          layer.instructionType
+                          layer.instructionType,
                         )}`}
                       >
                         {layer.instructionType}
@@ -312,23 +349,27 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
                     <div className="text-right shrink-0">
                       <span
                         className={`text-2xs font-mono font-medium ${
-                          layer.emptyLayer ? "text-muted-foreground/60" : "text-foreground font-semibold"
+                          layer.emptyLayer
+                            ? "text-muted-foreground/60"
+                            : "text-foreground font-semibold"
                         }`}
                       >
                         {layer.emptyLayer ? "0 B" : formatBytes(layer.size)}
                       </span>
                       {layer.size > 0 && displayTotalSize > 0 && (
                         <span className="text-[10px] font-mono text-muted-foreground block">
-                          {(Math.min(100, (layer.size / displayTotalSize) * 100)).toFixed(1)}%
+                          {Math.min(
+                            100,
+                            (layer.size / displayTotalSize) * 100,
+                          ).toFixed(1)}
+                          %
                         </span>
                       )}
                     </div>
                   </div>
 
                   <div className="mt-1.5">
-                    <p
-                      className="text-xs font-mono text-foreground/90 truncate leading-relaxed group-hover:text-foreground"
-                    >
+                    <p className="text-xs font-mono text-foreground/90 truncate leading-relaxed group-hover:text-foreground">
                       {layer.command}
                     </p>
                   </div>
@@ -381,7 +422,14 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
 
             {selectedLayer && (
               <span className="text-2xs font-mono text-muted-foreground">
-                {t.images.layerIndex.replace("#{index}", `#${selectedLayer.index}`)} • {selectedLayer.emptyLayer ? "0 B" : formatBytes(selectedLayer.size)}
+                {t.images.layerIndex.replace(
+                  "#{index}",
+                  `#${selectedLayer.index}`,
+                )}{" "}
+                •{" "}
+                {selectedLayer.emptyLayer
+                  ? "0 B"
+                  : formatBytes(selectedLayer.size)}
               </span>
             )}
           </div>
@@ -391,7 +439,9 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-0.5 text-2xs font-mono font-bold rounded border uppercase ${getInstructionBadge(selectedLayer.instructionType)}`}>
+                    <span
+                      className={`px-2 py-0.5 text-2xs font-mono font-bold rounded border uppercase ${getInstructionBadge(selectedLayer.instructionType)}`}
+                    >
                       {selectedLayer.instructionType}
                     </span>
                     <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -421,27 +471,38 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
                     <span className="w-2.5 h-2.5 rounded-full bg-rose-500/60 inline-block" />
                     <span className="w-2.5 h-2.5 rounded-full bg-amber-500/60 inline-block" />
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/60 inline-block" />
-                    <span className="ml-2 font-medium">Dockerfile / sh execution</span>
+                    <span className="ml-2 font-medium">
+                      Dockerfile / sh execution
+                    </span>
                   </div>
 
                   {parsedCommand && parsedCommand.tokens.length > 1 ? (
                     <div className="space-y-1.5 pt-1 overflow-x-auto">
                       <div className="pb-1">
-                        <span className={`px-2 py-0.5 rounded text-2xs font-mono font-bold uppercase tracking-wider border ${getInstructionBadge(selectedLayer.instructionType)}`}>
+                        <span
+                          className={`px-2 py-0.5 rounded text-2xs font-mono font-bold uppercase tracking-wider border ${getInstructionBadge(selectedLayer.instructionType)}`}
+                        >
                           {selectedLayer.instructionType}
                         </span>
                       </div>
                       {parsedCommand.tokens.map((token, i) => {
-                        const isOperator = token === "&&" || token === "||" || token === ";";
+                        const isOperator =
+                          token === "&&" || token === "||" || token === ";";
                         if (isOperator) {
                           return (
-                            <span key={i} className="text-amber-400 font-bold px-1 inline-block">
+                            <span
+                              key={i}
+                              className="text-amber-400 font-bold px-1 inline-block"
+                            >
                               {token}
                             </span>
                           );
                         }
                         return (
-                          <div key={i} className="pl-3 py-0.5 border-l-2 border-primary/40 hover:border-primary transition-colors text-foreground/95 break-all">
+                          <div
+                            key={i}
+                            className="pl-3 py-0.5 border-l-2 border-primary/40 hover:border-primary transition-colors text-foreground/95 break-all"
+                          >
                             {token}
                           </div>
                         );
@@ -451,7 +512,9 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
                     <div className="pt-1 flex items-start space-x-2 select-all break-all whitespace-pre-wrap leading-relaxed">
                       {parsedCommand ? (
                         <>
-                          <span className={`px-2 py-0.5 rounded text-2xs font-mono font-bold uppercase tracking-wider shrink-0 border ${getInstructionBadge(parsedCommand.instruction)}`}>
+                          <span
+                            className={`px-2 py-0.5 rounded text-2xs font-mono font-bold uppercase tracking-wider shrink-0 border ${getInstructionBadge(parsedCommand.instruction)}`}
+                          >
                             {parsedCommand.instruction}
                           </span>
                           <span className="text-foreground/95 pt-0.5">
@@ -492,7 +555,8 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
                     Size In Bytes
                   </span>
                   <span className="font-mono text-2xs text-foreground block">
-                    {formatBytes(selectedLayer.size)} ({selectedLayer.size.toLocaleString()} bytes)
+                    {formatBytes(selectedLayer.size)} (
+                    {selectedLayer.size.toLocaleString()} bytes)
                   </span>
                 </div>
 
@@ -502,7 +566,7 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
                   </span>
                   <span className="font-mono text-2xs text-foreground block">
                     {selectedLayer.size > 0 && displayTotalSize > 0
-                      ? `${(Math.min(100, (selectedLayer.size / displayTotalSize) * 100)).toFixed(1)}%`
+                      ? `${Math.min(100, (selectedLayer.size / displayTotalSize) * 100).toFixed(1)}%`
                       : "0%"}
                   </span>
                 </div>
@@ -587,12 +651,16 @@ export const ImageLayerInspector: React.FC<ImageLayerInspectorProps> = ({
                           className={`text-2xs font-bold px-1 rounded shrink-0 ${
                             file.changeType === "added"
                               ? "text-status-running bg-status-running/10"
-                            : file.changeType === "modified"
-                            ? "text-amber-500 bg-amber-500/10"
-                            : "text-status-danger bg-status-danger/10"
+                              : file.changeType === "modified"
+                                ? "text-amber-500 bg-amber-500/10"
+                                : "text-status-danger bg-status-danger/10"
                           }`}
                         >
-                          {file.changeType === "added" ? "+" : file.changeType === "modified" ? "~" : "-"}
+                          {file.changeType === "added"
+                            ? "+"
+                            : file.changeType === "modified"
+                              ? "~"
+                              : "-"}
                         </span>
                         {file.type === "dir" ? (
                           <Folder className="w-3.5 h-3.5 text-sky-400 shrink-0" />

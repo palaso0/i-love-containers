@@ -27,10 +27,21 @@ interface ComposeGroupSectionProps {
   toggleGroupSelect: (groupList: ContainerDetail[]) => void;
   toggleContainerSelect: (id: string) => void;
   onSelectContainer: (id: string) => void;
-  handleStartAll: (name: string, list: ContainerDetail[], e: React.MouseEvent) => void;
+  handleStartAll: (
+    name: string,
+    list: ContainerDetail[],
+    e: React.MouseEvent,
+  ) => void;
   handleStopAll: (list: ContainerDetail[], e: React.MouseEvent) => void;
-  handleRestartAll: (name: string, list: ContainerDetail[], e: React.MouseEvent) => void;
-  setStackToDelete: (s: { name: string; containers: ContainerDetail[] }) => void;
+  handleRestartAll: (
+    name: string,
+    list: ContainerDetail[],
+    e: React.MouseEvent,
+  ) => void;
+  setStackToDelete: (s: {
+    name: string;
+    containers: ContainerDetail[];
+  }) => void;
   onStart: (id: string, e: React.MouseEvent) => void;
   onStop: (id: string, e: React.MouseEvent) => void;
   onPause: (id: string, e: React.MouseEvent) => void;
@@ -91,7 +102,10 @@ export const ComposeGroupSection: React.FC<ComposeGroupSectionProps> = ({
             </button>
             <div onClick={(e) => e.stopPropagation()}>
               <IndeterminateCheckbox
-                checked={groupList.length > 0 && groupList.every((c) => selectedIds.has(c.id))}
+                checked={
+                  groupList.length > 0 &&
+                  groupList.every((c) => selectedIds.has(c.id))
+                }
                 indeterminate={
                   groupList.some((c) => selectedIds.has(c.id)) &&
                   !groupList.every((c) => selectedIds.has(c.id))
@@ -109,7 +123,10 @@ export const ComposeGroupSection: React.FC<ComposeGroupSectionProps> = ({
             </span>
           </div>
 
-          <div className="flex items-center space-x-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="flex items-center space-x-1 shrink-0"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -167,7 +184,10 @@ export const ComposeGroupSection: React.FC<ComposeGroupSectionProps> = ({
         <div className="flex items-center justify-between px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
           <div className="flex items-center space-x-2">
             <IndeterminateCheckbox
-              checked={groupList.length > 0 && groupList.every((c) => selectedIds.has(c.id))}
+              checked={
+                groupList.length > 0 &&
+                groupList.every((c) => selectedIds.has(c.id))
+              }
               indeterminate={
                 groupList.some((c) => selectedIds.has(c.id)) &&
                 !groupList.every((c) => selectedIds.has(c.id))
@@ -178,7 +198,8 @@ export const ComposeGroupSection: React.FC<ComposeGroupSectionProps> = ({
             <span>{t.containers.standalone}</span>
           </div>
           <span className="text-2xs font-mono lowercase">
-            {groupList.filter((c) => c.state === "running").length}/{groupList.length}
+            {groupList.filter((c) => c.state === "running").length}/
+            {groupList.length}
           </span>
         </div>
       )}

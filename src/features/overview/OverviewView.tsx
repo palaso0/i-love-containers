@@ -85,7 +85,9 @@ export const OverviewView: React.FC = () => {
                 className="text-2xs text-muted-foreground hover:text-foreground flex items-center space-x-1 p-1 rounded hover:bg-surface-secondary transition-colors"
                 title={t.engines.rescan}
               >
-                <RefreshCw className={`w-3 h-3 ${isActionInProgress ? "animate-spin text-primary" : ""}`} />
+                <RefreshCw
+                  className={`w-3 h-3 ${isActionInProgress ? "animate-spin text-primary" : ""}`}
+                />
                 <span>{t.engines.rescan}</span>
               </button>
             </div>
@@ -112,7 +114,9 @@ export const OverviewView: React.FC = () => {
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center space-x-2">
-                          <span className="font-semibold text-foreground text-xs">{engine.name}</span>
+                          <span className="font-semibold text-foreground text-xs">
+                            {engine.name}
+                          </span>
                           {engine.appPath && (
                             <span className="text-[10px] font-mono text-muted-foreground hidden sm:inline">
                               {engine.appPath}
@@ -131,34 +135,43 @@ export const OverviewView: React.FC = () => {
                           isRunning
                             ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
                             : isStopped
-                            ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                            : "bg-muted/20 text-muted-foreground border-border/40"
+                              ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                              : "bg-muted/20 text-muted-foreground border-border/40"
                         }`}
                       >
                         {isRunning
                           ? t.engines.running
                           : isStopped
-                          ? t.engines.stopped
-                          : t.engines.notInstalled}
+                            ? t.engines.stopped
+                            : t.engines.notInstalled}
                       </span>
-                      {isCurrent && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+                      {isCurrent && (
+                        <Check className="w-3.5 h-3.5 text-primary shrink-0" />
+                      )}
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            {currentEngine && currentEngine.status === "stopped" && currentEngine.appPath && (
-              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs space-y-1">
-                <div className="font-semibold text-amber-400 flex items-center gap-1.5">
-                  <span>💡 Tip:</span>
-                  <span>{currentEngine.name} is installed on this Mac</span>
+            {currentEngine &&
+              currentEngine.status === "stopped" &&
+              currentEngine.appPath && (
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs space-y-1">
+                  <div className="font-semibold text-amber-400 flex items-center gap-1.5">
+                    <span>💡 Tip:</span>
+                    <span>{currentEngine.name} is installed on this Mac</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Launch{" "}
+                    <strong className="text-foreground">
+                      {currentEngine.name}
+                    </strong>{" "}
+                    from your Applications folder or Spotlight, then click{" "}
+                    <strong>Retry Connection</strong> below.
+                  </p>
                 </div>
-                <p className="text-[11px] text-muted-foreground">
-                  Launch <strong className="text-foreground">{currentEngine.name}</strong> from your Applications folder or Spotlight, then click <strong>Retry Connection</strong> below.
-                </p>
-              </div>
-            )}
+              )}
           </div>
 
           <div className="flex items-center justify-center pt-1">
@@ -167,7 +180,9 @@ export const OverviewView: React.FC = () => {
               disabled={isActionInProgress}
               className="w-full sm:w-auto min-w-[200px] py-2 px-6 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-medium transition-all flex items-center justify-center space-x-2 shadow-xs disabled:opacity-50"
             >
-              <RotateCw className={`w-3.5 h-3.5 ${isActionInProgress ? "animate-spin" : ""}`} />
+              <RotateCw
+                className={`w-3.5 h-3.5 ${isActionInProgress ? "animate-spin" : ""}`}
+              />
               <span>{t.engines.retry}</span>
             </button>
           </div>
@@ -181,7 +196,6 @@ export const OverviewView: React.FC = () => {
 
   return (
     <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-background ">
-
       <div className="bg-surface/80 backdrop-blur-sm border border-border/70 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
         <div className="flex items-center space-x-3">
           <div className="p-2 rounded-lg bg-surface-secondary border border-border/60 shrink-0">
@@ -232,7 +246,9 @@ export const OverviewView: React.FC = () => {
 
       <div className="flex items-center justify-between border-b border-border/70 pb-3">
         <div>
-          <h1 className="text-base font-semibold text-foreground tracking-tight">Overview</h1>
+          <h1 className="text-base font-semibold text-foreground tracking-tight">
+            Overview
+          </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
             System overview and running engine resources
             {viewMode === "minimal" && " • Minimal Mode"}
@@ -248,7 +264,8 @@ export const OverviewView: React.FC = () => {
                   : "bg-amber-400"
               }`}
             />
-            {currentEngine?.name || "Docker"} {systemOverview?.engineVersion || ""}
+            {currentEngine?.name || "Docker"}{" "}
+            {systemOverview?.engineVersion || ""}
           </span>
         </div>
       </div>
@@ -329,7 +346,11 @@ export const OverviewView: React.FC = () => {
                           : "text-status-running hover:bg-status-running/10 border border-status-running/30"
                       }`}
                     >
-                      {isRunning ? <Square className="w-2.5 h-2.5 fill-current" /> : <Play className="w-2.5 h-2.5 fill-current" />}
+                      {isRunning ? (
+                        <Square className="w-2.5 h-2.5 fill-current" />
+                      ) : (
+                        <Play className="w-2.5 h-2.5 fill-current" />
+                      )}
                       <span>{isRunning ? "Stop" : "Start"}</span>
                     </button>
                   </div>
@@ -442,7 +463,9 @@ export const OverviewView: React.FC = () => {
               <div className="w-full bg-surface-secondary h-1.5 rounded-full overflow-hidden">
                 <div
                   className="bg-status-running h-full rounded-full transition-all duration-300"
-                  style={{ width: `${Math.min(100, systemOverview?.systemCpuPercent ?? 0)}%` }}
+                  style={{
+                    width: `${Math.min(100, systemOverview?.systemCpuPercent ?? 0)}%`,
+                  }}
                 />
               </div>
             </div>
@@ -454,7 +477,8 @@ export const OverviewView: React.FC = () => {
                   Container Memory Usage
                 </span>
                 <span className="font-semibold text-foreground font-mono text-xs">
-                  {formatBytes(systemOverview?.systemMemoryUsed ?? 0)} / {formatBytes(systemOverview?.systemMemoryTotal ?? 0)}
+                  {formatBytes(systemOverview?.systemMemoryUsed ?? 0)} /{" "}
+                  {formatBytes(systemOverview?.systemMemoryTotal ?? 0)}
                 </span>
               </div>
               <div className="w-full bg-surface-secondary h-1.5 rounded-full overflow-hidden">
@@ -463,7 +487,9 @@ export const OverviewView: React.FC = () => {
                   style={{
                     width: `${
                       systemOverview?.systemMemoryTotal
-                        ? (systemOverview.systemMemoryUsed / systemOverview.systemMemoryTotal) * 100
+                        ? (systemOverview.systemMemoryUsed /
+                            systemOverview.systemMemoryTotal) *
+                          100
                         : 0
                     }%`,
                   }}
@@ -475,7 +501,9 @@ export const OverviewView: React.FC = () => {
           <div className="bg-surface/80 backdrop-blur-sm border border-border/70 rounded-xl overflow-hidden shadow-xs">
             <div className="px-4 py-2.5 border-b border-border/70 flex items-center justify-between bg-surface-secondary/40">
               <div className="flex items-center space-x-2">
-                <span className="text-xs font-semibold text-foreground">Recent Containers</span>
+                <span className="text-xs font-semibold text-foreground">
+                  Recent Containers
+                </span>
                 <span className="text-2xs font-mono text-muted-foreground bg-surface-secondary px-1.5 py-0.5 rounded-full">
                   {containers.length}
                 </span>
@@ -520,7 +548,9 @@ export const OverviewView: React.FC = () => {
                     <div className="flex items-center space-x-3 shrink-0">
                       {isRunning ? (
                         <div className="flex items-center space-x-1 text-2xs font-mono text-foreground hidden sm:flex">
-                          <span className="text-status-running font-medium">{container.cpuPercent ?? 0}%</span>
+                          <span className="text-status-running font-medium">
+                            {container.cpuPercent ?? 0}%
+                          </span>
                           <span className="text-muted-foreground">•</span>
                           <span className="text-muted-foreground">
                             {formatBytes(container.memoryUsage ?? 0)}
@@ -547,8 +577,14 @@ export const OverviewView: React.FC = () => {
                             : "text-status-running hover:bg-status-running/10 border border-status-running/30 bg-surface"
                         }`}
                       >
-                        {isRunning ? <Square className="w-2.5 h-2.5 fill-current" /> : <Play className="w-2.5 h-2.5 fill-current" />}
-                        <span className="text-2xs">{isRunning ? "Stop" : "Start"}</span>
+                        {isRunning ? (
+                          <Square className="w-2.5 h-2.5 fill-current" />
+                        ) : (
+                          <Play className="w-2.5 h-2.5 fill-current" />
+                        )}
+                        <span className="text-2xs">
+                          {isRunning ? "Stop" : "Start"}
+                        </span>
                       </button>
                     </div>
                   </div>

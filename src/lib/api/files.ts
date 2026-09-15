@@ -1,14 +1,11 @@
-import {
-  ContainerFileItem,
-  ContainerFileListResponse,
-} from "@/types";
+import { ContainerFileItem, ContainerFileListResponse } from "@/types";
 import { normalizePath, getParentPath } from "../utils";
 import { apiFetch, getApiUrl } from "./client";
 import { mockFilesystem } from "./mockFilesystem";
 
 export async function fetchContainerFiles(
   containerId: string,
-  dirPath?: string
+  dirPath?: string,
 ): Promise<ContainerFileListResponse> {
   const hasExplicitPath = Boolean(dirPath && dirPath.trim());
   const normalized = hasExplicitPath ? normalizePath(dirPath!) : "";
@@ -47,10 +44,12 @@ export async function fetchContainerFiles(
 
 export async function fetchFileContent(
   containerId: string,
-  filePath: string
+  filePath: string,
 ): Promise<{ isBinary: boolean; size: number; content: string }> {
   try {
-    const res = await apiFetch(`/api/containers/${containerId}/files/content?path=${encodeURIComponent(filePath)}`);
+    const res = await apiFetch(
+      `/api/containers/${containerId}/files/content?path=${encodeURIComponent(filePath)}`,
+    );
     if (res.ok) {
       return await res.json();
     }
@@ -74,9 +73,10 @@ export async function fetchFileContent(
 export async function downloadContainerFile(
   containerId: string,
   filePath: string,
-  filename?: string
+  filename?: string,
 ): Promise<void> {
-  const name = filename || filePath.split("/").filter(Boolean).pop() || "download";
+  const name =
+    filename || filePath.split("/").filter(Boolean).pop() || "download";
   try {
     const url = `/api/containers/${containerId}/files/content?path=${encodeURIComponent(filePath)}&download=true`;
     const fullUrl = getApiUrl(url);
@@ -103,7 +103,7 @@ export async function downloadContainerFile(
 export async function saveContainerFile(
   containerId: string,
   filePath: string,
-  content: string
+  content: string,
 ): Promise<{ ok: boolean }> {
   try {
     const res = await apiFetch(`/api/containers/${containerId}/files/write`, {
@@ -131,7 +131,7 @@ export async function saveContainerFile(
 
 export async function createContainerFolder(
   containerId: string,
-  folderPath: string
+  folderPath: string,
 ): Promise<{ ok: boolean }> {
   try {
     const res = await apiFetch(`/api/containers/${containerId}/files/mkdir`, {
@@ -159,7 +159,7 @@ export async function createContainerFolder(
 
 export async function createContainerFile(
   containerId: string,
-  filePath: string
+  filePath: string,
 ): Promise<{ ok: boolean }> {
   try {
     const res = await apiFetch(`/api/containers/${containerId}/files/touch`, {
@@ -188,7 +188,7 @@ export async function createContainerFile(
 export async function renameContainerFile(
   containerId: string,
   oldPath: string,
-  newPath: string
+  newPath: string,
 ): Promise<{ ok: boolean }> {
   try {
     const res = await apiFetch(`/api/containers/${containerId}/files/rename`, {
@@ -214,7 +214,7 @@ export async function renameContainerFile(
 
 export async function deleteContainerFiles(
   containerId: string,
-  paths: string[]
+  paths: string[],
 ): Promise<{ ok: boolean }> {
   try {
     const res = await apiFetch(`/api/containers/${containerId}/files/delete`, {
@@ -230,7 +230,9 @@ export async function deleteContainerFiles(
     const parent = getParentPath(norm) || "/";
     const name = norm.split("/").filter(Boolean).pop() || "";
     if (mockFilesystem[parent]) {
-      mockFilesystem[parent] = mockFilesystem[parent].filter((f) => f.name !== name);
+      mockFilesystem[parent] = mockFilesystem[parent].filter(
+        (f) => f.name !== name,
+      );
     }
     delete mockFilesystem[norm];
   }
@@ -240,7 +242,7 @@ export async function deleteContainerFiles(
 export async function copyContainerFile(
   containerId: string,
   sourcePath: string,
-  targetPath: string
+  targetPath: string,
 ): Promise<{ ok: boolean }> {
   try {
     const res = await apiFetch(`/api/containers/${containerId}/files/copy`, {
@@ -254,7 +256,9 @@ export async function copyContainerFile(
   const srcNorm = normalizePath(sourcePath);
   const srcParent = getParentPath(srcNorm) || "/";
   const srcName = srcNorm.split("/").filter(Boolean).pop() || "";
-  const srcItem = (mockFilesystem[srcParent] || []).find((f) => f.name === srcName);
+  const srcItem = (mockFilesystem[srcParent] || []).find(
+    (f) => f.name === srcName,
+  );
 
   const tgtNorm = normalizePath(targetPath);
   const tgtParent = getParentPath(tgtNorm) || "/";
@@ -267,7 +271,9 @@ export async function copyContainerFile(
       name: tgtName,
     });
     if (srcItem.isDirectory && mockFilesystem[srcNorm]) {
-      mockFilesystem[tgtNorm] = JSON.parse(JSON.stringify(mockFilesystem[srcNorm]));
+      mockFilesystem[tgtNorm] = JSON.parse(
+        JSON.stringify(mockFilesystem[srcNorm]),
+      );
     }
   }
   return { ok: true };
@@ -276,7 +282,7 @@ export async function copyContainerFile(
 export async function uploadContainerFile(
   containerId: string,
   dirPath: string,
-  file: File
+  file: File,
 ): Promise<{ ok: boolean }> {
   const base64 = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -314,7 +320,7 @@ export async function uploadContainerFile(
 export async function copyHostFileToContainer(
   containerId: string,
   destDir: string,
-  hostPath: string
+  hostPath: string,
 ): Promise<{ ok: boolean; error?: string }> {
   try {
     const { invoke } = await import("@tauri-apps/api/core");

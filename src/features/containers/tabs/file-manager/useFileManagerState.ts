@@ -10,31 +10,42 @@ import {
   copyHostFileToContainer,
   fetchFileContent,
 } from "@/lib/api";
-import { getFileManagerCache, setFileManagerCache } from "@/lib/fileManagerCache";
+import {
+  getFileManagerCache,
+  setFileManagerCache,
+} from "@/lib/fileManagerCache";
 import { getUniqueDuplicateName } from "./fileTypes";
 import { ViewerModalState } from "./FileViewerModal";
 
 export function useFileManagerState(
   containerId: string,
   state: ContainerState,
-  fm: Record<string, any>
+  fm: Record<string, any>,
 ) {
   const isRunning = state === "running";
   const cached = getFileManagerCache(containerId);
 
-  const [currentPath, setCurrentPath] = useState<string>(cached?.currentPath || "/");
+  const [currentPath, setCurrentPath] = useState<string>(
+    cached?.currentPath || "/",
+  );
   const [defaultPath, setDefaultPath] = useState<string>("/");
   const [history, setHistory] = useState<string[]>(cached?.history || ["/"]);
   const [historyIdx, setHistoryIdx] = useState<number>(cached?.historyIdx || 0);
   const [files, setFiles] = useState<ContainerFileItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [viewMode, setViewMode] = useState<"list" | "grid">(cached?.viewMode || "grid");
-  const [sortField, setSortField] = useState<"name" | "size" | "mtime">(cached?.sortField || "name");
+  const [viewMode, setViewMode] = useState<"list" | "grid">(
+    cached?.viewMode || "grid",
+  );
+  const [sortField, setSortField] = useState<"name" | "size" | "mtime">(
+    cached?.sortField || "name",
+  );
   const [sortAsc, setSortAsc] = useState<boolean>(cached?.sortAsc ?? true);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
   const [isEditingPath, setIsEditingPath] = useState<boolean>(false);
-  const [pathInput, setPathInput] = useState<string>(cached?.currentPath || "/");
+  const [pathInput, setPathInput] = useState<string>(
+    cached?.currentPath || "/",
+  );
   const [isDraggingOver, setIsDraggingOver] = useState<boolean>(false);
 
   const [dropStatus, setDropStatus] = useState<{
@@ -67,9 +78,15 @@ export function useFileManagerState(
     newName: string;
   } | null>(null);
 
-  const [newFolderModal, setNewFolderModal] = useState<{ name: string } | null>(null);
-  const [newFileModal, setNewFileModal] = useState<{ name: string } | null>(null);
-  const [deleteModal, setDeleteModal] = useState<{ items: ContainerFileItem[] } | null>(null);
+  const [newFolderModal, setNewFolderModal] = useState<{ name: string } | null>(
+    null,
+  );
+  const [newFileModal, setNewFileModal] = useState<{ name: string } | null>(
+    null,
+  );
+  const [deleteModal, setDeleteModal] = useState<{
+    items: ContainerFileItem[];
+  } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -114,7 +131,7 @@ export function useFileManagerState(
         setIsLoading(false);
       }
     },
-    [containerId]
+    [containerId],
   );
 
   useEffect(() => {
@@ -150,7 +167,15 @@ export function useFileManagerState(
       sortField,
       sortAsc,
     });
-  }, [containerId, currentPath, history, historyIdx, viewMode, sortField, sortAsc]);
+  }, [
+    containerId,
+    currentPath,
+    history,
+    historyIdx,
+    viewMode,
+    sortField,
+    sortAsc,
+  ]);
 
   // Handle native Tauri drag and drop
   useEffect(() => {
@@ -174,7 +199,11 @@ export function useFileManagerState(
 
       for (const hostPath of paths) {
         try {
-          const res = await copyHostFileToContainer(containerId, targetDir, hostPath);
+          const res = await copyHostFileToContainer(
+            containerId,
+            targetDir,
+            hostPath,
+          );
           if (res.ok) {
             successCount++;
           } else {
@@ -195,7 +224,10 @@ export function useFileManagerState(
           message: `${fmRef.current.uploadSuccess} (${successCount}/${count}) - ${anyError}`,
         });
       } else {
-        setDropStatus({ type: "success", message: fmRef.current.uploadSuccess });
+        setDropStatus({
+          type: "success",
+          message: fmRef.current.uploadSuccess,
+        });
       }
 
       setTimeout(() => {
@@ -207,18 +239,23 @@ export function useFileManagerState(
       try {
         const { getCurrentWebview } = await import("@tauri-apps/api/webview");
         const currentWebview = getCurrentWebview();
-        const unlistenFn = await currentWebview.onDragDropEvent(async (event) => {
-          if (!isMounted) return;
-          if (isDraggingInternalRef.current) return;
-          if (event.payload.type === "over" || event.payload.type === "enter") {
-            setIsDraggingOver(true);
-          } else if (event.payload.type === "drop") {
-            setIsDraggingOver(false);
-            await handleTauriDrop(event.payload.paths);
-          } else {
-            setIsDraggingOver(false);
-          }
-        });
+        const unlistenFn = await currentWebview.onDragDropEvent(
+          async (event) => {
+            if (!isMounted) return;
+            if (isDraggingInternalRef.current) return;
+            if (
+              event.payload.type === "over" ||
+              event.payload.type === "enter"
+            ) {
+              setIsDraggingOver(true);
+            } else if (event.payload.type === "drop") {
+              setIsDraggingOver(false);
+              await handleTauriDrop(event.payload.paths);
+            } else {
+              setIsDraggingOver(false);
+            }
+          },
+        );
         if (isMounted) {
           unlisten = unlistenFn;
         } else {
@@ -229,19 +266,22 @@ export function useFileManagerState(
 
       try {
         const { listen } = await import("@tauri-apps/api/event");
-        const unlistenFn = await listen<any>("tauri://drag-drop", async (event) => {
-          if (!isMounted) return;
-          if (isDraggingInternalRef.current) return;
-          const payload = event.payload;
-          if (payload.type === "over" || payload.type === "enter") {
-            setIsDraggingOver(true);
-          } else if (payload.type === "drop") {
-            setIsDraggingOver(false);
-            await handleTauriDrop(payload.paths);
-          } else {
-            setIsDraggingOver(false);
-          }
-        });
+        const unlistenFn = await listen<any>(
+          "tauri://drag-drop",
+          async (event) => {
+            if (!isMounted) return;
+            if (isDraggingInternalRef.current) return;
+            const payload = event.payload;
+            if (payload.type === "over" || payload.type === "enter") {
+              setIsDraggingOver(true);
+            } else if (payload.type === "drop") {
+              setIsDraggingOver(false);
+              await handleTauriDrop(payload.paths);
+            } else {
+              setIsDraggingOver(false);
+            }
+          },
+        );
         if (isMounted) {
           unlisten = unlistenFn;
         } else {
@@ -307,7 +347,10 @@ export function useFileManagerState(
 
       const filesList = Array.from(droppedFiles);
       const targetDir = currentPathRef.current;
-      setDropStatus({ type: "loading", message: `${fmRef.current.uploading} (${filesList.length})` });
+      setDropStatus({
+        type: "loading",
+        message: `${fmRef.current.uploading} (${filesList.length})`,
+      });
       setIsLoading(true);
 
       let anyError = false;
@@ -333,7 +376,10 @@ export function useFileManagerState(
           message: `${fmRef.current.uploadSuccess} (${successCount}/${filesList.length}) - ${fmRef.current.uploadFailed}`,
         });
       } else {
-        setDropStatus({ type: "success", message: fmRef.current.uploadSuccess });
+        setDropStatus({
+          type: "success",
+          message: fmRef.current.uploadSuccess,
+        });
       }
 
       setTimeout(() => setDropStatus(null), 4000);
@@ -412,7 +458,9 @@ export function useFileManagerState(
 
   const sortedFiles = [...files]
     .filter((f) =>
-      searchQuery ? f.name.toLowerCase().includes(searchQuery.toLowerCase()) : true
+      searchQuery
+        ? f.name.toLowerCase().includes(searchQuery.toLowerCase())
+        : true,
     )
     .sort((a, b) => {
       if (a.isDirectory && !b.isDirectory) return -1;
@@ -488,7 +536,10 @@ export function useFileManagerState(
 
   useEffect(() => {
     const handleDismiss = (e: MouseEvent | TouchEvent) => {
-      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
+      if (
+        contextMenuRef.current &&
+        !contextMenuRef.current.contains(e.target as Node)
+      ) {
         setContextMenu(null);
       }
     };
@@ -500,25 +551,31 @@ export function useFileManagerState(
     };
   }, []);
 
-  const handleCopy = useCallback((item?: ContainerFileItem) => {
-    const targetItems = item
-      ? [item]
-      : files.filter((f) => selectedPaths.has(f.path));
-    if (targetItems.length > 0) {
-      setClipboard({ action: "copy", items: targetItems });
-    }
-    setContextMenu(null);
-  }, [files, selectedPaths]);
+  const handleCopy = useCallback(
+    (item?: ContainerFileItem) => {
+      const targetItems = item
+        ? [item]
+        : files.filter((f) => selectedPaths.has(f.path));
+      if (targetItems.length > 0) {
+        setClipboard({ action: "copy", items: targetItems });
+      }
+      setContextMenu(null);
+    },
+    [files, selectedPaths],
+  );
 
-  const handleCut = useCallback((item?: ContainerFileItem) => {
-    const targetItems = item
-      ? [item]
-      : files.filter((f) => selectedPaths.has(f.path));
-    if (targetItems.length > 0) {
-      setClipboard({ action: "cut", items: targetItems });
-    }
-    setContextMenu(null);
-  }, [files, selectedPaths]);
+  const handleCut = useCallback(
+    (item?: ContainerFileItem) => {
+      const targetItems = item
+        ? [item]
+        : files.filter((f) => selectedPaths.has(f.path));
+      if (targetItems.length > 0) {
+        setClipboard({ action: "cut", items: targetItems });
+      }
+      setContextMenu(null);
+    },
+    [files, selectedPaths],
+  );
 
   const handlePaste = useCallback(async () => {
     if (!clipboard || clipboard.items.length === 0) return;
@@ -534,7 +591,10 @@ export function useFileManagerState(
         existingNames.add(destName);
       } else if (
         existingNames.has(item.name) &&
-        item.path !== (currentPath === "/" ? `/${item.name}` : `${currentPath}/${item.name}`)
+        item.path !==
+          (currentPath === "/"
+            ? `/${item.name}`
+            : `${currentPath}/${item.name}`)
       ) {
         destName = getUniqueDuplicateName(item.name, existingNames);
         existingNames.add(destName);
@@ -578,7 +638,7 @@ export function useFileManagerState(
     } else if (op.type === "copy") {
       await deleteContainerFiles(
         containerId,
-        op.items.map((i) => i.to)
+        op.items.map((i) => i.to),
       );
     }
 
@@ -603,7 +663,7 @@ export function useFileManagerState(
         type: "container-files",
         paths: filesToDrag.map((f) => f.path),
         names: filesToDrag.map((f) => f.name),
-      })
+      }),
     );
   };
 
@@ -613,21 +673,30 @@ export function useFileManagerState(
     setIsDraggingOver(false);
   };
 
-  const handleItemDragOver = (e: React.DragEvent, targetItem: ContainerFileItem) => {
+  const handleItemDragOver = (
+    e: React.DragEvent,
+    targetItem: ContainerFileItem,
+  ) => {
     e.preventDefault();
     e.stopPropagation();
     e.dataTransfer.dropEffect = "copy";
     setDropTarget(targetItem);
   };
 
-  const handleItemDragLeave = (e: React.DragEvent, targetItem: ContainerFileItem) => {
+  const handleItemDragLeave = (
+    e: React.DragEvent,
+    targetItem: ContainerFileItem,
+  ) => {
     e.stopPropagation();
     if (dropTarget?.path === targetItem.path) {
       setDropTarget(null);
     }
   };
 
-  const handleItemDrop = async (e: React.DragEvent, targetItem: ContainerFileItem) => {
+  const handleItemDrop = async (
+    e: React.DragEvent,
+    targetItem: ContainerFileItem,
+  ) => {
     e.preventDefault();
     e.stopPropagation();
     setDropTarget(null);
@@ -649,7 +718,11 @@ export function useFileManagerState(
           }
 
           setIsLoading(true);
-          const currentDirFiles = targetDir === currentPath ? files : (await fetchContainerFiles(containerId, targetDir)).entries || [];
+          const currentDirFiles =
+            targetDir === currentPath
+              ? files
+              : (await fetchContainerFiles(containerId, targetDir)).entries ||
+                [];
           const existingNames = new Set(currentDirFiles.map((f) => f.name));
           const movedItems: { from: string; to: string }[] = [];
 
@@ -660,7 +733,8 @@ export function useFileManagerState(
               destName = getUniqueDuplicateName(fileName, existingNames);
             }
             existingNames.add(destName);
-            const targetDest = targetDir === "/" ? `/${destName}` : `${targetDir}/${destName}`;
+            const targetDest =
+              targetDir === "/" ? `/${destName}` : `${targetDir}/${destName}`;
             if (srcPath !== targetDest) {
               await renameContainerFile(containerId, srcPath, targetDest);
               movedItems.push({ from: srcPath, to: targetDest });
@@ -748,7 +822,8 @@ export function useFileManagerState(
               destName = getUniqueDuplicateName(fileName, existingNames);
             }
             existingNames.add(destName);
-            const targetDest = targetDir === "/" ? `/${destName}` : `${targetDir}/${destName}`;
+            const targetDest =
+              targetDir === "/" ? `/${destName}` : `${targetDir}/${destName}`;
             if (srcPath !== targetDest) {
               await renameContainerFile(containerId, srcPath, targetDest);
               movedItems.push({ from: srcPath, to: targetDest });
@@ -816,7 +891,9 @@ export function useFileManagerState(
     }
   };
 
-  const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInputChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const selectedFiles = e.target.files;
     if (selectedFiles && selectedFiles.length > 0) {
       const filesList = Array.from(selectedFiles);
@@ -866,7 +943,11 @@ export function useFileManagerState(
   const handleSaveAndClose = async () => {
     if (!viewerModal) return;
     setViewerModal((prev) => (prev ? { ...prev, isSaving: true } : null));
-    await saveContainerFile(containerId, viewerModal.item.path, viewerModal.content);
+    await saveContainerFile(
+      containerId,
+      viewerModal.item.path,
+      viewerModal.content,
+    );
     setViewerModal(null);
     await loadFiles(currentPath);
   };
@@ -929,15 +1010,18 @@ export function useFileManagerState(
         shiftAnchorIndexRef.current = -1;
         lastClickedIndexRef.current = -1;
         cursorIndexRef.current = -1;
-      } else if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+      } else if (
+        ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)
+      ) {
         e.preventDefault();
         if (sortedFiles.length === 0) return;
 
-        const currentIdx = cursorIndexRef.current >= 0
-          ? cursorIndexRef.current
-          : (selectedPaths.size > 0
-            ? sortedFiles.findIndex((f) => selectedPaths.has(f.path))
-            : -1);
+        const currentIdx =
+          cursorIndexRef.current >= 0
+            ? cursorIndexRef.current
+            : selectedPaths.size > 0
+              ? sortedFiles.findIndex((f) => selectedPaths.has(f.path))
+              : -1;
 
         let cols = 1;
         if (viewMode === "grid" && gridContainerRef.current) {
@@ -978,7 +1062,9 @@ export function useFileManagerState(
           const anchor = shiftAnchorIndexRef.current;
           const start = Math.min(anchor, nextIdx);
           const end = Math.max(anchor, nextIdx);
-          const rangePaths = sortedFiles.slice(start, end + 1).map((f) => f.path);
+          const rangePaths = sortedFiles
+            .slice(start, end + 1)
+            .map((f) => f.path);
           setSelectedPaths(new Set(rangePaths));
         } else {
           shiftAnchorIndexRef.current = nextIdx;

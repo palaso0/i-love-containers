@@ -42,8 +42,8 @@ export const ServiceNodeItem: React.FC<ServiceNodeItemProps> = ({
         isSelected
           ? "bg-surface/95 border-primary shadow-[0_0_22px_rgba(0,122,255,0.4)] ring-2 ring-primary/60"
           : isHovered
-          ? "bg-surface/95 border-foreground/40 shadow-mac-segment"
-          : "bg-surface/85 backdrop-blur-xl border-border/80 shadow-mac-segment"
+            ? "bg-surface/95 border-foreground/40 shadow-mac-segment"
+            : "bg-surface/85 backdrop-blur-xl border-border/80 shadow-mac-segment"
       }`}
     >
       <div className="flex items-center justify-between">
@@ -53,12 +53,17 @@ export const ServiceNodeItem: React.FC<ServiceNodeItemProps> = ({
               isRunning
                 ? "bg-status-running shadow-[0_0_6px_rgba(48,209,88,0.8)]"
                 : isPaused
-                ? "bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]"
-                : "bg-status-stopped"
+                  ? "bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]"
+                  : "bg-status-stopped"
             }`}
           />
           <div className="flex items-center space-x-1.5 min-w-0">
-            <TechIcon image={svc.image} name={svc.name} role={svc.role} className="w-4 h-4" />
+            <TechIcon
+              image={svc.image}
+              name={svc.name}
+              role={svc.role}
+              className="w-4 h-4"
+            />
             <span className="font-semibold text-xs text-foreground tracking-tight truncate">
               {svc.name}
             </span>
@@ -92,7 +97,9 @@ export const ServiceNodeItem: React.FC<ServiceNodeItemProps> = ({
               </span>
             ))
           ) : (
-            <span className="text-muted-foreground/60 italic text-[9px]">internal</span>
+            <span className="text-muted-foreground/60 italic text-[9px]">
+              internal
+            </span>
           )}
         </div>
 

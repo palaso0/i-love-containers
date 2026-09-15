@@ -54,13 +54,14 @@ export const PersistentTerminal: React.FC<PersistentTerminalProps> = ({
     fitAddonRef.current = fitAddon;
 
     term.writeln(
-      `\x1b[1;38;5;205m♥\x1b[0m \x1b[1mI ♥ Containers Workspace\x1b[0m \x1b[90m—\x1b[0m \x1b[1;36m${containerName}\x1b[0m \x1b[90m(${containerId.substring(0, 12)})\x1b[0m \x1b[90m•\x1b[0m \x1b[32m● Connected\x1b[0m`
+      `\x1b[1;38;5;205m♥\x1b[0m \x1b[1mI ♥ Containers Workspace\x1b[0m \x1b[90m—\x1b[0m \x1b[1;36m${containerName}\x1b[0m \x1b[90m(${containerId.substring(0, 12)})\x1b[0m \x1b[90m•\x1b[0m \x1b[32m● Connected\x1b[0m`,
     );
     term.writeln("");
 
     const controller = setupTerminalInput({
       term,
-      getPrompt: () => formatTerminalPrompt(containerName, containerId, currentCwdRef.current),
+      getPrompt: () =>
+        formatTerminalPrompt(containerName, containerId, currentCwdRef.current),
       onExecute: async (command) => {
         if (session.containerId) {
           const isCd = command === "cd" || command.startsWith("cd ");
@@ -72,7 +73,7 @@ export const PersistentTerminal: React.FC<PersistentTerminalProps> = ({
                 cdCmd,
                 term.cols,
                 term.rows,
-                currentCwdRef.current
+                currentCwdRef.current,
               );
               if (res.exitCode === 0 && res.output) {
                 const lines = res.output.trim().split(/\r?\n/);
@@ -93,7 +94,7 @@ export const PersistentTerminal: React.FC<PersistentTerminalProps> = ({
                 command,
                 term.cols,
                 term.rows,
-                currentCwdRef.current
+                currentCwdRef.current,
               );
               if (res.output) {
                 const formattedOutput = res.output.replace(/\r?\n/g, "\r\n");
@@ -178,7 +179,10 @@ export const PersistentTerminal: React.FC<PersistentTerminalProps> = ({
       }`}
       style={{ display: isActive ? "block" : "none" }}
     >
-      <div ref={terminalElementRef} className="w-full h-full font-mono select-text" />
+      <div
+        ref={terminalElementRef}
+        className="w-full h-full font-mono select-text"
+      />
     </div>
   );
 };

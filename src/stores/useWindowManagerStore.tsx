@@ -40,7 +40,7 @@ interface WindowManagerContextValue {
   openLogsWindow: (containerId: string, containerName: string) => string;
   openStackLogsWindow: (
     composeProject: string,
-    serviceContainers: Array<{ id: string; name: string }>
+    serviceContainers: Array<{ id: string; name: string }>,
   ) => string;
   closeWindow: (id: string) => void;
   focusWindow: (id: string) => void;
@@ -49,7 +49,7 @@ interface WindowManagerContextValue {
   restoreWindow: (id: string) => void;
   updateWindowBounds: (
     id: string,
-    bounds: { x?: number; y?: number; width?: number; height?: number }
+    bounds: { x?: number; y?: number; width?: number; height?: number },
   ) => void;
   tileWindows: () => void;
   minimizeAllWindows: () => void;
@@ -62,7 +62,9 @@ interface WindowManagerContextValue {
   toggleWindowServiceFilter: (windowId: string, serviceName: string) => void;
 }
 
-const WindowManagerContext = createContext<WindowManagerContextValue | undefined>(undefined);
+const WindowManagerContext = createContext<
+  WindowManagerContextValue | undefined
+>(undefined);
 
 const SERVICE_COLORS = [
   "#38bdf8",
@@ -75,140 +77,178 @@ const SERVICE_COLORS = [
   "#e879f9",
 ];
 
-const getSourceColor = (index: number) => SERVICE_COLORS[index % SERVICE_COLORS.length];
+const getSourceColor = (index: number) =>
+  SERVICE_COLORS[index % SERVICE_COLORS.length];
 
-export const WindowManagerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const WindowManagerProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [windows, setWindows] = useState<FloatingWindow[]>([]);
   const [highestZIndex, setHighestZIndex] = useState(100);
-  const [terminalCounters, setTerminalCounters] = useState<Record<string, number>>({});
+  const [terminalCounters, setTerminalCounters] = useState<
+    Record<string, number>
+  >({});
 
-  const openTerminalWindow = useCallback((containerId: string, containerName: string) => {
-    const count = (terminalCounters[containerId] || 0) + 1;
-    setTerminalCounters((prev) => ({ ...prev, [containerId]: count }));
-    const windowId = `win-term-${containerId}-${Date.now()}`;
-    const nextZ = highestZIndex + 1;
-    setHighestZIndex(nextZ);
+  const openTerminalWindow = useCallback(
+    (containerId: string, containerName: string) => {
+      const count = (terminalCounters[containerId] || 0) + 1;
+      setTerminalCounters((prev) => ({ ...prev, [containerId]: count }));
+      const windowId = `win-term-${containerId}-${Date.now()}`;
+      const nextZ = highestZIndex + 1;
+      setHighestZIndex(nextZ);
 
-    const offsetStep = (windows.length % 6) * 32;
-    const initialX = Math.max(20, Math.min(window.innerWidth - 680, 70 + offsetStep));
-    const initialY = Math.max(20, Math.min(window.innerHeight - 500, 60 + offsetStep));
+      const offsetStep = (windows.length % 6) * 32;
+      const initialX = Math.max(
+        20,
+        Math.min(window.innerWidth - 680, 70 + offsetStep),
+      );
+      const initialY = Math.max(
+        20,
+        Math.min(window.innerHeight - 500, 60 + offsetStep),
+      );
 
-    const newWindow: FloatingWindow = {
-      id: windowId,
-      type: "terminal",
-      title: `${containerName} — Shell #${count}`,
-      containerId,
-      containerName,
-      x: initialX,
-      y: initialY,
-      width: 680,
-      height: 440,
-      zIndex: nextZ,
-      isMinimized: false,
-      isMaximized: false,
-      createdAt: Date.now(),
-    };
+      const newWindow: FloatingWindow = {
+        id: windowId,
+        type: "terminal",
+        title: `${containerName} — Shell #${count}`,
+        containerId,
+        containerName,
+        x: initialX,
+        y: initialY,
+        width: 680,
+        height: 440,
+        zIndex: nextZ,
+        isMinimized: false,
+        isMaximized: false,
+        createdAt: Date.now(),
+      };
 
-    setWindows((prev) => [...prev, newWindow]);
-    return windowId;
-  }, [highestZIndex, terminalCounters, windows.length]);
+      setWindows((prev) => [...prev, newWindow]);
+      return windowId;
+    },
+    [highestZIndex, terminalCounters, windows.length],
+  );
 
-  const openLogsWindow = useCallback((containerId: string, containerName: string) => {
-    const windowId = `win-logs-${containerId}-${Date.now()}`;
-    const nextZ = highestZIndex + 1;
-    setHighestZIndex(nextZ);
+  const openLogsWindow = useCallback(
+    (containerId: string, containerName: string) => {
+      const windowId = `win-logs-${containerId}-${Date.now()}`;
+      const nextZ = highestZIndex + 1;
+      setHighestZIndex(nextZ);
 
-    const offsetStep = (windows.length % 6) * 32;
-    const initialX = Math.max(20, Math.min(window.innerWidth - 680, 100 + offsetStep));
-    const initialY = Math.max(20, Math.min(window.innerHeight - 500, 80 + offsetStep));
+      const offsetStep = (windows.length % 6) * 32;
+      const initialX = Math.max(
+        20,
+        Math.min(window.innerWidth - 680, 100 + offsetStep),
+      );
+      const initialY = Math.max(
+        20,
+        Math.min(window.innerHeight - 500, 80 + offsetStep),
+      );
 
-    const initialTimestamp = new Date().toISOString().replace("T", " ").substring(0, 19);
-    const initialLogs: LogEntry[] = [
-      {
-        id: "l-1",
+      const initialTimestamp = new Date()
+        .toISOString()
+        .replace("T", " ")
+        .substring(0, 19);
+      const initialLogs: LogEntry[] = [
+        {
+          id: "l-1",
+          timestamp: initialTimestamp,
+          source: containerName,
+          color: "#38bdf8",
+          message: `Connected to live log stream for ${containerName} (${containerId.substring(0, 12)})`,
+        },
+        {
+          id: "l-2",
+          timestamp: initialTimestamp,
+          source: containerName,
+          color: "#38bdf8",
+          message: `HTTP Service listening and accepting socket traffic`,
+        },
+      ];
+
+      const newWindow: FloatingWindow = {
+        id: windowId,
+        type: "logs",
+        title: `${containerName} — Live Logs`,
+        containerId,
+        containerName,
+        x: initialX,
+        y: initialY,
+        width: 680,
+        height: 440,
+        zIndex: nextZ,
+        isMinimized: false,
+        isMaximized: false,
+        createdAt: Date.now(),
+        logs: initialLogs,
+        activeServiceFilters: [containerName],
+        isPaused: false,
+        autoScroll: true,
+        showTimestamps: true,
+      };
+
+      setWindows((prev) => [...prev, newWindow]);
+      return windowId;
+    },
+    [highestZIndex, windows.length],
+  );
+
+  const openStackLogsWindow = useCallback(
+    (
+      composeProject: string,
+      serviceContainers: Array<{ id: string; name: string }>,
+    ) => {
+      const windowId = `win-stack-logs-${composeProject}-${Date.now()}`;
+      const nextZ = highestZIndex + 1;
+      setHighestZIndex(nextZ);
+
+      const offsetStep = (windows.length % 6) * 32;
+      const initialX = Math.max(
+        20,
+        Math.min(window.innerWidth - 740, 80 + offsetStep),
+      );
+      const initialY = Math.max(
+        20,
+        Math.min(window.innerHeight - 500, 70 + offsetStep),
+      );
+
+      const initialTimestamp = new Date()
+        .toISOString()
+        .replace("T", " ")
+        .substring(0, 19);
+      const initialLogs: LogEntry[] = serviceContainers.map((s, index) => ({
+        id: `init-${s.id}`,
         timestamp: initialTimestamp,
-        source: containerName,
-        color: "#38bdf8",
-        message: `Connected to live log stream for ${containerName} (${containerId.substring(0, 12)})`,
-      },
-      {
-        id: "l-2",
-        timestamp: initialTimestamp,
-        source: containerName,
-        color: "#38bdf8",
-        message: `HTTP Service listening and accepting socket traffic`,
-      },
-    ];
+        source: s.name,
+        color: getSourceColor(index),
+        message: `Attached to unified live stream for ${s.name}`,
+      }));
 
-    const newWindow: FloatingWindow = {
-      id: windowId,
-      type: "logs",
-      title: `${containerName} — Live Logs`,
-      containerId,
-      containerName,
-      x: initialX,
-      y: initialY,
-      width: 680,
-      height: 440,
-      zIndex: nextZ,
-      isMinimized: false,
-      isMaximized: false,
-      createdAt: Date.now(),
-      logs: initialLogs,
-      activeServiceFilters: [containerName],
-      isPaused: false,
-      autoScroll: true,
-      showTimestamps: true,
-    };
+      const newWindow: FloatingWindow = {
+        id: windowId,
+        type: "logs",
+        title: `${composeProject} — Stack Logs (${serviceContainers.length} services)`,
+        composeProject,
+        x: initialX,
+        y: initialY,
+        width: 740,
+        height: 460,
+        zIndex: nextZ,
+        isMinimized: false,
+        isMaximized: false,
+        createdAt: Date.now(),
+        logs: initialLogs,
+        activeServiceFilters: serviceContainers.map((s) => s.name),
+        isPaused: false,
+        autoScroll: true,
+        showTimestamps: true,
+      };
 
-    setWindows((prev) => [...prev, newWindow]);
-    return windowId;
-  }, [highestZIndex, windows.length]);
-
-  const openStackLogsWindow = useCallback((
-    composeProject: string,
-    serviceContainers: Array<{ id: string; name: string }>
-  ) => {
-    const windowId = `win-stack-logs-${composeProject}-${Date.now()}`;
-    const nextZ = highestZIndex + 1;
-    setHighestZIndex(nextZ);
-
-    const offsetStep = (windows.length % 6) * 32;
-    const initialX = Math.max(20, Math.min(window.innerWidth - 740, 80 + offsetStep));
-    const initialY = Math.max(20, Math.min(window.innerHeight - 500, 70 + offsetStep));
-
-    const initialTimestamp = new Date().toISOString().replace("T", " ").substring(0, 19);
-    const initialLogs: LogEntry[] = serviceContainers.map((s, index) => ({
-      id: `init-${s.id}`,
-      timestamp: initialTimestamp,
-      source: s.name,
-      color: getSourceColor(index),
-      message: `Attached to unified live stream for ${s.name}`,
-    }));
-
-    const newWindow: FloatingWindow = {
-      id: windowId,
-      type: "logs",
-      title: `${composeProject} — Stack Logs (${serviceContainers.length} services)`,
-      composeProject,
-      x: initialX,
-      y: initialY,
-      width: 740,
-      height: 460,
-      zIndex: nextZ,
-      isMinimized: false,
-      isMaximized: false,
-      createdAt: Date.now(),
-      logs: initialLogs,
-      activeServiceFilters: serviceContainers.map((s) => s.name),
-      isPaused: false,
-      autoScroll: true,
-      showTimestamps: true,
-    };
-
-    setWindows((prev) => [...prev, newWindow]);
-    return windowId;
-  }, [highestZIndex, windows.length]);
+      setWindows((prev) => [...prev, newWindow]);
+      return windowId;
+    },
+    [highestZIndex, windows.length],
+  );
 
   const closeWindow = useCallback((id: string) => {
     setWindows((prev) => prev.filter((w) => w.id !== id));
@@ -217,20 +257,26 @@ export const WindowManagerProvider: React.FC<{ children: React.ReactNode }> = ({
   const focusWindow = useCallback((id: string) => {
     setHighestZIndex((prevZ) => {
       const nextZ = prevZ + 1;
-      setWindows((prev) => prev.map((w) => (w.id === id ? { ...w, zIndex: nextZ } : w)));
+      setWindows((prev) =>
+        prev.map((w) => (w.id === id ? { ...w, zIndex: nextZ } : w)),
+      );
       return nextZ;
     });
   }, []);
 
   const minimizeWindow = useCallback((id: string) => {
-    setWindows((prev) => prev.map((w) => (w.id === id ? { ...w, isMinimized: true } : w)));
+    setWindows((prev) =>
+      prev.map((w) => (w.id === id ? { ...w, isMinimized: true } : w)),
+    );
   }, []);
 
   const restoreWindow = useCallback((id: string) => {
     setHighestZIndex((prevZ) => {
       const nextZ = prevZ + 1;
       setWindows((prev) =>
-        prev.map((w) => (w.id === id ? { ...w, isMinimized: false, zIndex: nextZ } : w))
+        prev.map((w) =>
+          w.id === id ? { ...w, isMinimized: false, zIndex: nextZ } : w,
+        ),
       );
       return nextZ;
     });
@@ -243,7 +289,12 @@ export const WindowManagerProvider: React.FC<{ children: React.ReactNode }> = ({
         prev.map((w) => {
           if (w.id !== id) return w;
           if (w.isMaximized) {
-            const pb = w.prevBounds || { x: 70, y: 70, width: 680, height: 440 };
+            const pb = w.prevBounds || {
+              x: 70,
+              y: 70,
+              width: 680,
+              height: 440,
+            };
             return {
               ...w,
               isMaximized: false,
@@ -265,18 +316,23 @@ export const WindowManagerProvider: React.FC<{ children: React.ReactNode }> = ({
               zIndex: nextZ,
             };
           }
-        })
+        }),
       );
       return nextZ;
     });
   }, []);
 
-  const updateWindowBounds = useCallback((
-    id: string,
-    bounds: { x?: number; y?: number; width?: number; height?: number }
-  ) => {
-    setWindows((prev) => prev.map((w) => (w.id === id ? { ...w, ...bounds } : w)));
-  }, []);
+  const updateWindowBounds = useCallback(
+    (
+      id: string,
+      bounds: { x?: number; y?: number; width?: number; height?: number },
+    ) => {
+      setWindows((prev) =>
+        prev.map((w) => (w.id === id ? { ...w, ...bounds } : w)),
+      );
+    },
+    [],
+  );
 
   const tileWindows = useCallback(() => {
     setWindows((prev) => {
@@ -337,7 +393,7 @@ export const WindowManagerProvider: React.FC<{ children: React.ReactNode }> = ({
           ...w,
           logs: [...w.logs.slice(-800), entry],
         };
-      })
+      }),
     );
   }, []);
 
@@ -349,7 +405,7 @@ export const WindowManagerProvider: React.FC<{ children: React.ReactNode }> = ({
           ...w,
           logs: [],
         };
-      })
+      }),
     );
   }, []);
 
@@ -361,7 +417,7 @@ export const WindowManagerProvider: React.FC<{ children: React.ReactNode }> = ({
           ...w,
           isPaused: !w.isPaused,
         };
-      })
+      }),
     );
   }, []);
 
@@ -373,7 +429,7 @@ export const WindowManagerProvider: React.FC<{ children: React.ReactNode }> = ({
           ...w,
           autoScroll: !w.autoScroll,
         };
-      })
+      }),
     );
   }, []);
 
@@ -385,26 +441,29 @@ export const WindowManagerProvider: React.FC<{ children: React.ReactNode }> = ({
           ...w,
           showTimestamps: !w.showTimestamps,
         };
-      })
+      }),
     );
   }, []);
 
-  const toggleWindowServiceFilter = useCallback((windowId: string, serviceName: string) => {
-    setWindows((prev) =>
-      prev.map((w) => {
-        if (w.id !== windowId) return w;
-        const filters = w.activeServiceFilters || [];
-        const exists = filters.includes(serviceName);
-        const updated = exists
-          ? filters.filter((name) => name !== serviceName)
-          : [...filters, serviceName];
-        return {
-          ...w,
-          activeServiceFilters: updated,
-        };
-      })
-    );
-  }, []);
+  const toggleWindowServiceFilter = useCallback(
+    (windowId: string, serviceName: string) => {
+      setWindows((prev) =>
+        prev.map((w) => {
+          if (w.id !== windowId) return w;
+          const filters = w.activeServiceFilters || [];
+          const exists = filters.includes(serviceName);
+          const updated = exists
+            ? filters.filter((name) => name !== serviceName)
+            : [...filters, serviceName];
+          return {
+            ...w,
+            activeServiceFilters: updated,
+          };
+        }),
+      );
+    },
+    [],
+  );
 
   const value: WindowManagerContextValue = {
     windows,
@@ -439,7 +498,9 @@ export const WindowManagerProvider: React.FC<{ children: React.ReactNode }> = ({
 export const useWindowManagerStore = (): WindowManagerContextValue => {
   const context = useContext(WindowManagerContext);
   if (!context) {
-    throw new Error("useWindowManagerStore must be used within WindowManagerProvider");
+    throw new Error(
+      "useWindowManagerStore must be used within WindowManagerProvider",
+    );
   }
   return context;
 };

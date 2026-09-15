@@ -10,13 +10,12 @@ interface StandaloneOverviewWindowProps {
   containerName?: string;
 }
 
-export const StandaloneOverviewWindow: React.FC<StandaloneOverviewWindowProps> = ({
-  containerId,
-  containerName = "container",
-}) => {
+export const StandaloneOverviewWindow: React.FC<
+  StandaloneOverviewWindowProps
+> = ({ containerId, containerName = "container" }) => {
   const { containers } = useAppStore();
   const [container, setContainer] = useState<ContainerDetail | null>(
-    containers.find((c) => c.id === containerId) || null
+    containers.find((c) => c.id === containerId) || null,
   );
 
   useEffect(() => {
@@ -37,7 +36,9 @@ export const StandaloneOverviewWindow: React.FC<StandaloneOverviewWindowProps> =
           <span className="w-2 h-2 rounded-full bg-status-running shadow-[0_0_6px_rgba(48,209,88,0.5)]" />
           <Box className="w-3.5 h-3.5 text-primary" />
           <span className="font-bold text-foreground">{containerName}</span>
-          <span className="text-muted-foreground">({containerId.substring(0, 12)})</span>
+          <span className="text-muted-foreground">
+            ({containerId.substring(0, 12)})
+          </span>
           <span className="text-muted-foreground/60">•</span>
           <span className="text-muted-foreground">Overview</span>
         </div>
@@ -46,7 +47,9 @@ export const StandaloneOverviewWindow: React.FC<StandaloneOverviewWindowProps> =
         {container ? (
           <OverviewTab container={container} />
         ) : (
-          <div className="flex items-center justify-center h-full text-xs text-muted-foreground">Loading...</div>
+          <div className="flex items-center justify-center h-full text-xs text-muted-foreground">
+            Loading...
+          </div>
         )}
       </div>
     </div>

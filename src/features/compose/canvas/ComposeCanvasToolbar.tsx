@@ -36,7 +36,9 @@ export const ComposeCanvasToolbar: React.FC<ComposeCanvasToolbarProps> = ({
           title={t.compose.autoArrange}
         >
           <Sparkles className="w-3.5 h-3.5" />
-          <span className="text-[11px] font-sans font-semibold">{t.compose.autoArrange}</span>
+          <span className="text-[11px] font-sans font-semibold">
+            {t.compose.autoArrange}
+          </span>
         </button>
         <div className="w-[1px] h-3.5 bg-border/80" />
         <button
@@ -68,10 +70,13 @@ export const ComposeCanvasToolbar: React.FC<ComposeCanvasToolbarProps> = ({
 
       <div className="absolute top-3 left-3 z-20 flex flex-wrap items-center gap-2 max-w-lg pointer-events-none">
         <div className="bg-surface/90 backdrop-blur-xl border border-border/80 px-3 py-1.5 rounded-xl shadow-mac-segment pointer-events-auto flex items-center space-x-2 text-xs">
-          <span className="font-semibold text-foreground tracking-tight">{projectName}</span>
+          <span className="font-semibold text-foreground tracking-tight">
+            {projectName}
+          </span>
           <span className="w-1.5 h-1.5 rounded-full bg-status-running shadow-[0_0_6px_rgba(48,209,88,0.7)]" />
           <span className="text-[11px] text-muted-foreground font-mono">
-            {servicesCount} {t.compose.servicesCount} • {networks.length} {t.compose.networksCount} • {volumesCount} {t.compose.volumesCount}
+            {servicesCount} {t.compose.servicesCount} • {networks.length}{" "}
+            {t.compose.networksCount} • {volumesCount} {t.compose.volumesCount}
           </span>
         </div>
 
@@ -83,7 +88,10 @@ export const ComposeCanvasToolbar: React.FC<ComposeCanvasToolbarProps> = ({
               onMouseLeave={() => onHoverNetwork(null)}
               className="bg-surface/80 backdrop-blur-sm border border-border/70 px-2 py-0.5 rounded-lg text-[10px] font-mono text-foreground/80 flex items-center space-x-1.5 shadow-2xs hover:border-foreground/40 transition-colors cursor-default"
             >
-              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: net.color }} />
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ backgroundColor: net.color }}
+              />
               <span>{net.name}</span>
             </div>
           ))}

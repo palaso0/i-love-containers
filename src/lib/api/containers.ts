@@ -21,7 +21,9 @@ export async function fetchContainers(): Promise<ContainerDetail[]> {
   return [];
 }
 
-export async function fetchContainer(id: string): Promise<ContainerDetail | null> {
+export async function fetchContainer(
+  id: string,
+): Promise<ContainerDetail | null> {
   try {
     const response = await apiFetch(`/api/containers/${id}`);
     if (response.ok) {
@@ -33,7 +35,9 @@ export async function fetchContainer(id: string): Promise<ContainerDetail | null
 
 export async function startContainer(id: string): Promise<boolean> {
   try {
-    const response = await apiFetch(`/api/containers/${id}/start`, { method: "POST" });
+    const response = await apiFetch(`/api/containers/${id}/start`, {
+      method: "POST",
+    });
     if (response.ok) return true;
   } catch {}
 
@@ -55,7 +59,9 @@ export async function startContainer(id: string): Promise<boolean> {
 
 export async function stopContainer(id: string): Promise<boolean> {
   try {
-    const response = await apiFetch(`/api/containers/${id}/stop`, { method: "POST" });
+    const response = await apiFetch(`/api/containers/${id}/stop`, {
+      method: "POST",
+    });
     if (response.ok) return true;
   } catch {}
 
@@ -76,7 +82,9 @@ export async function stopContainer(id: string): Promise<boolean> {
 
 export async function pauseContainer(id: string): Promise<boolean> {
   try {
-    const response = await apiFetch(`/api/containers/${id}/pause`, { method: "POST" });
+    const response = await apiFetch(`/api/containers/${id}/pause`, {
+      method: "POST",
+    });
     if (response.ok) return true;
   } catch {}
 
@@ -96,7 +104,9 @@ export async function pauseContainer(id: string): Promise<boolean> {
 
 export async function unpauseContainer(id: string): Promise<boolean> {
   try {
-    const response = await apiFetch(`/api/containers/${id}/unpause`, { method: "POST" });
+    const response = await apiFetch(`/api/containers/${id}/unpause`, {
+      method: "POST",
+    });
     if (response.ok) return true;
   } catch {}
 
@@ -116,7 +126,9 @@ export async function unpauseContainer(id: string): Promise<boolean> {
 
 export async function restartContainer(id: string): Promise<boolean> {
   try {
-    const response = await apiFetch(`/api/containers/${id}/restart`, { method: "POST" });
+    const response = await apiFetch(`/api/containers/${id}/restart`, {
+      method: "POST",
+    });
     if (response.ok) return true;
   } catch {}
 
@@ -136,7 +148,9 @@ export async function restartContainer(id: string): Promise<boolean> {
 
 export async function removeContainer(id: string): Promise<boolean> {
   try {
-    const response = await apiFetch(`/api/containers/${id}`, { method: "DELETE" });
+    const response = await apiFetch(`/api/containers/${id}`, {
+      method: "DELETE",
+    });
     if (response.ok) return true;
   } catch {}
 
@@ -149,7 +163,7 @@ export async function executeContainerCommand(
   command: string,
   cols?: number,
   rows?: number,
-  cwd?: string
+  cwd?: string,
 ): Promise<{ output: string; exitCode: number }> {
   try {
     const response = await apiFetch(`/api/containers/${containerId}/exec`, {
@@ -162,7 +176,9 @@ export async function executeContainerCommand(
   return { output: "", exitCode: 1 };
 }
 
-export async function fetchContainerStats(id: string): Promise<ContainerStats[]> {
+export async function fetchContainerStats(
+  id: string,
+): Promise<ContainerStats[]> {
   try {
     const response = await apiFetch(`/api/containers/${id}/stats`);
     if (response.ok) {

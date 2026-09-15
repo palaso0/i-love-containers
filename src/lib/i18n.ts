@@ -51,24 +51,31 @@ export const translations = {
       stopAll: "Stop all in stack",
       restartAll: "Restart all in stack",
       removeConfirmTitle: "Remove Container?",
-      removeConfirmDesc: "Are you sure you want to permanently remove container",
+      removeConfirmDesc:
+        "Are you sure you want to permanently remove container",
       removeStackConfirmTitle: "Remove Stack?",
-      removeStackConfirmDesc: "Are you sure you want to permanently remove the stack",
+      removeStackConfirmDesc:
+        "Are you sure you want to permanently remove the stack",
       removeStackContainersTitle: "Remove Stack Containers?",
-      removeStackContainersDesc: "Are you sure you want to stop and remove all containers in stack",
-      removeStackContainersNote: "The stack will remain available in your list so you can bring it up again.",
+      removeStackContainersDesc:
+        "Are you sure you want to stop and remove all containers in stack",
+      removeStackContainersNote:
+        "The stack will remain available in your list so you can bring it up again.",
       noContainersInStack: "No active containers (stack is down)",
       removeBulkConfirmTitle: "Remove Selected Containers?",
-      removeBulkConfirmDesc: "Are you sure you want to permanently remove the selected containers?",
+      removeBulkConfirmDesc:
+        "Are you sure you want to permanently remove the selected containers?",
       cannotBeUndone: "This action cannot be undone.",
       cancel: "Cancel",
       noContainers: "No containers found",
       disconnected: "Docker disconnected",
       selectToInspect: "Select a container to inspect details",
       containerNotRunningTitle: "Container is not running",
-      containerNotRunningDesc: "This section requires the container to be running to execute commands, browse files, or inspect metrics.",
+      containerNotRunningDesc:
+        "This section requires the container to be running to execute commands, browse files, or inspect metrics.",
       containerPausedTitle: "Container is paused",
-      containerPausedDesc: "This section requires the container to be active. Resume the container to access its terminal, files, or metrics.",
+      containerPausedDesc:
+        "This section requires the container to be active. Resume the container to access its terminal, files, or metrics.",
       tabs: {
         overview: "Overview",
         stats: "Stats",
@@ -158,7 +165,8 @@ export const translations = {
       yamlView: "YAML File",
       servicesView: "Services",
       noStacks: "No Compose Stacks Discovered",
-      noStacksDesc: "Containers with Docker Compose labels will automatically be detected and grouped here.",
+      noStacksDesc:
+        "Containers with Docker Compose labels will automatically be detected and grouped here.",
       zoomIn: "Zoom In",
       zoomOut: "Zoom Out",
       resetZoom: "Reset View",
@@ -186,7 +194,8 @@ export const translations = {
       customPlay: "Custom",
       customPlayTitle: "Custom Play",
       customPlayCommand: "Command",
-      customPlayPlaceholder: "docker compose -f docker-compose.yml -f override.yml up -d --build",
+      customPlayPlaceholder:
+        "docker compose -f docker-compose.yml -f override.yml up -d --build",
       applyToComposeActions: "Apply to compose actions",
       run: "Run",
       save: "Save",
@@ -195,7 +204,8 @@ export const translations = {
       codeView: "Raw YAML",
       bulkOptions: "Bulk Options",
       bulkOptionsTitle: "Apply Bulk / Global Options",
-      bulkOptionsDesc: "Add or update directives across multiple services simultaneously",
+      bulkOptionsDesc:
+        "Add or update directives across multiple services simultaneously",
       bulkSelectServices: "1. Select target services",
       bulkSelectDirective: "2. Directive to apply",
       bulkApplyButton: "Apply to Selected",
@@ -249,7 +259,8 @@ export const translations = {
       cancelRaw: "Cancel",
       editText: "Edit Text",
       resetSample: "Reset to sample template",
-      bulkPlatformDesc: "Architecture / Platform (e.g. linux/amd64 to emulate x86 on Apple Silicon)",
+      bulkPlatformDesc:
+        "Architecture / Platform (e.g. linux/amd64 to emulate x86 on Apple Silicon)",
       bulkRestartDesc: "Docker restart policy (restart)",
       bulkEnvDesc: "Global or shared environment variable",
       bulkNetDesc: "Attach to Docker network",
@@ -261,14 +272,17 @@ export const translations = {
       title: "Settings",
       subtitle: "Appearance, themes, language, and runtime endpoints",
       appearanceModeSection: "Appearance Mode",
-      appearanceModeDesc: "Select light, dark, or sync automatically with your macOS system theme.",
+      appearanceModeDesc:
+        "Select light, dark, or sync automatically with your macOS system theme.",
       lightMode: "Light",
       darkMode: "Dark",
       systemMode: "System (Auto)",
       themeSection: "Interface Theme",
-      themeSectionDesc: "Select your preferred visual style. Themes adapt automatically to light and dark mode.",
+      themeSectionDesc:
+        "Select your preferred visual style. Themes adapt automatically to light and dark mode.",
       accentSection: "Accent & Selection Color",
-      accentSectionDesc: "Highlight color for selected sidebar items, active containers, buttons, and text.",
+      accentSectionDesc:
+        "Highlight color for selected sidebar items, active containers, buttons, and text.",
       languageSection: "Language",
       languageSectionDesc: "Choose your preferred interface language.",
       previewTitle: "Live Preview",
@@ -276,7 +290,8 @@ export const translations = {
       previewActiveButton: "Active Button",
       previewBadge: "stack: web:3000",
       densitySection: "View Density Mode",
-      densitySectionDesc: "Minimalist mode strips clutter for a fast glance; detailed mode displays full metrics.",
+      densitySectionDesc:
+        "Minimalist mode strips clutter for a fast glance; detailed mode displays full metrics.",
       mode: "Mode",
       hostsSection: "Daemon Hosts (Multi-Host)",
       activeHost: "Active",
@@ -322,7 +337,8 @@ export const translations = {
         graphite: "Titanium Graphite",
       },
       enginesSection: "Container Engines & Daemons",
-      enginesSectionDesc: "Automatically detects and switches between Docker Desktop, OrbStack, Rancher Desktop, Colima, and Podman.",
+      enginesSectionDesc:
+        "Automatically detects and switches between Docker Desktop, OrbStack, Rancher Desktop, Colima, and Podman.",
     },
     engines: {
       title: "Container Engines & Daemons",
@@ -337,7 +353,8 @@ export const translations = {
       demo: "DEMO PREVIEW",
       mockNotice: "Running in Demo Mode with simulated data",
       engineStoppedTitle: "Daemon is Not Running",
-      engineStoppedDesc: "The engine was detected but the daemon socket is offline. Start the application or select another engine.",
+      engineStoppedDesc:
+        "The engine was detected but the daemon socket is offline. Start the application or select another engine.",
       retry: "Retry Connection",
       exploreDemo: "Explore Demo Mode",
       socket: "Socket",
@@ -349,7 +366,8 @@ export const translations = {
       search: "Search volumes...",
       inUse: "In use",
       dangling: "Dangling",
-      danglingTooltip: "This volume is not attached to any running or stopped container",
+      danglingTooltip:
+        "This volume is not attached to any running or stopped container",
       driver: "DRIVER",
       path: "PATH",
       size: "SIZE",
@@ -409,7 +427,8 @@ export const translations = {
       modified: "Modified",
       deleted: "Deleted",
       noFiles: "No file modifications recorded in this layer",
-      noRecommendations: "This image is well-optimized! No significant bloat detected.",
+      noRecommendations:
+        "This image is well-optimized! No significant bloat detected.",
       potentialSavings: "Potential savings",
     },
     networks: {
@@ -478,24 +497,31 @@ export const translations = {
       stopAll: "Detener todos en el stack",
       restartAll: "Reiniciar todos en el stack",
       removeConfirmTitle: "¿Eliminar Contenedor?",
-      removeConfirmDesc: "¿Estás seguro de que deseas eliminar permanentemente el contenedor",
+      removeConfirmDesc:
+        "¿Estás seguro de que deseas eliminar permanentemente el contenedor",
       removeStackConfirmTitle: "¿Eliminar Stack?",
-      removeStackConfirmDesc: "¿Estás seguro de que deseas eliminar permanentemente el stack",
+      removeStackConfirmDesc:
+        "¿Estás seguro de que deseas eliminar permanentemente el stack",
       removeStackContainersTitle: "¿Eliminar Contenedores del Stack?",
-      removeStackContainersDesc: "¿Estás seguro de que deseas detener y eliminar todos los contenedores del stack",
-      removeStackContainersNote: "El stack permanecerá disponible en tu lista para levantarlo de nuevo.",
+      removeStackContainersDesc:
+        "¿Estás seguro de que deseas detener y eliminar todos los contenedores del stack",
+      removeStackContainersNote:
+        "El stack permanecerá disponible en tu lista para levantarlo de nuevo.",
       noContainersInStack: "Sin contenedores activos (stack apagado)",
       removeBulkConfirmTitle: "¿Eliminar Contenedores Seleccionados?",
-      removeBulkConfirmDesc: "¿Estás seguro de que deseas eliminar permanentemente los contenedores seleccionados?",
+      removeBulkConfirmDesc:
+        "¿Estás seguro de que deseas eliminar permanentemente los contenedores seleccionados?",
       cannotBeUndone: "Esta acción no se puede deshacer.",
       cancel: "Cancelar",
       noContainers: "No se encontraron contenedores",
       disconnected: "Docker desconectado",
       selectToInspect: "Selecciona un contenedor para inspeccionar detalles",
       containerNotRunningTitle: "El contenedor no está en ejecución",
-      containerNotRunningDesc: "Esta sección requiere que el contenedor esté en ejecución para interactuar con su consola, explorar archivos o consultar métricas.",
+      containerNotRunningDesc:
+        "Esta sección requiere que el contenedor esté en ejecución para interactuar con su consola, explorar archivos o consultar métricas.",
       containerPausedTitle: "El contenedor está pausado",
-      containerPausedDesc: "Esta sección requiere que el contenedor esté activo. Reanuda el contenedor para acceder a su consola, archivos o métricas.",
+      containerPausedDesc:
+        "Esta sección requiere que el contenedor esté activo. Reanuda el contenedor para acceder a su consola, archivos o métricas.",
       tabs: {
         overview: "Resumen",
         stats: "Estadísticas",
@@ -538,7 +564,8 @@ export const translations = {
         fileNamePrompt: "Nombre del archivo:",
         renamePrompt: "Nuevo nombre:",
         confirmDeleteTitle: "¿Eliminar archivo o carpeta?",
-        confirmDeleteDesc: "¿Estás seguro de que deseas eliminar permanentemente",
+        confirmDeleteDesc:
+          "¿Estás seguro de que deseas eliminar permanentemente",
         save: "Guardar",
         saving: "Guardando...",
         saved: "¡Guardado!",
@@ -585,7 +612,8 @@ export const translations = {
       yamlView: "Archivo YAML",
       servicesView: "Servicios",
       noStacks: "No se encontraron pilas de Compose",
-      noStacksDesc: "Los contenedores con etiquetas de Docker Compose se detectarán y agruparán automáticamente aquí.",
+      noStacksDesc:
+        "Los contenedores con etiquetas de Docker Compose se detectarán y agruparán automáticamente aquí.",
       zoomIn: "Acercar",
       zoomOut: "Alejar",
       resetZoom: "Restablecer Vista",
@@ -613,7 +641,8 @@ export const translations = {
       customPlay: "Custom",
       customPlayTitle: "Custom Play",
       customPlayCommand: "Comando",
-      customPlayPlaceholder: "docker compose -f docker-compose.yml -f override.yml up -d --build",
+      customPlayPlaceholder:
+        "docker compose -f docker-compose.yml -f override.yml up -d --build",
       applyToComposeActions: "Aplicar a las acciones de Compose",
       run: "Ejecutar",
       save: "Guardar",
@@ -622,7 +651,8 @@ export const translations = {
       codeView: "Código YAML",
       bulkOptions: "Opciones en Lote",
       bulkOptionsTitle: "Aplicar Opciones en Lote / Globales",
-      bulkOptionsDesc: "Añade o modifica directivas en múltiples servicios a la vez",
+      bulkOptionsDesc:
+        "Añade o modifica directivas en múltiples servicios a la vez",
       bulkSelectServices: "1. Selecciona los servicios destino",
       bulkSelectDirective: "2. Directiva a aplicar",
       bulkApplyButton: "Aplicar a Seleccionados",
@@ -635,7 +665,8 @@ export const translations = {
       hasUnsavedChanges: "Hay cambios sin guardar en los servicios",
       discardChanges: "Descartar",
       saveChanges: "Guardar Cambios",
-      savedSuccess: "¡Cambios aplicados correctamente al archivo YAML y al diagrama!",
+      savedSuccess:
+        "¡Cambios aplicados correctamente al archivo YAML y al diagrama!",
       deleteService: "Eliminar",
       deleteServiceTitle: "Eliminar este servicio del Compose",
       serviceNameInYaml: "Nombre del Servicio en YAML",
@@ -676,7 +707,8 @@ export const translations = {
       cancelRaw: "Cancelar",
       editText: "Editar Texto",
       resetSample: "Restablecer a plantilla de ejemplo",
-      bulkPlatformDesc: "Arquitectura / Plataforma (ej: linux/amd64 para emular x86 en Apple Silicon)",
+      bulkPlatformDesc:
+        "Arquitectura / Plataforma (ej: linux/amd64 para emular x86 en Apple Silicon)",
       bulkRestartDesc: "Política de reinicio de Docker (restart)",
       bulkEnvDesc: "Variable de entorno global o compartida",
       bulkNetDesc: "Vincular a red Docker",
@@ -688,14 +720,17 @@ export const translations = {
       title: "Configuración",
       subtitle: "Apariencia, temas, idioma y conexiones de demonio",
       appearanceModeSection: "Modo de Apariencia",
-      appearanceModeDesc: "Elige modo claro, oscuro o sincroniza automáticamente con el sistema macOS.",
+      appearanceModeDesc:
+        "Elige modo claro, oscuro o sincroniza automáticamente con el sistema macOS.",
       lightMode: "Claro",
       darkMode: "Oscuro",
       systemMode: "Automático (Sistema)",
       themeSection: "Tema de Interfaz",
-      themeSectionDesc: "Selecciona tu estilo visual favorito. Los temas se adaptan al modo claro y oscuro.",
+      themeSectionDesc:
+        "Selecciona tu estilo visual favorito. Los temas se adaptan al modo claro y oscuro.",
       accentSection: "Color de Acento y Selección",
-      accentSectionDesc: "Color de resalte para la barra lateral, contenedores activos, botones y texto.",
+      accentSectionDesc:
+        "Color de resalte para la barra lateral, contenedores activos, botones y texto.",
       languageSection: "Idioma",
       languageSectionDesc: "Selecciona tu idioma preferido para la interfaz.",
       previewTitle: "Vista Previa en Vivo",
@@ -703,7 +738,8 @@ export const translations = {
       previewActiveButton: "Botón Activo",
       previewBadge: "stack: web:3000",
       densitySection: "Densidad de Vista",
-      densitySectionDesc: "Modo minimalista para resumen ágil; modo detallado con métricas completas.",
+      densitySectionDesc:
+        "Modo minimalista para resumen ágil; modo detallado con métricas completas.",
       mode: "Modo",
       hostsSection: "Servidores de Demonio (Multi-Host)",
       activeHost: "Activo",
@@ -749,7 +785,8 @@ export const translations = {
         graphite: "Grafito Titanio",
       },
       enginesSection: "Motores de Contenedores y Demonios",
-      enginesSectionDesc: "Detecta automáticamente y permite alternar entre Docker Desktop, OrbStack, Rancher Desktop, Colima y Podman.",
+      enginesSectionDesc:
+        "Detecta automáticamente y permite alternar entre Docker Desktop, OrbStack, Rancher Desktop, Colima y Podman.",
     },
     engines: {
       title: "Motores y Demonios de Contenedores",
@@ -764,7 +801,8 @@ export const translations = {
       demo: "VISTA DEMO",
       mockNotice: "Ejecutando en Modo Demo con datos simulados",
       engineStoppedTitle: "Demonio no está ejecutándose",
-      engineStoppedDesc: "El motor fue detectado pero su socket está desconectado. Inicia la aplicación o selecciona otro motor.",
+      engineStoppedDesc:
+        "El motor fue detectado pero su socket está desconectado. Inicia la aplicación o selecciona otro motor.",
       retry: "Reintentar Conexión",
       exploreDemo: "Explorar Modo Demo",
       socket: "Socket",
@@ -776,14 +814,16 @@ export const translations = {
       search: "Buscar volúmenes...",
       inUse: "En uso",
       dangling: "Sin asociar",
-      danglingTooltip: "Este volumen no está conectado a ningún contenedor actualmente",
+      danglingTooltip:
+        "Este volumen no está conectado a ningún contenedor actualmente",
       driver: "CONTROLADOR",
       path: "RUTA",
       size: "TAMAÑO",
       dynamic: "Dinámico",
       active: "Activo",
       removeTitle: "¿Eliminar volumen?",
-      removeDesc: "¿Estás seguro de que deseas eliminar permanentemente el volumen",
+      removeDesc:
+        "¿Estás seguro de que deseas eliminar permanentemente el volumen",
       removeWarning: "Se perderán todos los datos almacenados.",
       cannotDeleteInUse: "No se puede eliminar un volumen en uso",
       deleteAction: "Eliminar volumen",
@@ -836,7 +876,8 @@ export const translations = {
       modified: "Modificados",
       deleted: "Eliminados",
       noFiles: "No hay modificaciones de archivos registradas en esta capa",
-      noRecommendations: "¡Esta imagen está bien optimizada! No se detectó desperdicio significativo.",
+      noRecommendations:
+        "¡Esta imagen está bien optimizada! No se detectó desperdicio significativo.",
       potentialSavings: "Ahorro potencial",
     },
     networks: {

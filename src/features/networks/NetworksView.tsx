@@ -4,7 +4,8 @@ import { useAppStore } from "@/stores/useAppStore";
 import { DockerDisconnected } from "@/components/DockerDisconnected";
 
 export const NetworksView: React.FC = () => {
-  const { t, networks, systemOverview, setActiveTab, setSelectedContainerId } = useAppStore();
+  const { t, networks, systemOverview, setActiveTab, setSelectedContainerId } =
+    useAppStore();
   const isConnected = systemOverview?.dockerConnected ?? false;
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -15,7 +16,7 @@ export const NetworksView: React.FC = () => {
   const filteredNetworks = networks.filter(
     (network) =>
       network.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      network.driver.toLowerCase().includes(searchQuery.toLowerCase())
+      network.driver.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -23,7 +24,9 @@ export const NetworksView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/70 pb-3">
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="text-base font-semibold text-foreground tracking-tight">{t.networks.title}</h1>
+            <h1 className="text-base font-semibold text-foreground tracking-tight">
+              {t.networks.title}
+            </h1>
             <span className="text-xs font-mono text-muted-foreground bg-surface-secondary/70 border border-border/60 px-2 py-0.5 rounded-full">
               {networks.length}
             </span>
@@ -66,7 +69,9 @@ export const NetworksView: React.FC = () => {
               </div>
 
               <div className="text-2xs text-muted-foreground font-mono mb-3">
-                {t.networks.driver.toUpperCase()}: <span className="text-foreground">{network.driver}</span> • {t.networks.scope.toUpperCase()}:{" "}
+                {t.networks.driver.toUpperCase()}:{" "}
+                <span className="text-foreground">{network.driver}</span> •{" "}
+                {t.networks.scope.toUpperCase()}:{" "}
                 <span className="text-foreground">{network.scope}</span>
               </div>
 
@@ -88,7 +93,9 @@ export const NetworksView: React.FC = () => {
                         <Box className="w-3 h-3 text-muted-foreground" />
                         <span>{c.name}</span>
                         {c.ipv4 && (
-                          <span className="text-muted-foreground/70 text-[10px]">({c.ipv4})</span>
+                          <span className="text-muted-foreground/70 text-[10px]">
+                            ({c.ipv4})
+                          </span>
                         )}
                       </button>
                     ))}
@@ -103,7 +110,11 @@ export const NetworksView: React.FC = () => {
 
             <div className="mt-4 pt-3 border-t border-border/60 flex items-center justify-between text-2xs font-mono text-muted-foreground">
               <span>ID: {network.id.substring(0, 12)}</span>
-              <span>{network.driver === "bridge" ? t.networks.defaultBridge : t.networks.customDriver}</span>
+              <span>
+                {network.driver === "bridge"
+                  ? t.networks.defaultBridge
+                  : t.networks.customDriver}
+              </span>
             </div>
           </div>
         ))}

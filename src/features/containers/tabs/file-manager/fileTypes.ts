@@ -57,7 +57,10 @@ export function getFileIcon(item: ContainerFileItem) {
   }
 }
 
-export function getUniqueDuplicateName(originalName: string, existingNames: Set<string>): string {
+export function getUniqueDuplicateName(
+  originalName: string,
+  existingNames: Set<string>,
+): string {
   if (!existingNames.has(originalName)) return originalName;
   let base = originalName;
   let ext = "";

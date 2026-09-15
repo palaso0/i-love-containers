@@ -47,7 +47,10 @@ export const EngineSelector: React.FC = () => {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -57,8 +60,7 @@ export const EngineSelector: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
-  const currentEngine: ContainerEngineInfo =
-    activeEngine ||
+  const currentEngine: ContainerEngineInfo = activeEngine ||
     detectedEngines.find((e) => e.isActive) ||
     detectedEngines[0] || {
       id: "docker-desktop",
@@ -71,7 +73,8 @@ export const EngineSelector: React.FC = () => {
       icon: "docker",
     };
 
-  const isConnected = systemOverview?.dockerConnected ?? (currentEngine.status === "running");
+  const isConnected =
+    systemOverview?.dockerConnected ?? currentEngine.status === "running";
 
   return (
     <div className="relative" ref={popoverRef}>
@@ -84,8 +87,12 @@ export const EngineSelector: React.FC = () => {
         }`}
         title="Select container engine (Docker, OrbStack, Rancher, Colima, Podman)"
       >
-        <span className="shrink-0">{getEngineIcon(currentEngine.type, "w-3 h-3")}</span>
-        <span className="font-medium truncate max-w-[110px]">{currentEngine.name}</span>
+        <span className="shrink-0">
+          {getEngineIcon(currentEngine.type, "w-3 h-3")}
+        </span>
+        <span className="font-medium truncate max-w-[110px]">
+          {currentEngine.name}
+        </span>
 
         <span
           className={`w-1.5 h-1.5 rounded-full shrink-0 ${
@@ -114,15 +121,12 @@ export const EngineSelector: React.FC = () => {
 
       {isOpen && (
         <>
-
           <div
             className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
 
-          <div
-            className="absolute left-0 top-full mt-2 w-[360px] max-w-[90vw] rounded-xl p-3 z-50 animate-in fade-in zoom-in-95 duration-100 font-sans text-xs bg-white dark:bg-[#151923] border border-border/80 dark:border-white/15 shadow-2xl"
-          >
+          <div className="absolute left-0 top-full mt-2 w-[360px] max-w-[90vw] rounded-xl p-3 z-50 animate-in fade-in zoom-in-95 duration-100 font-sans text-xs bg-white dark:bg-[#151923] border border-border/80 dark:border-white/15 shadow-2xl">
             <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-border/70">
               <div>
                 <div className="font-semibold text-foreground text-xs flex items-center gap-1.5">
@@ -139,7 +143,9 @@ export const EngineSelector: React.FC = () => {
                 className="p-1.5 text-muted-foreground hover:text-foreground rounded-md transition-colors bg-surface-secondary border border-border/70 hover:bg-surface-hover disabled:opacity-50 shadow-xs"
                 title={t.engines.rescan}
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${isActionInProgress ? "animate-spin text-primary" : ""}`} />
+                <RefreshCw
+                  className={`w-3.5 h-3.5 ${isActionInProgress ? "animate-spin text-primary" : ""}`}
+                />
               </button>
             </div>
 
@@ -189,18 +195,20 @@ export const EngineSelector: React.FC = () => {
                           isRunning
                             ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
                             : isStopped
-                            ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
-                            : "bg-muted/40 text-muted-foreground border-border/60"
+                              ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                              : "bg-muted/40 text-muted-foreground border-border/60"
                         }`}
                       >
                         {isRunning
                           ? t.engines.running
                           : isStopped
-                          ? t.engines.stopped
-                          : t.engines.notInstalled}
+                            ? t.engines.stopped
+                            : t.engines.notInstalled}
                       </span>
 
-                      {isEngineActive && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+                      {isEngineActive && (
+                        <Check className="w-3.5 h-3.5 text-primary shrink-0" />
+                      )}
                     </div>
                   </div>
                 );

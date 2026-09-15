@@ -7,7 +7,10 @@ export function getApiUrl(path: string): string {
   return `http://127.0.0.1:${BACKEND_PORT}${path}`;
 }
 
-export async function apiFetch(input: string, init?: RequestInit): Promise<Response> {
+export async function apiFetch(
+  input: string,
+  init?: RequestInit,
+): Promise<Response> {
   const url = input.startsWith("/api") ? getApiUrl(input) : input;
   let attempts = 0;
   while (attempts < 3) {

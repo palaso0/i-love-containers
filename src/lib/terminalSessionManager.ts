@@ -21,7 +21,7 @@ const sessions = new Map<string, TerminalSession>();
 export function getOrCreateTerminalSession(
   containerId: string,
   containerName: string,
-  isDark: boolean
+  isDark: boolean,
 ): TerminalSession {
   const existing = sessions.get(containerId);
   if (existing) {
@@ -64,7 +64,7 @@ export function getOrCreateTerminalSession(
   const currentCwd = { current: "/" };
 
   term.writeln(
-    `\x1b[1;38;5;205m♥\x1b[0m \x1b[1mI ♥ Containers\x1b[0m \x1b[90m—\x1b[0m \x1b[1;36m${containerName}\x1b[0m \x1b[90m(${containerId.substring(0, 12)})\x1b[0m \x1b[90m•\x1b[0m \x1b[32m● Connected\x1b[0m`
+    `\x1b[1;38;5;205m♥\x1b[0m \x1b[1mI ♥ Containers\x1b[0m \x1b[90m—\x1b[0m \x1b[1;36m${containerName}\x1b[0m \x1b[90m(${containerId.substring(0, 12)})\x1b[0m \x1b[90m•\x1b[0m \x1b[32m● Connected\x1b[0m`,
   );
   term.writeln("");
 
@@ -85,7 +85,8 @@ export function getOrCreateTerminalSession(
 
   const controller = setupTerminalInput({
     term,
-    getPrompt: () => formatTerminalPrompt(containerName, containerId, currentCwd.current),
+    getPrompt: () =>
+      formatTerminalPrompt(containerName, containerId, currentCwd.current),
     onExecute: async (command) => {
       const isCd = command === "cd" || command.startsWith("cd ");
       if (isCd) {
@@ -96,7 +97,7 @@ export function getOrCreateTerminalSession(
             cdCmd,
             term.cols,
             term.rows,
-            currentCwd.current
+            currentCwd.current,
           );
           if (res.exitCode === 0 && res.output) {
             const lines = res.output.trim().split(/\r?\n/);
@@ -117,7 +118,7 @@ export function getOrCreateTerminalSession(
             command,
             term.cols,
             term.rows,
-            currentCwd.current
+            currentCwd.current,
           );
           if (res.output) {
             const formattedOutput = res.output.replace(/\r?\n/g, "\r\n");
@@ -132,7 +133,12 @@ export function getOrCreateTerminalSession(
       }
     },
     onComplete: async (buf, pos) => {
-      return resolveContainerCompletion(containerId, currentCwd.current, buf, pos);
+      return resolveContainerCompletion(
+        containerId,
+        currentCwd.current,
+        buf,
+        pos,
+      );
     },
   });
 

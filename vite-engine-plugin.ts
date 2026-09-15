@@ -1859,7 +1859,7 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
               );
               if (!alreadyInMap) {
                 let resolvedFile = kp.configFile;
-                let resolvedDir = kp.workingDir;
+                const resolvedDir = kp.workingDir;
                 if (!resolvedFile && resolvedDir) {
                   const candidates = [
                     path.join(resolvedDir, "docker-compose.yml"),
@@ -2012,7 +2012,8 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
             req.on("end", async () => {
               try {
                 const payload = JSON.parse(body || "{}");
-                let { workingDir, configFile, forget } = payload;
+                const { forget } = payload;
+                let { workingDir, configFile } = payload;
                 const urlObj = new URL(url, "http://localhost");
                 const isForget = forget === true || urlObj.searchParams.get("forget") === "true";
                 const projectName = decodeURIComponent(urlObj.pathname.replace("/api/compose/", "").split("/")[0]);

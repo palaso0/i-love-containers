@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import {
   ActiveTab,
   AppTheme,
@@ -36,7 +44,8 @@ interface AppState {
   toggleSidebar: () => void;
   activeTab: ActiveTab;
   selectedContainerId: string | null;
-  containerDetailTab: "overview" | "logs" | "terminal" | "stats" | "inspect" | "files";
+  containerDetailTab:
+    "overview" | "logs" | "terminal" | "stats" | "inspect" | "files";
   selectedImageId: string | null;
   canGoBack: boolean;
   canGoForward: boolean;
@@ -60,7 +69,9 @@ interface AppState {
   selectedHost: string;
   setActiveTab: (tab: ActiveTab) => void;
   setSelectedContainerId: (id: string | null) => void;
-  setContainerDetailTab: (tab: "overview" | "logs" | "terminal" | "stats" | "inspect" | "files") => void;
+  setContainerDetailTab: (
+    tab: "overview" | "logs" | "terminal" | "stats" | "inspect" | "files",
+  ) => void;
   setSelectedImageId: (id: string | null) => void;
   setIsCommandPaletteOpen: (open: boolean) => void;
   setSearchFilter: (query: string) => void;
@@ -72,8 +83,17 @@ interface AppState {
   unpauseContainer: (id: string) => Promise<void>;
   restartContainer: (id: string) => Promise<void>;
   removeContainer: (id: string) => Promise<void>;
-  removeComposeProject: (projectName: string, workingDir?: string, configFile?: string) => Promise<void>;
-  upComposeProject: (projectName: string, workingDir?: string, configFile?: string, customCommand?: string) => Promise<{ ok: boolean; stdout?: string; stderr?: string }>;
+  removeComposeProject: (
+    projectName: string,
+    workingDir?: string,
+    configFile?: string,
+  ) => Promise<void>;
+  upComposeProject: (
+    projectName: string,
+    workingDir?: string,
+    configFile?: string,
+    customCommand?: string,
+  ) => Promise<{ ok: boolean; stdout?: string; stderr?: string }>;
   forgetComposeProject: (projectName: string) => Promise<void>;
   removeImage: (id: string) => Promise<void>;
   removeVolume: (name: string) => Promise<void>;
@@ -94,7 +114,10 @@ const broadcastSettings = (settings: {
   } catch {}
 
   try {
-    if (typeof window !== "undefined" && ("__TAURI_INTERNALS__" in window || "__TAURI__" in window)) {
+    if (
+      typeof window !== "undefined" &&
+      ("__TAURI_INTERNALS__" in window || "__TAURI__" in window)
+    ) {
       import("@tauri-apps/api/core").then(({ invoke }) => {
         const payload = JSON.stringify(settings);
         const js = `window.__applyIlcSettings && window.__applyIlcSettings(${payload});`;
@@ -104,9 +127,14 @@ const broadcastSettings = (settings: {
   } catch {}
 };
 
-export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [appTheme, setAppThemeState] = useState<AppTheme>(() => {
-    const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+    const urlParams =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search)
+        : null;
     const urlTheme = urlParams?.get("theme") as AppTheme | null;
     const validThemes: AppTheme[] = [
       "liquid-glass",
@@ -126,9 +154,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [accentColor, setAccentColorState] = useState<AccentColor>(() => {
-    const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+    const urlParams =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search)
+        : null;
     const urlAccent = urlParams?.get("accent") as AccentColor | null;
-    const validAccents: AccentColor[] = ["blue", "sky", "mint", "orange", "pink", "purple", "graphite"];
+    const validAccents: AccentColor[] = [
+      "blue",
+      "sky",
+      "mint",
+      "orange",
+      "pink",
+      "purple",
+      "graphite",
+    ];
     if (urlAccent && validAccents.includes(urlAccent)) {
       return urlAccent;
     }
@@ -137,7 +176,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [language, setLanguageState] = useState<Language>(() => {
-    const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+    const urlParams =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search)
+        : null;
     const urlLang = urlParams?.get("lang") as Language | null;
     if (urlLang === "en" || urlLang === "es") return urlLang;
     const saved = localStorage.getItem("ilc-language") as Language | null;
@@ -151,7 +193,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const [colorMode, setColorModeState] = useState<ColorMode>(() => {
-    const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+    const urlParams =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search)
+        : null;
     const urlMode = urlParams?.get("mode") as ColorMode | null;
     if (urlMode === "light" || urlMode === "dark" || urlMode === "system") {
       return urlMode;
@@ -281,7 +326,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       "graphite",
       "light",
     ];
-    themes.forEach((t) => document.documentElement.classList.remove(`theme-${t}`));
+    themes.forEach((t) =>
+      document.documentElement.classList.remove(`theme-${t}`),
+    );
     document.documentElement.classList.add(`theme-${appTheme}`);
     localStorage.setItem("ilc-app-theme", appTheme);
 
@@ -293,8 +340,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [appTheme, theme]);
 
   useEffect(() => {
-    const accents: AccentColor[] = ["blue", "sky", "mint", "orange", "pink", "purple", "graphite"];
-    accents.forEach((a) => document.documentElement.classList.remove(`accent-${a}`));
+    const accents: AccentColor[] = [
+      "blue",
+      "sky",
+      "mint",
+      "orange",
+      "pink",
+      "purple",
+      "graphite",
+    ];
+    accents.forEach((a) =>
+      document.documentElement.classList.remove(`accent-${a}`),
+    );
     document.documentElement.classList.add(`accent-${accentColor}`);
     localStorage.setItem("ilc-app-accent", accentColor);
   }, [accentColor]);
@@ -312,7 +369,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const [viewMode, setViewModeState] = useState<"minimal" | "detailed">(() => {
-    const saved = localStorage.getItem("ilc-view-mode") as "minimal" | "detailed" | null;
+    const saved = localStorage.getItem("ilc-view-mode") as
+      "minimal" | "detailed" | null;
     return saved || "detailed";
   });
 
@@ -330,20 +388,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("containers");
-  const [selectedContainerId, setSelectedContainerId] = useState<string | null>(null);
+  const [selectedContainerId, setSelectedContainerId] = useState<string | null>(
+    null,
+  );
   const [containerDetailTab, setContainerDetailTab] = useState<
     "overview" | "logs" | "terminal" | "stats" | "inspect" | "files"
   >("overview");
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
 
-  const [navigationHistory, setNavigationHistory] = useState<NavigationEntry[]>([
-    {
-      activeTab: "containers",
-      selectedContainerId: null,
-      containerDetailTab: "overview",
-      selectedImageId: null,
-    },
-  ]);
+  const [navigationHistory, setNavigationHistory] = useState<NavigationEntry[]>(
+    [
+      {
+        activeTab: "containers",
+        selectedContainerId: null,
+        containerDetailTab: "overview",
+        selectedImageId: null,
+      },
+    ],
+  );
   const [historyIndex, setHistoryIndex] = useState<number>(0);
   const isNavigatingHistoryRef = useRef(false);
 
@@ -386,7 +448,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return sliced;
       });
     },
-    [historyIndex]
+    [historyIndex],
   );
 
   const handleSetActiveTab = useCallback(
@@ -394,7 +456,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setActiveTab(tab);
       pushHistory({ activeTab: tab });
     },
-    [pushHistory]
+    [pushHistory],
   );
 
   const handleSetSelectedContainerId = useCallback(
@@ -402,7 +464,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setSelectedContainerId(id);
       pushHistory({ selectedContainerId: id });
     },
-    [pushHistory]
+    [pushHistory],
   );
 
   const handleSetContainerDetailTab = useCallback(
@@ -410,7 +472,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setContainerDetailTab(tab);
       pushHistory({ containerDetailTab: tab });
     },
-    [pushHistory]
+    [pushHistory],
   );
 
   const handleSetSelectedImageId = useCallback(
@@ -418,7 +480,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setSelectedImageId(id);
       pushHistory({ selectedImageId: id });
     },
-    [pushHistory]
+    [pushHistory],
   );
 
   const canGoBack = historyIndex > 0;
@@ -458,9 +520,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, 60);
   }, [historyIndex, navigationHistory]);
 
-  const [systemOverview, setSystemOverview] = useState<SystemOverview | null>(null);
-  const [detectedEngines, setDetectedEngines] = useState<ContainerEngineInfo[]>([]);
-  const [activeEngine, setActiveEngine] = useState<ContainerEngineInfo | null>(null);
+  const [systemOverview, setSystemOverview] = useState<SystemOverview | null>(
+    null,
+  );
+  const [detectedEngines, setDetectedEngines] = useState<ContainerEngineInfo[]>(
+    [],
+  );
+  const [activeEngine, setActiveEngine] = useState<ContainerEngineInfo | null>(
+    null,
+  );
   const [containers, setContainers] = useState<ContainerDetail[]>([]);
   const [images, setImages] = useState<DockerImage[]>([]);
   const [volumes, setVolumes] = useState<DockerVolume[]>([]);
@@ -488,29 +556,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const refreshData = useCallback(async () => {
     try {
-      const [overviewData, containersData, imagesData, volumesData, networksData, composeData, enginesData] =
-        await Promise.all([
-          api.fetchSystemOverview(),
-          api.fetchContainers(),
-          api.fetchImages(),
-          api.fetchVolumes(),
-          api.fetchNetworks(),
-          api.fetchComposeProjects(),
-          api.fetchDetectedEngines(),
-        ]);
+      const [
+        overviewData,
+        containersData,
+        imagesData,
+        volumesData,
+        networksData,
+        composeData,
+        enginesData,
+      ] = await Promise.all([
+        api.fetchSystemOverview(),
+        api.fetchContainers(),
+        api.fetchImages(),
+        api.fetchVolumes(),
+        api.fetchNetworks(),
+        api.fetchComposeProjects(),
+        api.fetchDetectedEngines(),
+      ]);
 
       setSystemOverview(overviewData);
-      setDetectedEngines(enginesData.engines || overviewData.detectedEngines || []);
-      setActiveEngine(enginesData.activeEngine || overviewData.activeEngine || null);
+      setDetectedEngines(
+        enginesData.engines || overviewData.detectedEngines || [],
+      );
+      setActiveEngine(
+        enginesData.activeEngine || overviewData.activeEngine || null,
+      );
       setContainers(containersData);
       if (containersData.length > 0) {
-        setSelectedContainerId((prev) => (containersData.some((c) => c.id === prev) ? prev : containersData[0].id));
+        setSelectedContainerId((prev) =>
+          containersData.some((c) => c.id === prev)
+            ? prev
+            : containersData[0].id,
+        );
       } else {
         setSelectedContainerId(null);
       }
-      setImages([...imagesData].sort((a, b) => (a.repository + a.tag).localeCompare(b.repository + b.tag)));
-      setVolumes([...volumesData].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })));
-      setNetworks([...networksData].sort((a, b) => a.name.localeCompare(b.name)));
+      setImages(
+        [...imagesData].sort((a, b) =>
+          (a.repository + a.tag).localeCompare(b.repository + b.tag),
+        ),
+      );
+      setVolumes(
+        [...volumesData].sort((a, b) =>
+          a.name.localeCompare(b.name, undefined, { numeric: true }),
+        ),
+      );
+      setNetworks(
+        [...networksData].sort((a, b) => a.name.localeCompare(b.name)),
+      );
       setComposeProjects(composeData);
     } catch {
       setStatusMessage("Failed to sync container data");
@@ -519,19 +612,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
-  const switchEngine = useCallback(async (engineId: string) => {
-    setIsActionInProgress(true);
-    try {
-      const result = await api.selectContainerEngine(engineId);
-      setDetectedEngines(result.engines);
-      setActiveEngine(result.activeEngine);
-      await refreshData();
-    } catch {
-      setStatusMessage("Failed to switch container engine");
-    } finally {
-      setIsActionInProgress(false);
-    }
-  }, [refreshData]);
+  const switchEngine = useCallback(
+    async (engineId: string) => {
+      setIsActionInProgress(true);
+      try {
+        const result = await api.selectContainerEngine(engineId);
+        setDetectedEngines(result.engines);
+        setActiveEngine(result.activeEngine);
+        await refreshData();
+      } catch {
+        setStatusMessage("Failed to switch container engine");
+      } finally {
+        setIsActionInProgress(false);
+      }
+    },
+    [refreshData],
+  );
 
   const rescanEngines = useCallback(async () => {
     setIsActionInProgress(true);
@@ -603,7 +699,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const handleRemoveComposeProject = async (projectName: string, workingDir?: string, configFile?: string) => {
+  const handleRemoveComposeProject = async (
+    projectName: string,
+    workingDir?: string,
+    configFile?: string,
+  ) => {
     setIsActionInProgress(true);
     try {
       await api.removeComposeProject(projectName, workingDir, configFile);
@@ -617,11 +717,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     projectName: string,
     workingDir?: string,
     configFile?: string,
-    customCommand?: string
+    customCommand?: string,
   ) => {
     setIsActionInProgress(true);
     try {
-      const res = await api.upComposeProject(projectName, workingDir, configFile, customCommand);
+      const res = await api.upComposeProject(
+        projectName,
+        workingDir,
+        configFile,
+        customCommand,
+      );
       await refreshData();
       return res;
     } finally {
@@ -634,7 +739,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       await api.forgetComposeProject(projectName);
       setComposeProjects((prev) =>
-        prev.filter((p) => p.name.toLowerCase() !== projectName.toLowerCase())
+        prev.filter((p) => p.name.toLowerCase() !== projectName.toLowerCase()),
       );
       await refreshData();
     } finally {

@@ -1,4 +1,5 @@
-export type ContainerState = "running" | "stopped" | "restarting" | "created" | "paused" | "exited";
+export type ContainerState =
+  "running" | "stopped" | "restarting" | "created" | "paused" | "exited";
 
 export interface PortMapping {
   ip?: string;
@@ -120,12 +121,7 @@ export interface ComposeProject {
 }
 
 export type EngineType =
-  | "docker-desktop"
-  | "orbstack"
-  | "rancher"
-  | "colima"
-  | "podman"
-  | "custom";
+  "docker-desktop" | "orbstack" | "rancher" | "colima" | "podman" | "custom";
 
 export type EngineStatus = "running" | "stopped" | "not_installed";
 
@@ -186,7 +182,8 @@ export type AppTheme =
   | "material-flow"
   | "pixel-arcade";
 
-export type AccentColor = "blue" | "sky" | "mint" | "orange" | "pink" | "purple" | "graphite";
+export type AccentColor =
+  "blue" | "sky" | "mint" | "orange" | "pink" | "purple" | "graphite";
 
 export type ColorMode = "light" | "dark" | "system";
 
@@ -240,6 +237,7 @@ export interface ImageAnalysis {
 export interface NavigationEntry {
   activeTab: ActiveTab;
   selectedContainerId: string | null;
-  containerDetailTab: "overview" | "logs" | "terminal" | "stats" | "inspect" | "files";
+  containerDetailTab:
+    "overview" | "logs" | "terminal" | "stats" | "inspect" | "files";
   selectedImageId: string | null;
 }

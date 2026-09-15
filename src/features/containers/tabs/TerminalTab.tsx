@@ -39,14 +39,22 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
     const containerEl = terminalElementRef.current;
     if (!containerEl) return;
 
-    const session = getOrCreateTerminalSession(containerId, containerName, isDark);
+    const session = getOrCreateTerminalSession(
+      containerId,
+      containerName,
+      isDark,
+    );
 
     if (session.wrapperEl.parentElement !== containerEl) {
       containerEl.appendChild(session.wrapperEl);
     }
 
     const safeFit = () => {
-      if (!containerEl || containerEl.clientWidth < 100 || containerEl.clientHeight < 50) {
+      if (
+        !containerEl ||
+        containerEl.clientWidth < 100 ||
+        containerEl.clientHeight < 50
+      ) {
         return;
       }
       try {
@@ -87,7 +95,11 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
   }, [containerId, containerName, isRunning, isDark]);
 
   const handleClear = () => {
-    const session = getOrCreateTerminalSession(containerId, containerName, isDark);
+    const session = getOrCreateTerminalSession(
+      containerId,
+      containerName,
+      isDark,
+    );
     session.controller.clear();
   };
 
@@ -99,7 +111,11 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
         setIsCompact(width < 460);
         if (width >= 100 && height >= 50) {
           try {
-            const session = getOrCreateTerminalSession(containerId, containerName, isDark);
+            const session = getOrCreateTerminalSession(
+              containerId,
+              containerName,
+              isDark,
+            );
             session.fitAddon.fit();
             if (session.term.cols < 30) {
               session.term.resize(80, 24);
@@ -132,7 +148,9 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
       <div className="h-9 px-3 bg-surface-secondary border-b border-border flex items-center justify-between shrink-0">
         <div className="flex items-center space-x-2 text-2xs font-mono text-muted-foreground truncate min-w-0">
           <TerminalIcon className="w-3 h-3 text-primary shrink-0" />
-          <span className="truncate">{isCompact ? "PTY" : "Interactive PTY (Docker Exec)"}</span>
+          <span className="truncate">
+            {isCompact ? "PTY" : "Interactive PTY (Docker Exec)"}
+          </span>
         </div>
         <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
           <button
@@ -145,7 +163,10 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
           </button>
         </div>
       </div>
-      <div ref={terminalElementRef} className="flex-1 p-2 min-h-0 select-text font-mono overflow-hidden" />
+      <div
+        ref={terminalElementRef}
+        className="flex-1 p-2 min-h-0 select-text font-mono overflow-hidden"
+      />
     </div>
   );
 };

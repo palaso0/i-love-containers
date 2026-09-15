@@ -81,7 +81,9 @@ export const ContainerDetailHeader: React.FC<ContainerDetailHeaderProps> = ({
                 <span className="truncate">{activeContainer.image}</span>
               </button>
               <span>•</span>
-              <span className="shrink-0">{activeContainer.id.slice(0, 12)}</span>
+              <span className="shrink-0">
+                {activeContainer.id.slice(0, 12)}
+              </span>
             </div>
           </div>
         </div>
@@ -180,7 +182,8 @@ export const ContainerDetailHeader: React.FC<ContainerDetailHeaderProps> = ({
           <button
             onClick={() => {
               const tabType = containerDetailTab;
-              const tabTitle = tabs.find((t) => t.id === tabType)?.label || tabType;
+              const tabTitle =
+                tabs.find((t) => t.id === tabType)?.label || tabType;
               openRealNativeWindow({
                 id: `${tabType}-${activeContainer.id}-${Date.now()}`,
                 title: `${activeContainer.name} — ${tabTitle}`,
@@ -193,7 +196,9 @@ export const ContainerDetailHeader: React.FC<ContainerDetailHeaderProps> = ({
             title="Pop out into real native OS window"
           >
             <AppWindow className="w-3 h-3 text-primary shrink-0" />
-            <span className="truncate">Pop out ({tabs.find((t) => t.id === containerDetailTab)?.label})</span>
+            <span className="truncate">
+              Pop out ({tabs.find((t) => t.id === containerDetailTab)?.label})
+            </span>
           </button>
         </div>
       </div>

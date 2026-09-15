@@ -26,8 +26,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
           return {
             ...prev,
             ...full,
-            ports: full.ports && full.ports.length > 0 ? full.ports : prev.ports,
-            mounts: full.mounts && full.mounts.length > 0 ? full.mounts : prev.mounts,
+            ports:
+              full.ports && full.ports.length > 0 ? full.ports : prev.ports,
+            mounts:
+              full.mounts && full.mounts.length > 0 ? full.mounts : prev.mounts,
             env: full.env && full.env.length > 0 ? full.env : prev.env,
             rawInspectJson: full.rawInspectJson || prev.rawInspectJson,
           };
@@ -43,7 +45,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
   useEffect(() => {
     setDetail((prev) => {
       if (prev.id !== container.id) return prev;
-      if (prev.status === container.status && prev.state === container.state) return prev;
+      if (prev.status === container.status && prev.state === container.state)
+        return prev;
       return {
         ...prev,
         status: container.status,
@@ -63,7 +66,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
       (img) =>
         img.id === detail.imageId ||
         `${img.repository}:${img.tag}` === detail.image ||
-        img.repository === detail.image.split(":")[0]
+        img.repository === detail.image.split(":")[0],
     );
     setActiveTab("images");
     if (targetImg) {
@@ -88,7 +91,11 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
                 onClick={() => copyToClipboard(detail.id, "id")}
                 className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-surface transition-colors ml-2 select-none shrink-0"
               >
-                {copiedKey === "id" ? <Check className="w-3.5 h-3.5 text-status-running" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedKey === "id" ? (
+                  <Check className="w-3.5 h-3.5 text-status-running" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" />
+                )}
               </button>
             </div>
           </div>
@@ -108,12 +115,18 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
               </button>
             </div>
             <div className="flex items-center justify-between mt-1 text-foreground">
-              <span className="truncate text-xs select-text">{detail.imageId}</span>
+              <span className="truncate text-xs select-text">
+                {detail.imageId}
+              </span>
               <button
                 onClick={() => copyToClipboard(detail.imageId, "image")}
                 className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-surface transition-colors ml-2 select-none shrink-0"
               >
-                {copiedKey === "image" ? <Check className="w-3.5 h-3.5 text-status-running" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedKey === "image" ? (
+                  <Check className="w-3.5 h-3.5 text-status-running" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" />
+                )}
               </button>
             </div>
           </div>
@@ -122,14 +135,18 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
             <span className="text-muted-foreground block text-[11px] font-sans font-medium uppercase select-none">
               {ot.uptimeStatus}
             </span>
-            <span className="text-foreground text-xs block mt-1 select-text">{detail.status}</span>
+            <span className="text-foreground text-xs block mt-1 select-text">
+              {detail.status}
+            </span>
           </div>
 
           <div className="bg-surface-secondary/50 p-2.5 rounded-lg border border-border/60">
             <span className="text-muted-foreground block text-[11px] font-sans font-medium uppercase select-none">
               {ot.restartPolicy}
             </span>
-            <span className="text-foreground text-xs block mt-1 select-text">{detail.restartPolicy || "no"}</span>
+            <span className="text-foreground text-xs block mt-1 select-text">
+              {detail.restartPolicy || "no"}
+            </span>
           </div>
 
           <div className="bg-surface-secondary/50 p-2.5 rounded-lg border border-border/60 md:col-span-2">
@@ -139,11 +156,17 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
               </span>
               {detail.command && (
                 <button
-                  onClick={() => copyToClipboard(detail.command || "", "command")}
+                  onClick={() =>
+                    copyToClipboard(detail.command || "", "command")
+                  }
                   className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-surface transition-colors select-none shrink-0"
                   title="Copiar comando"
                 >
-                  {copiedKey === "command" ? <Check className="w-3.5 h-3.5 text-status-running" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedKey === "command" ? (
+                    <Check className="w-3.5 h-3.5 text-status-running" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
                 </button>
               )}
             </div>
@@ -161,12 +184,17 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
         {Array.isArray(detail.ports) && detail.ports.length > 0 ? (
           <div className="divide-y divide-border/60 select-text">
             {detail.ports.map((port, index) => (
-              <div key={index} className="py-2.5 flex items-center justify-between text-xs font-mono select-text">
+              <div
+                key={index}
+                className="py-2.5 flex items-center justify-between text-xs font-mono select-text"
+              >
                 <div className="flex items-center space-x-2 select-text">
                   <span className="px-2 py-0.5 rounded-md bg-surface-secondary border border-border/70 text-foreground font-semibold text-2xs select-none">
                     {port.type.toUpperCase()}
                   </span>
-                  <span className="text-foreground select-text">{port.privatePort}</span>
+                  <span className="text-foreground select-text">
+                    {port.privatePort}
+                  </span>
                 </div>
                 <div className="text-muted-foreground select-text">
                   {port.publicPort ? (
@@ -178,11 +206,20 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
                         {port.ip || "0.0.0.0"}:{port.publicPort}
                       </span>
                       <button
-                        onClick={() => copyToClipboard(`${port.ip || "0.0.0.0"}:${port.publicPort}`, `port-${index}`)}
+                        onClick={() =>
+                          copyToClipboard(
+                            `${port.ip || "0.0.0.0"}:${port.publicPort}`,
+                            `port-${index}`,
+                          )
+                        }
                         className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-surface transition-colors select-none"
                         title="Copiar puerto mapeado"
                       >
-                        {copiedKey === `port-${index}` ? <Check className="w-3.5 h-3.5 text-status-running" /> : <Copy className="w-3.5 h-3.5" />}
+                        {copiedKey === `port-${index}` ? (
+                          <Check className="w-3.5 h-3.5 text-status-running" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
                       </button>
                     </div>
                   ) : (
@@ -191,11 +228,20 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
                         {ot.internalOnly}
                       </span>
                       <button
-                        onClick={() => copyToClipboard(String(port.privatePort), `port-${index}`)}
+                        onClick={() =>
+                          copyToClipboard(
+                            String(port.privatePort),
+                            `port-${index}`,
+                          )
+                        }
                         className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-surface transition-colors select-none"
                         title="Copiar puerto"
                       >
-                        {copiedKey === `port-${index}` ? <Check className="w-3.5 h-3.5 text-status-running" /> : <Copy className="w-3.5 h-3.5" />}
+                        {copiedKey === `port-${index}` ? (
+                          <Check className="w-3.5 h-3.5 text-status-running" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
                       </button>
                     </div>
                   )}
@@ -204,7 +250,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
             ))}
           </div>
         ) : (
-          <div className="text-xs text-muted-foreground select-none">{ot.noPorts}</div>
+          <div className="text-xs text-muted-foreground select-none">
+            {ot.noPorts}
+          </div>
         )}
       </div>
 
@@ -215,38 +263,61 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
         {Array.isArray(detail.mounts) && detail.mounts.length > 0 ? (
           <div className="space-y-2 select-text">
             {detail.mounts.map((mount, index) => (
-              <div key={index} className="bg-surface-secondary/50 p-2.5 rounded-lg border border-border/60 text-xs font-mono select-text">
+              <div
+                key={index}
+                className="bg-surface-secondary/50 p-2.5 rounded-lg border border-border/60 text-xs font-mono select-text"
+              >
                 <div className="flex items-center justify-between text-muted-foreground mb-1 select-none">
-                  <span className="font-semibold text-foreground uppercase text-2xs">{mount.type}</span>
-                  <span className="text-2xs">{mount.rw ? ot.readWrite : ot.readOnly}</span>
+                  <span className="font-semibold text-foreground uppercase text-2xs">
+                    {mount.type}
+                  </span>
+                  <span className="text-2xs">
+                    {mount.rw ? ot.readWrite : ot.readOnly}
+                  </span>
                 </div>
                 <div className="text-muted-foreground flex items-center justify-between py-0.5 select-text">
                   <div className="truncate mr-2 select-text">
                     <span className="select-none">SRC: </span>
-                    <span className="text-foreground select-text">{mount.source}</span>
+                    <span className="text-foreground select-text">
+                      {mount.source}
+                    </span>
                   </div>
                   {mount.source && (
                     <button
-                      onClick={() => copyToClipboard(mount.source, `src-${index}`)}
+                      onClick={() =>
+                        copyToClipboard(mount.source, `src-${index}`)
+                      }
                       className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-surface transition-colors select-none shrink-0"
                       title="Copiar ruta de origen"
                     >
-                      {copiedKey === `src-${index}` ? <Check className="w-3.5 h-3.5 text-status-running" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedKey === `src-${index}` ? (
+                        <Check className="w-3.5 h-3.5 text-status-running" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
                     </button>
                   )}
                 </div>
                 <div className="text-muted-foreground flex items-center justify-between py-0.5 select-text">
                   <div className="truncate mr-2 select-text">
                     <span className="select-none">DST: </span>
-                    <span className="text-foreground select-text">{mount.destination}</span>
+                    <span className="text-foreground select-text">
+                      {mount.destination}
+                    </span>
                   </div>
                   {mount.destination && (
                     <button
-                      onClick={() => copyToClipboard(mount.destination, `dst-${index}`)}
+                      onClick={() =>
+                        copyToClipboard(mount.destination, `dst-${index}`)
+                      }
                       className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-surface transition-colors select-none shrink-0"
                       title="Copiar ruta de destino"
                     >
-                      {copiedKey === `dst-${index}` ? <Check className="w-3.5 h-3.5 text-status-running" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedKey === `dst-${index}` ? (
+                        <Check className="w-3.5 h-3.5 text-status-running" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
                     </button>
                   )}
                 </div>
@@ -254,7 +325,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
             ))}
           </div>
         ) : (
-          <div className="text-xs text-muted-foreground select-none">{ot.noMounts}</div>
+          <div className="text-xs text-muted-foreground select-none">
+            {ot.noMounts}
+          </div>
         )}
       </div>
 
@@ -272,7 +345,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
               {copiedKey === "all-env" ? (
                 <>
                   <Check className="w-3.5 h-3.5 text-status-running mr-1" />
-                  <span className="text-status-running font-sans text-[11px]">{ot.copied}</span>
+                  <span className="text-status-running font-sans text-[11px]">
+                    {ot.copied}
+                  </span>
                 </>
               ) : (
                 <>
@@ -294,8 +369,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
                   className="flex items-center justify-between group hover:bg-surface/60 rounded px-1.5 py-1 transition-colors select-text"
                 >
                   <div className="flex items-start mr-2 select-text min-w-0 flex-1">
-                    <span className="text-primary font-medium shrink-0 mr-1.5 select-text">{key}=</span>
-                    <span className="text-muted-foreground select-text break-all">{val}</span>
+                    <span className="text-primary font-medium shrink-0 mr-1.5 select-text">
+                      {key}=
+                    </span>
+                    <span className="text-muted-foreground select-text break-all">
+                      {val}
+                    </span>
                   </div>
                   <button
                     onClick={() => copyToClipboard(variable, `env-${index}`)}
@@ -313,7 +392,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
             })}
           </div>
         ) : (
-          <div className="text-xs text-muted-foreground select-none">{ot.noEnv}</div>
+          <div className="text-xs text-muted-foreground select-none">
+            {ot.noEnv}
+          </div>
         )}
       </div>
 

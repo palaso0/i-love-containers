@@ -1,7 +1,20 @@
 import React, { useState } from "react";
-import { Zap, X, CheckSquare, Square, Layers, Cpu, RotateCw, Globe, Wrench } from "lucide-react";
+import {
+  Zap,
+  X,
+  CheckSquare,
+  Square,
+  Layers,
+  Cpu,
+  RotateCw,
+  Globe,
+  Wrench,
+} from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
-import { ComposeServiceConfig, applyBulkServiceConfig } from "@/lib/composeYamlHelper";
+import {
+  ComposeServiceConfig,
+  applyBulkServiceConfig,
+} from "@/lib/composeYamlHelper";
 import { DirectiveAutocompleteInput } from "./DirectiveAutocompleteInput";
 
 interface ComposeBulkApplyModalProps {
@@ -23,8 +36,12 @@ export const ComposeBulkApplyModal: React.FC<ComposeBulkApplyModalProps> = ({
 }) => {
   const { t } = useAppStore();
 
-  const [selectedServices, setSelectedServices] = useState<string[]>(services.map((s) => s.name));
-  const [selectedField, setSelectedField] = useState<"platform" | "restart" | "environment" | "network" | "custom">("platform");
+  const [selectedServices, setSelectedServices] = useState<string[]>(
+    services.map((s) => s.name),
+  );
+  const [selectedField, setSelectedField] = useState<
+    "platform" | "restart" | "environment" | "network" | "custom"
+  >("platform");
 
   const [platformValue, setPlatformValue] = useState("linux/amd64");
   const [restartValue, setRestartValue] = useState("always");
@@ -46,7 +63,7 @@ export const ComposeBulkApplyModal: React.FC<ComposeBulkApplyModalProps> = ({
 
   const toggleService = (name: string) => {
     setSelectedServices((prev) =>
-      prev.includes(name) ? prev.filter((s) => s !== name) : [...prev, name]
+      prev.includes(name) ? prev.filter((s) => s !== name) : [...prev, name],
     );
   };
 
@@ -90,7 +107,6 @@ export const ComposeBulkApplyModal: React.FC<ComposeBulkApplyModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-100">
       <div className="bg-popover border border-popover-border rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-100">
-
         <div className="px-5 py-4 border-b border-border/70 flex items-center justify-between bg-surface-secondary/50">
           <div className="flex items-center space-x-2.5">
             <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500">
@@ -101,7 +117,8 @@ export const ComposeBulkApplyModal: React.FC<ComposeBulkApplyModalProps> = ({
                 {t.compose.bulkOptionsTitle || "Apply Bulk / Global Options"}
               </h3>
               <p className="text-2xs text-muted-foreground">
-                {t.compose.bulkOptionsDesc || "Add or update directives across multiple services simultaneously"}
+                {t.compose.bulkOptionsDesc ||
+                  "Add or update directives across multiple services simultaneously"}
               </p>
             </div>
           </div>
@@ -115,12 +132,13 @@ export const ComposeBulkApplyModal: React.FC<ComposeBulkApplyModalProps> = ({
         </div>
 
         <div className="p-5 space-y-4 overflow-y-auto flex-1 text-xs">
-
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="font-semibold text-foreground text-xs flex items-center gap-1.5">
                 <Layers className="w-3.5 h-3.5 text-primary" />
-                <span>{t.compose.bulkSelectServices || "1. Select target services"}</span>
+                <span>
+                  {t.compose.bulkSelectServices || "1. Select target services"}
+                </span>
               </label>
               <button
                 type="button"
@@ -162,9 +180,13 @@ export const ComposeBulkApplyModal: React.FC<ComposeBulkApplyModalProps> = ({
                           : "border-muted-foreground/40 bg-transparent"
                       }`}
                     >
-                      {isSelected && <span className="text-[10px] leading-none">✓</span>}
+                      {isSelected && (
+                        <span className="text-[10px] leading-none">✓</span>
+                      )}
                     </div>
-                    <span className="truncate font-mono text-2xs">{svc.name}</span>
+                    <span className="truncate font-mono text-2xs">
+                      {svc.name}
+                    </span>
                   </button>
                 );
               })}
@@ -174,7 +196,9 @@ export const ComposeBulkApplyModal: React.FC<ComposeBulkApplyModalProps> = ({
           <div className="space-y-2">
             <label className="font-semibold text-foreground text-xs flex items-center gap-1.5">
               <Wrench className="w-3.5 h-3.5 text-amber-500" />
-              <span>{t.compose.bulkSelectDirective || "2. Directive to apply"}</span>
+              <span>
+                {t.compose.bulkSelectDirective || "2. Directive to apply"}
+              </span>
             </label>
 
             <div className="flex flex-wrap gap-1.5 bg-surface-secondary/70 p-1 rounded-xl border border-border/70">
@@ -213,7 +237,9 @@ export const ComposeBulkApplyModal: React.FC<ComposeBulkApplyModalProps> = ({
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <span className="text-amber-400 font-mono text-[11px] font-bold">ENV</span>
+                <span className="text-amber-400 font-mono text-[11px] font-bold">
+                  ENV
+                </span>
                 <span>environment</span>
               </button>
 
@@ -247,12 +273,16 @@ export const ComposeBulkApplyModal: React.FC<ComposeBulkApplyModalProps> = ({
               {selectedField === "platform" && (
                 <div>
                   <label className="block text-2xs font-mono text-muted-foreground mb-1.5">
-                    {t.compose.bulkPlatformDesc || "Architecture / Platform (e.g. linux/amd64 to emulate x86 on Apple Silicon)"}
+                    {t.compose.bulkPlatformDesc ||
+                      "Architecture / Platform (e.g. linux/amd64 to emulate x86 on Apple Silicon)"}
                   </label>
                   <div className="grid grid-cols-2 gap-2 mb-2">
                     {[
                       { label: "linux/amd64 (x86_64)", value: "linux/amd64" },
-                      { label: "linux/arm64 (Apple Silicon / ARM)", value: "linux/arm64" },
+                      {
+                        label: "linux/arm64 (Apple Silicon / ARM)",
+                        value: "linux/arm64",
+                      },
                       { label: "linux/arm/v7", value: "linux/arm/v7" },
                       { label: "linux/386", value: "linux/386" },
                     ].map((p) => (
@@ -283,14 +313,34 @@ export const ComposeBulkApplyModal: React.FC<ComposeBulkApplyModalProps> = ({
               {selectedField === "restart" && (
                 <div>
                   <label className="block text-2xs font-mono text-muted-foreground mb-1.5">
-                    {t.compose.bulkRestartDesc || "Docker restart policy (restart)"}
+                    {t.compose.bulkRestartDesc ||
+                      "Docker restart policy (restart)"}
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { value: "always", label: "always", desc: t.compose.restartAlways || "Always restart" },
-                      { value: "unless-stopped", label: "unless-stopped", desc: t.compose.restartUnlessStopped || "Unless stopped manually" },
-                      { value: "on-failure", label: "on-failure", desc: t.compose.restartOnFailure || "On errors only" },
-                      { value: "no", label: "no", desc: t.compose.restartNo || "Do not restart automatically" },
+                      {
+                        value: "always",
+                        label: "always",
+                        desc: t.compose.restartAlways || "Always restart",
+                      },
+                      {
+                        value: "unless-stopped",
+                        label: "unless-stopped",
+                        desc:
+                          t.compose.restartUnlessStopped ||
+                          "Unless stopped manually",
+                      },
+                      {
+                        value: "on-failure",
+                        label: "on-failure",
+                        desc: t.compose.restartOnFailure || "On errors only",
+                      },
+                      {
+                        value: "no",
+                        label: "no",
+                        desc:
+                          t.compose.restartNo || "Do not restart automatically",
+                      },
                     ].map((r) => (
                       <button
                         key={r.value}
@@ -302,8 +352,12 @@ export const ComposeBulkApplyModal: React.FC<ComposeBulkApplyModalProps> = ({
                             : "bg-surface-secondary/60 border-border/60 text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        <div className="font-mono font-semibold text-2xs">{r.label}</div>
-                        <div className="text-[10px] text-muted-foreground mt-0.5">{r.desc}</div>
+                        <div className="font-mono font-semibold text-2xs">
+                          {r.label}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5">
+                          {r.desc}
+                        </div>
                       </button>
                     ))}
                   </div>
@@ -313,7 +367,8 @@ export const ComposeBulkApplyModal: React.FC<ComposeBulkApplyModalProps> = ({
               {selectedField === "environment" && (
                 <div>
                   <label className="block text-2xs font-mono text-muted-foreground mb-1.5">
-                    {t.compose.bulkEnvDesc || "Global or shared environment variable"}
+                    {t.compose.bulkEnvDesc ||
+                      "Global or shared environment variable"}
                   </label>
                   <div className="flex items-center space-x-2">
                     <input
@@ -369,7 +424,8 @@ export const ComposeBulkApplyModal: React.FC<ComposeBulkApplyModalProps> = ({
               {selectedField === "custom" && (
                 <div className="space-y-2">
                   <label className="block text-2xs font-mono text-muted-foreground">
-                    {t.compose.bulkCustomDesc || "Custom directive (key : value)"}
+                    {t.compose.bulkCustomDesc ||
+                      "Custom directive (key : value)"}
                   </label>
                   <div className="flex items-center space-x-2">
                     <DirectiveAutocompleteInput
@@ -405,7 +461,8 @@ export const ComposeBulkApplyModal: React.FC<ComposeBulkApplyModalProps> = ({
 
         <div className="px-5 py-3.5 border-t border-border/70 bg-surface-secondary/40 flex items-center justify-between">
           <span className="text-2xs text-muted-foreground font-mono">
-            {selectedServices.length} / {services.length} {t.compose.bulkSelectedCount || "services selected"}
+            {selectedServices.length} / {services.length}{" "}
+            {t.compose.bulkSelectedCount || "services selected"}
           </span>
 
           <div className="flex items-center space-x-2">
@@ -424,7 +481,8 @@ export const ComposeBulkApplyModal: React.FC<ComposeBulkApplyModalProps> = ({
             >
               <Zap className="w-3.5 h-3.5 fill-current" />
               <span>
-                {t.compose.bulkApplyButton || `Apply to Selected (${selectedServices.length})`}
+                {t.compose.bulkApplyButton ||
+                  `Apply to Selected (${selectedServices.length})`}
               </span>
             </button>
           </div>

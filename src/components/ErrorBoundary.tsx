@@ -40,7 +40,8 @@ export class ErrorBoundary extends Component<Props, State> {
             {this.props.fallbackTitle || "Something went wrong"}
           </h3>
           <p className="text-xs text-muted-foreground mb-4 max-w-md font-mono bg-black/20 p-2 rounded border border-border/40 overflow-x-auto text-left">
-            {this.state.error?.message || "An unexpected error occurred in this view."}
+            {this.state.error?.message ||
+              "An unexpected error occurred in this view."}
           </p>
           <button
             onClick={this.handleReset}

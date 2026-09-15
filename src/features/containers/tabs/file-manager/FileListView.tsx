@@ -49,9 +49,7 @@ export const FileListView: React.FC<FileListViewProps> = ({
           className="col-span-6 flex items-center space-x-1 cursor-pointer hover:text-foreground"
         >
           <span>{fm.name}</span>
-          {sortField === "name" && (
-            <span>{sortAsc ? "↑" : "↓"}</span>
-          )}
+          {sortField === "name" && <span>{sortAsc ? "↑" : "↓"}</span>}
         </div>
         <div
           onClick={(e) => {
@@ -61,9 +59,7 @@ export const FileListView: React.FC<FileListViewProps> = ({
           className="col-span-2 text-right cursor-pointer hover:text-foreground"
         >
           <span>{fm.size}</span>
-          {sortField === "size" && (
-            <span>{sortAsc ? "↑" : "↓"}</span>
-          )}
+          {sortField === "size" && <span>{sortAsc ? "↑" : "↓"}</span>}
         </div>
         <div className="col-span-2 text-center">{fm.permissions}</div>
         <div
@@ -74,9 +70,7 @@ export const FileListView: React.FC<FileListViewProps> = ({
           className="col-span-2 text-right cursor-pointer hover:text-foreground"
         >
           <span>{fm.modified}</span>
-          {sortField === "mtime" && (
-            <span>{sortAsc ? "↑" : "↓"}</span>
-          )}
+          {sortField === "mtime" && <span>{sortAsc ? "↑" : "↓"}</span>}
         </div>
       </div>
 
@@ -101,8 +95,8 @@ export const FileListView: React.FC<FileListViewProps> = ({
                 isDropTarget
                   ? "bg-primary/30 ring-2 ring-primary border-primary text-foreground"
                   : isSelected
-                  ? "bg-primary text-white font-semibold shadow-xs"
-                  : "hover:bg-surface-secondary/60 text-foreground"
+                    ? "bg-primary text-white font-semibold shadow-xs"
+                    : "hover:bg-surface-secondary/60 text-foreground"
               }`}
             >
               <div className="col-span-6 flex items-center space-x-2 truncate">
@@ -111,24 +105,32 @@ export const FileListView: React.FC<FileListViewProps> = ({
                     isSelected
                       ? "text-white fill-white/20"
                       : file.isDirectory
-                      ? "text-amber-400 fill-amber-400/20"
-                      : "text-muted-foreground"
+                        ? "text-amber-400 fill-amber-400/20"
+                        : "text-muted-foreground"
                   }`}
                 />
                 <span className="truncate">{file.name}</span>
                 {file.isSymlink && file.linkTarget && (
-                  <span className={`text-2xs truncate ${isSelected ? "text-white/70" : "text-muted-foreground opacity-60"}`}>
+                  <span
+                    className={`text-2xs truncate ${isSelected ? "text-white/70" : "text-muted-foreground opacity-60"}`}
+                  >
                     → {file.linkTarget}
                   </span>
                 )}
               </div>
-              <div className={`col-span-2 text-right truncate ${isSelected ? "text-white/90" : "text-muted-foreground"}`}>
+              <div
+                className={`col-span-2 text-right truncate ${isSelected ? "text-white/90" : "text-muted-foreground"}`}
+              >
                 {file.isDirectory ? "—" : formatBytes(file.size)}
               </div>
-              <div className={`col-span-2 text-center text-2xs font-mono truncate ${isSelected ? "text-white/80" : "text-muted-foreground"}`}>
+              <div
+                className={`col-span-2 text-center text-2xs font-mono truncate ${isSelected ? "text-white/80" : "text-muted-foreground"}`}
+              >
                 {file.permissions}
               </div>
-              <div className={`col-span-2 text-right text-2xs truncate ${isSelected ? "text-white/90" : "text-muted-foreground"}`}>
+              <div
+                className={`col-span-2 text-right text-2xs truncate ${isSelected ? "text-white/90" : "text-muted-foreground"}`}
+              >
                 {file.mtime}
               </div>
             </div>

@@ -1,5 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { ComposeTopology, ComposeServiceNode, ComposeVolumeNode } from "@/lib/composeParser";
+import {
+  ComposeTopology,
+  ComposeServiceNode,
+  ComposeVolumeNode,
+} from "@/lib/composeParser";
 
 interface UseCanvasInteractionOptions {
   topology: ComposeTopology;
@@ -12,30 +16,38 @@ export function useCanvasInteraction({
   projectName,
   onSelectService,
 }: UseCanvasInteractionOptions) {
-  const [view, setView] = useState<{ x: number; y: number; zoom: number }>(() => {
+  const [view, setView] = useState<{ x: number; y: number; zoom: number }>(
+    () => {
+      try {
+        const raw = localStorage.getItem(`ilc-compose-layout-${projectName}`);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (
+            parsed?.view &&
+            typeof parsed.view.x === "number" &&
+            typeof parsed.view.y === "number" &&
+            typeof parsed.view.zoom === "number"
+          ) {
+            return parsed.view;
+          }
+        }
+      } catch {}
+      return { x: 0, y: 0, zoom: 1 };
+    },
+  );
+
+  const [nodePositions, setNodePositions] = useState<
+    Record<string, { x: number; y: number }>
+  >(() => {
     try {
       const raw = localStorage.getItem(`ilc-compose-layout-${projectName}`);
       if (raw) {
         const parsed = JSON.parse(raw);
         if (
-          parsed?.view &&
-          typeof parsed.view.x === "number" &&
-          typeof parsed.view.y === "number" &&
-          typeof parsed.view.zoom === "number"
+          parsed?.nodePositions &&
+          typeof parsed.nodePositions === "object" &&
+          parsed.nodePositions !== null
         ) {
-          return parsed.view;
-        }
-      }
-    } catch {}
-    return { x: 0, y: 0, zoom: 1 };
-  });
-
-  const [nodePositions, setNodePositions] = useState<Record<string, { x: number; y: number }>>(() => {
-    try {
-      const raw = localStorage.getItem(`ilc-compose-layout-${projectName}`);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed?.nodePositions && typeof parsed.nodePositions === "object" && parsed.nodePositions !== null) {
           return parsed.nodePositions;
         }
       }
@@ -51,10 +63,18 @@ export function useCanvasInteraction({
   const mousePosRef = useRef<{ x: number; y: number } | null>(null);
   const isDraggingRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
-  const touchStateRef = useRef<{ dist: number; center: { x: number; y: number } } | null>(null);
+  const touchStateRef = useRef<{
+    dist: number;
+    center: { x: number; y: number };
+  } | null>(null);
   const autoPanFrameRef = useRef<number | null>(null);
-  const lastClientMousePosRef = useRef<{ clientX: number; clientY: number } | null>(null);
-  const wheelSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastClientMousePosRef = useRef<{
+    clientX: number;
+    clientY: number;
+  } | null>(null);
+  const wheelSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const initializedProjectRef = useRef<string | null>(null);
 
   const draggingNodeRef = useRef<{
@@ -69,7 +89,7 @@ export function useCanvasInteraction({
 
   const saveLayout = (
     positions: Record<string, { x: number; y: number }>,
-    currentView: { x: number; y: number; zoom: number }
+    currentView: { x: number; y: number; zoom: number },
   ) => {
     try {
       localStorage.setItem(
@@ -77,7 +97,7 @@ export function useCanvasInteraction({
         JSON.stringify({
           nodePositions: positions,
           view: currentView,
-        })
+        }),
       );
     } catch {}
   };
@@ -107,11 +127,22 @@ export function useCanvasInteraction({
       const padTop = 72;
       const padBottom = 48;
       const scaleX = (clientWidth - padX * 2) / topology.canvasWidth;
-      const scaleY = (clientHeight - padTop - padBottom) / topology.canvasHeight;
+      const scaleY =
+        (clientHeight - padTop - padBottom) / topology.canvasHeight;
       const fitZoom = Math.min(1, Math.max(0.35, Math.min(scaleX, scaleY)));
-      const initialX = Math.round((clientWidth - topology.canvasWidth * fitZoom) / 2);
+      const initialX = Math.round(
+        (clientWidth - topology.canvasWidth * fitZoom) / 2,
+      );
       const initialY = Math.round(
-        padTop + Math.max(0, (clientHeight - padTop - padBottom - topology.canvasHeight * fitZoom) / 2)
+        padTop +
+          Math.max(
+            0,
+            (clientHeight -
+              padTop -
+              padBottom -
+              topology.canvasHeight * fitZoom) /
+              2,
+          ),
       );
       const nextView = { x: initialX, y: initialY, zoom: fitZoom };
       updateView(nextView);
@@ -156,9 +187,16 @@ export function useCanvasInteraction({
     const scaleY = (clientHeight - padTop - padBottom) / contentHeight;
     const fitZoom = Math.min(1, Math.max(0.35, Math.min(scaleX, scaleY)));
 
-    const initialX = Math.round((clientWidth - contentWidth * fitZoom) / 2 - minX * fitZoom);
+    const initialX = Math.round(
+      (clientWidth - contentWidth * fitZoom) / 2 - minX * fitZoom,
+    );
     const initialY = Math.round(
-      padTop + Math.max(0, (clientHeight - padTop - padBottom - contentHeight * fitZoom) / 2) - minY * fitZoom
+      padTop +
+        Math.max(
+          0,
+          (clientHeight - padTop - padBottom - contentHeight * fitZoom) / 2,
+        ) -
+        minY * fitZoom,
     );
 
     const nextView = { x: initialX, y: initialY, zoom: fitZoom };
@@ -171,7 +209,11 @@ export function useCanvasInteraction({
       const raw = localStorage.getItem(`ilc-compose-layout-${projectName}`);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (parsed?.nodePositions && typeof parsed.nodePositions === "object" && parsed.nodePositions !== null) {
+        if (
+          parsed?.nodePositions &&
+          typeof parsed.nodePositions === "object" &&
+          parsed.nodePositions !== null
+        ) {
           nodePositionsRef.current = parsed.nodePositions;
           setNodePositions(parsed.nodePositions);
           if (
@@ -234,14 +276,17 @@ export function useCanvasInteraction({
       let mouseX = e.clientX - rect.left;
       let mouseY = e.clientY - rect.top;
 
-      if (mousePosRef.current && (isNaN(mouseX) || (mouseX === 0 && mouseY === 0))) {
+      if (
+        mousePosRef.current &&
+        (isNaN(mouseX) || (mouseX === 0 && mouseY === 0))
+      ) {
         mouseX = mousePosRef.current.x;
         mouseY = mousePosRef.current.y;
       }
 
       if (e.ctrlKey || e.metaKey) {
         const zoomDelta = -e.deltaY * 0.003;
-        const zoomFactor = Math.min(Math.max(Math.exp(zoomDelta), 0.90), 1.10);
+        const zoomFactor = Math.min(Math.max(Math.exp(zoomDelta), 0.9), 1.1);
 
         const { x, y, zoom } = viewRef.current;
         const nextZoom = Math.min(Math.max(0.35, zoom * zoomFactor), 2.5);
@@ -290,7 +335,7 @@ export function useCanvasInteraction({
     e: React.MouseEvent,
     id: string,
     type: "service" | "volume",
-    pos: { x: number; y: number }
+    pos: { x: number; y: number },
   ) => {
     if (e.button !== 0) return;
     e.stopPropagation();
@@ -312,7 +357,10 @@ export function useCanvasInteraction({
       return;
     }
     isDraggingRef.current = true;
-    dragStartRef.current = { x: e.clientX - viewRef.current.x, y: e.clientY - viewRef.current.y };
+    dragStartRef.current = {
+      x: e.clientX - viewRef.current.x,
+      y: e.clientY - viewRef.current.y,
+    };
     setIsDragging(true);
   };
 
@@ -341,13 +389,19 @@ export function useCanvasInteraction({
       if (mouseX < threshold) {
         panX = Math.min(16, Math.max(2, (threshold - mouseX) * 0.35));
       } else if (mouseX > rect.width - threshold) {
-        panX = -Math.min(16, Math.max(2, (mouseX - (rect.width - threshold)) * 0.35));
+        panX = -Math.min(
+          16,
+          Math.max(2, (mouseX - (rect.width - threshold)) * 0.35),
+        );
       }
 
       if (mouseY < threshold + 40) {
         panY = Math.min(16, Math.max(2, (threshold + 40 - mouseY) * 0.35));
       } else if (mouseY > rect.height - threshold) {
-        panY = -Math.min(16, Math.max(2, (mouseY - (rect.height - threshold)) * 0.35));
+        panY = -Math.min(
+          16,
+          Math.max(2, (mouseY - (rect.height - threshold)) * 0.35),
+        );
       }
 
       if (panX !== 0 || panY !== 0) {
@@ -364,8 +418,14 @@ export function useCanvasInteraction({
           draggingNodeRef.current.startY += panY;
 
           const zoom = nextView.zoom;
-          const rawDx = (lastClientMousePosRef.current.clientX - draggingNodeRef.current.startX) / zoom;
-          const rawDy = (lastClientMousePosRef.current.clientY - draggingNodeRef.current.startY) / zoom;
+          const rawDx =
+            (lastClientMousePosRef.current.clientX -
+              draggingNodeRef.current.startX) /
+            zoom;
+          const rawDy =
+            (lastClientMousePosRef.current.clientY -
+              draggingNodeRef.current.startY) /
+            zoom;
           const rawWorldX = draggingNodeRef.current.nodeStartX + rawDx;
           const rawWorldY = draggingNodeRef.current.nodeStartY + rawDy;
 
@@ -373,15 +433,27 @@ export function useCanvasInteraction({
           const nodeH = draggingNodeRef.current.type === "service" ? 100 : 44;
 
           const minScreenX = 40;
-          const maxScreenX = Math.max(minScreenX, rect.width - nodeW * zoom - 40);
+          const maxScreenX = Math.max(
+            minScreenX,
+            rect.width - nodeW * zoom - 40,
+          );
           const minScreenY = 64;
-          const maxScreenY = Math.max(minScreenY, rect.height - nodeH * zoom - 40);
+          const maxScreenY = Math.max(
+            minScreenY,
+            rect.height - nodeH * zoom - 40,
+          );
 
           const screenX = nextView.x + rawWorldX * zoom;
           const screenY = nextView.y + rawWorldY * zoom;
 
-          const clampedScreenX = Math.min(Math.max(screenX, minScreenX), maxScreenX);
-          const clampedScreenY = Math.min(Math.max(screenY, minScreenY), maxScreenY);
+          const clampedScreenX = Math.min(
+            Math.max(screenX, minScreenX),
+            maxScreenX,
+          );
+          const clampedScreenY = Math.min(
+            Math.max(screenY, minScreenY),
+            maxScreenY,
+          );
 
           const nextX = Math.round((clampedScreenX - nextView.x) / zoom);
           const nextY = Math.round((clampedScreenY - nextView.y) / zoom);
@@ -399,7 +471,10 @@ export function useCanvasInteraction({
 
     const handleGlobalMouseMove = (e: MouseEvent) => {
       if (draggingNodeRef.current) {
-        lastClientMousePosRef.current = { clientX: e.clientX, clientY: e.clientY };
+        lastClientMousePosRef.current = {
+          clientX: e.clientX,
+          clientY: e.clientY,
+        };
 
         const zoom = viewRef.current.zoom;
         const rawDx = (e.clientX - draggingNodeRef.current.startX) / zoom;
@@ -418,15 +493,27 @@ export function useCanvasInteraction({
           const rawWorldY = draggingNodeRef.current.nodeStartY + rawDy;
 
           const minScreenX = 40;
-          const maxScreenX = Math.max(minScreenX, rect.width - nodeW * zoom - 40);
+          const maxScreenX = Math.max(
+            minScreenX,
+            rect.width - nodeW * zoom - 40,
+          );
           const minScreenY = 64;
-          const maxScreenY = Math.max(minScreenY, rect.height - nodeH * zoom - 40);
+          const maxScreenY = Math.max(
+            minScreenY,
+            rect.height - nodeH * zoom - 40,
+          );
 
           const screenX = viewRef.current.x + rawWorldX * zoom;
           const screenY = viewRef.current.y + rawWorldY * zoom;
 
-          const clampedScreenX = Math.min(Math.max(screenX, minScreenX), maxScreenX);
-          const clampedScreenY = Math.min(Math.max(screenY, minScreenY), maxScreenY);
+          const clampedScreenX = Math.min(
+            Math.max(screenX, minScreenX),
+            maxScreenX,
+          );
+          const clampedScreenY = Math.min(
+            Math.max(screenY, minScreenY),
+            maxScreenY,
+          );
 
           const nextX = Math.round((clampedScreenX - viewRef.current.x) / zoom);
           const nextY = Math.round((clampedScreenY - viewRef.current.y) / zoom);
@@ -523,12 +610,22 @@ export function useCanvasInteraction({
         y: e.touches[0].clientY - dragStartRef.current.y,
         zoom: viewRef.current.zoom,
       });
-    } else if (e.touches.length === 2 && touchStateRef.current && containerRef.current) {
+    } else if (
+      e.touches.length === 2 &&
+      touchStateRef.current &&
+      containerRef.current
+    ) {
       const t1 = e.touches[0];
       const t2 = e.touches[1];
-      const newDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      const newDist = Math.hypot(
+        t2.clientX - t1.clientX,
+        t2.clientY - t1.clientY,
+      );
       const rawFactor = newDist / touchStateRef.current.dist;
-      const zoomFactor = Math.min(Math.max(1 + (rawFactor - 1) * 0.4, 0.92), 1.08);
+      const zoomFactor = Math.min(
+        Math.max(1 + (rawFactor - 1) * 0.4, 0.92),
+        1.08,
+      );
 
       const rect = containerRef.current.getBoundingClientRect();
       const centerX = touchStateRef.current.center.x - rect.left;

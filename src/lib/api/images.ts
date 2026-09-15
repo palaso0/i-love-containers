@@ -29,7 +29,9 @@ export async function fetchImages(): Promise<DockerImage[]> {
 
 export async function removeImage(id: string): Promise<boolean> {
   try {
-    const response = await apiFetch(`/api/images/${encodeURIComponent(id)}`, { method: "DELETE" });
+    const response = await apiFetch(`/api/images/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
     if (response.ok) return true;
   } catch {}
 
@@ -39,9 +41,13 @@ export async function removeImage(id: string): Promise<boolean> {
 
 export { getMockImageAnalysis };
 
-export async function fetchImageAnalysis(imageId: string): Promise<ImageAnalysis | null> {
+export async function fetchImageAnalysis(
+  imageId: string,
+): Promise<ImageAnalysis | null> {
   try {
-    const response = await apiFetch(`/api/images/${encodeURIComponent(imageId)}/analysis`);
+    const response = await apiFetch(
+      `/api/images/${encodeURIComponent(imageId)}/analysis`,
+    );
     if (response.ok) {
       return await response.json();
     }
@@ -51,6 +57,6 @@ export async function fetchImageAnalysis(imageId: string): Promise<ImageAnalysis
   return getMockImageAnalysis(
     imageId,
     match ? match.repository : "app",
-    match ? match.tag : "latest"
+    match ? match.tag : "latest",
   );
 }

@@ -59,7 +59,7 @@ export function getTerminalTheme(isDark: boolean): ITheme {
 export function formatTerminalPrompt(
   containerName: string,
   containerId: string,
-  cwd: string = "/"
+  cwd: string = "/",
 ): string {
   const shortId = containerId.substring(0, 12);
   const host = containerName ? containerName : shortId;

@@ -96,7 +96,11 @@ export const FileManagerToolbar: React.FC<FileManagerToolbarProps> = ({
           onClick={() => onNavigateTo(defaultPath || "/")}
           disabled={currentPath === (defaultPath || "/")}
           className="p-1.5 rounded-md hover:bg-surface text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent transition-colors shadow-xs"
-          title={defaultPath && defaultPath !== "/" ? `Working directory (${defaultPath})` : fm.rootDirectory}
+          title={
+            defaultPath && defaultPath !== "/"
+              ? `Working directory (${defaultPath})`
+              : fm.rootDirectory
+          }
         >
           <Home className="w-4 h-4" />
         </button>
@@ -105,7 +109,9 @@ export const FileManagerToolbar: React.FC<FileManagerToolbarProps> = ({
           className="p-1.5 rounded-md hover:bg-surface text-muted-foreground hover:text-foreground transition-colors shadow-xs"
           title={fm.refresh}
         >
-          <RotateCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
+          <RotateCw
+            className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`}
+          />
         </button>
       </div>
 

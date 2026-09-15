@@ -15,10 +15,9 @@ interface StandaloneTerminalWindowProps {
   containerName: string;
 }
 
-export const StandaloneTerminalWindow: React.FC<StandaloneTerminalWindowProps> = ({
-  containerId,
-  containerName,
-}) => {
+export const StandaloneTerminalWindow: React.FC<
+  StandaloneTerminalWindowProps
+> = ({ containerId, containerName }) => {
   const { theme, containers } = useAppStore();
   const isDark = theme === "dark";
 
@@ -59,24 +58,27 @@ export const StandaloneTerminalWindow: React.FC<StandaloneTerminalWindowProps> =
     fitAddonRef.current = fitAddon;
 
     term.writeln(
-      `\x1b[1;38;5;205m♥\x1b[0m \x1b[1mI ♥ Containers\x1b[0m \x1b[90m—\x1b[0m \x1b[1;36m${containerName}\x1b[0m \x1b[90m(${containerId.substring(0, 12)})\x1b[0m \x1b[90m•\x1b[0m \x1b[32m● Connected\x1b[0m`
+      `\x1b[1;38;5;205m♥\x1b[0m \x1b[1mI ♥ Containers\x1b[0m \x1b[90m—\x1b[0m \x1b[1;36m${containerName}\x1b[0m \x1b[90m(${containerId.substring(0, 12)})\x1b[0m \x1b[90m•\x1b[0m \x1b[32m● Connected\x1b[0m`,
     );
     term.writeln("");
 
-    executeContainerCommand(containerId, "pwd").then((res) => {
-      if (res.exitCode === 0 && res.output) {
-        const lines = res.output.trim().split(/\r?\n/);
-        const lastLine = lines[lines.length - 1].trim();
-        if (lastLine.startsWith("/")) {
-          currentCwdRef.current = lastLine;
-          controllerRef.current?.redraw();
+    executeContainerCommand(containerId, "pwd")
+      .then((res) => {
+        if (res.exitCode === 0 && res.output) {
+          const lines = res.output.trim().split(/\r?\n/);
+          const lastLine = lines[lines.length - 1].trim();
+          if (lastLine.startsWith("/")) {
+            currentCwdRef.current = lastLine;
+            controllerRef.current?.redraw();
+          }
         }
-      }
-    }).catch(() => {});
+      })
+      .catch(() => {});
 
     const controller = setupTerminalInput({
       term,
-      getPrompt: () => formatTerminalPrompt(containerName, containerId, currentCwdRef.current),
+      getPrompt: () =>
+        formatTerminalPrompt(containerName, containerId, currentCwdRef.current),
       onExecute: async (command) => {
         const isCd = command === "cd" || command.startsWith("cd ");
         if (isCd) {
@@ -87,7 +89,7 @@ export const StandaloneTerminalWindow: React.FC<StandaloneTerminalWindowProps> =
               cdCmd,
               term.cols,
               term.rows,
-              currentCwdRef.current
+              currentCwdRef.current,
             );
             if (res.exitCode === 0 && res.output) {
               const lines = res.output.trim().split(/\r?\n/);
@@ -108,7 +110,7 @@ export const StandaloneTerminalWindow: React.FC<StandaloneTerminalWindowProps> =
               command,
               term.cols,
               term.rows,
-              currentCwdRef.current
+              currentCwdRef.current,
             );
             if (res.output) {
               const formattedOutput = res.output.replace(/\r?\n/g, "\r\n");
@@ -123,7 +125,12 @@ export const StandaloneTerminalWindow: React.FC<StandaloneTerminalWindowProps> =
         }
       },
       onComplete: async (buf, pos) => {
-        return resolveContainerCompletion(containerId, currentCwdRef.current, buf, pos);
+        return resolveContainerCompletion(
+          containerId,
+          currentCwdRef.current,
+          buf,
+          pos,
+        );
       },
     });
 
@@ -192,13 +199,15 @@ export const StandaloneTerminalWindow: React.FC<StandaloneTerminalWindowProps> =
               isRunning
                 ? "bg-status-running shadow-[0_0_6px_rgba(16,185,129,0.5)]"
                 : state === "paused"
-                ? "bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.5)]"
-                : "bg-muted-foreground/60"
+                  ? "bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.5)]"
+                  : "bg-muted-foreground/60"
             }`}
           />
           <TerminalIcon className="w-3.5 h-3.5 text-primary" />
           <span className="font-bold text-foreground">{containerName}</span>
-          <span className="text-muted-foreground">({containerId.substring(0, 12)})</span>
+          <span className="text-muted-foreground">
+            ({containerId.substring(0, 12)})
+          </span>
         </div>
 
         <div className="flex items-center space-x-2">
@@ -215,7 +224,11 @@ export const StandaloneTerminalWindow: React.FC<StandaloneTerminalWindowProps> =
 
       <div className="flex-1 p-3 select-text overflow-hidden font-mono flex flex-col min-h-0">
         {!isRunning ? (
-          <ContainerNotRunning state={state} containerName={containerName} featureName="terminal" />
+          <ContainerNotRunning
+            state={state}
+            containerName={containerName}
+            featureName="terminal"
+          />
         ) : (
           <div ref={terminalElementRef} className="w-full h-full" />
         )}

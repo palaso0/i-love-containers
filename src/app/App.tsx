@@ -52,31 +52,70 @@ export const App: React.FC = () => {
       ) {
         event.preventDefault();
         goForward();
-      } else if (event.key.toLowerCase() === "b" && (event.metaKey || event.ctrlKey)) {
+      } else if (
+        event.key.toLowerCase() === "b" &&
+        (event.metaKey || event.ctrlKey)
+      ) {
         event.preventDefault();
         toggleSidebar();
-      } else if (event.key.toLowerCase() === "r" && !event.metaKey && !event.ctrlKey) {
+      } else if (
+        event.key.toLowerCase() === "r" &&
+        !event.metaKey &&
+        !event.ctrlKey
+      ) {
         event.preventDefault();
         refreshData();
-      } else if (event.key.toLowerCase() === "m" && !event.metaKey && !event.ctrlKey) {
+      } else if (
+        event.key.toLowerCase() === "m" &&
+        !event.metaKey &&
+        !event.ctrlKey
+      ) {
         event.preventDefault();
         toggleViewMode();
-      } else if (event.key.toLowerCase() === "l" && !event.metaKey && !event.ctrlKey && selectedContainerId) {
+      } else if (
+        event.key.toLowerCase() === "l" &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        selectedContainerId
+      ) {
         event.preventDefault();
         setContainerDetailTab("logs");
-      } else if (event.key.toLowerCase() === "t" && !event.metaKey && !event.ctrlKey && selectedContainerId) {
+      } else if (
+        event.key.toLowerCase() === "t" &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        selectedContainerId
+      ) {
         event.preventDefault();
         setContainerDetailTab("terminal");
-      } else if (event.key.toLowerCase() === "s" && !event.metaKey && !event.ctrlKey && selectedContainerId) {
+      } else if (
+        event.key.toLowerCase() === "s" &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        selectedContainerId
+      ) {
         event.preventDefault();
         setContainerDetailTab("stats");
-      } else if (event.key.toLowerCase() === "f" && !event.metaKey && !event.ctrlKey && selectedContainerId) {
+      } else if (
+        event.key.toLowerCase() === "f" &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        selectedContainerId
+      ) {
         event.preventDefault();
         setActiveTab("containers");
         setContainerDetailTab("files");
-      } else if (event.key.toLowerCase() === "o" && !event.metaKey && !event.ctrlKey) {
+      } else if (
+        event.key.toLowerCase() === "o" &&
+        !event.metaKey &&
+        !event.ctrlKey
+      ) {
         event.preventDefault();
-        if (selectedContainerId && activeTab === "containers" && containerDetailTab !== "overview") {
+        if (
+          selectedContainerId &&
+          activeTab === "containers" &&
+          containerDetailTab !== "overview"
+        ) {
           setContainerDetailTab("overview");
         } else {
           setActiveTab("overview");
@@ -107,7 +146,9 @@ export const App: React.FC = () => {
             I <span className="text-primary">♥</span> Containers
           </span>
         </div>
-        <p className="text-xs text-muted-foreground">Checking local container engine...</p>
+        <p className="text-xs text-muted-foreground">
+          Checking local container engine...
+        </p>
       </div>
     );
   }
@@ -118,8 +159,15 @@ export const App: React.FC = () => {
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         <Header />
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background">
-          {activeTab === "overview" && (viewMode === "minimal" ? <FleetView /> : <OverviewView />)}
-          <div className={activeTab === "containers" ? "flex-1 flex flex-col min-w-0 h-full overflow-hidden" : "hidden"}>
+          {activeTab === "overview" &&
+            (viewMode === "minimal" ? <FleetView /> : <OverviewView />)}
+          <div
+            className={
+              activeTab === "containers"
+                ? "flex-1 flex flex-col min-w-0 h-full overflow-hidden"
+                : "hidden"
+            }
+          >
             <ContainersSplitView />
           </div>
           {activeTab === "images" && <ImagesView />}

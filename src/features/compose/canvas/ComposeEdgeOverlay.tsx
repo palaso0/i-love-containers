@@ -1,5 +1,9 @@
 import React from "react";
-import { ComposeTopology, ComposeServiceNode, ComposeVolumeNode } from "@/lib/composeParser";
+import {
+  ComposeTopology,
+  ComposeServiceNode,
+  ComposeVolumeNode,
+} from "@/lib/composeParser";
 
 interface ComposeEdgeOverlayProps {
   topology: ComposeTopology;
@@ -28,7 +32,13 @@ export const ComposeEdgeOverlay: React.FC<ComposeEdgeOverlayProps> = ({
       height={topology.canvasHeight}
     >
       <defs>
-        <linearGradient id="edge-running-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+        <linearGradient
+          id="edge-running-gradient"
+          x1="0%"
+          y1="0%"
+          x2="0%"
+          y2="100%"
+        >
           <stop offset="0%" stopColor="#30d158" stopOpacity="0.85" />
           <stop offset="100%" stopColor="#007aff" stopOpacity="0.85" />
         </linearGradient>
@@ -57,7 +67,11 @@ export const ComposeEdgeOverlay: React.FC<ComposeEdgeOverlayProps> = ({
           refY="4"
           orient="auto"
         >
-          <polygon points="1 1, 7 4, 1 7" fill={isDark ? "#52525b" : "#94a3b8"} opacity="0.85" />
+          <polygon
+            points="1 1, 7 4, 1 7"
+            fill={isDark ? "#52525b" : "#94a3b8"}
+            opacity="0.85"
+          />
         </marker>
 
         <marker
@@ -75,17 +89,25 @@ export const ComposeEdgeOverlay: React.FC<ComposeEdgeOverlayProps> = ({
       {topology.edges.map((edge) => {
         const fromService = topology.services.find((s) => s.id === edge.from);
         const toService = topology.services.find((s) => s.id === edge.to);
-        const toVolume = !toService ? topology.volumes.find((v) => v.id === edge.to) : null;
+        const toVolume = !toService
+          ? topology.volumes.find((v) => v.id === edge.to)
+          : null;
 
         if (!fromService || (!toService && !toVolume)) return null;
 
         const fromPos = getServicePos(fromService);
-        const toPos = toService ? getServicePos(toService) : toVolume ? getVolumePos(toVolume) : null;
+        const toPos = toService
+          ? getServicePos(toService)
+          : toVolume
+            ? getVolumePos(toVolume)
+            : null;
         if (!toPos) return null;
 
         const isVolume = edge.type === "volume";
         const fromState = optimisticStates[fromService.id] || fromService.state;
-        const toState = toService ? (optimisticStates[toService.id] || toService.state) : "running";
+        const toState = toService
+          ? optimisticStates[toService.id] || toService.state
+          : "running";
         const isRunning = isVolume
           ? fromState === "running"
           : fromState === "running" && toState === "running";
@@ -104,18 +126,28 @@ export const ComposeEdgeOverlay: React.FC<ComposeEdgeOverlayProps> = ({
           height: toService ? toService.height : 40,
         };
 
-        const outgoingEdges = topology.edges.filter((e) => e.from === edge.from);
+        const outgoingEdges = topology.edges.filter(
+          (e) => e.from === edge.from,
+        );
         const outIdx = outgoingEdges.findIndex((e) => e.id === edge.id);
         const totalOut = outgoingEdges.length;
 
-        const cFrom = { x: fromBox.x + fromBox.width / 2, y: fromBox.y + fromBox.height / 2 };
-        const cTo = { x: toBox.x + toBox.width / 2, y: toBox.y + toBox.height / 2 };
+        const cFrom = {
+          x: fromBox.x + fromBox.width / 2,
+          y: fromBox.y + fromBox.height / 2,
+        };
+        const cTo = {
+          x: toBox.x + toBox.width / 2,
+          y: toBox.y + toBox.height / 2,
+        };
         const dx = cTo.x - cFrom.x;
         const dy = cTo.y - cFrom.y;
 
         const verticalOverlap =
-          Math.max(fromBox.y, toBox.y) < Math.min(fromBox.y + fromBox.height, toBox.y + toBox.height);
-        const isHorizontal = verticalOverlap || Math.abs(dx) > Math.abs(dy) * 1.15;
+          Math.max(fromBox.y, toBox.y) <
+          Math.min(fromBox.y + fromBox.height, toBox.y + toBox.height);
+        const isHorizontal =
+          verticalOverlap || Math.abs(dx) > Math.abs(dy) * 1.15;
 
         let pathD: string;
 
@@ -179,16 +211,16 @@ export const ComposeEdgeOverlay: React.FC<ComposeEdgeOverlayProps> = ({
         const edgeOpacity = isHighlighted
           ? 1
           : hasActiveFocus
-          ? 0.08
-          : isVolume
-          ? 0.7
-          : 0.42;
+            ? 0.08
+            : isVolume
+              ? 0.7
+              : 0.42;
 
         const markerId = isVolume
           ? "arrowhead-volume"
           : isRunning
-          ? "arrowhead-active"
-          : "arrowhead-muted";
+            ? "arrowhead-active"
+            : "arrowhead-muted";
 
         return (
           <g key={edge.id}>
@@ -196,7 +228,15 @@ export const ComposeEdgeOverlay: React.FC<ComposeEdgeOverlayProps> = ({
               <path
                 d={pathD}
                 fill="none"
-                stroke={isVolume ? "#38bdf8" : isRunning ? "#30d158" : isDark ? "#a855f7" : "#8b5cf6"}
+                stroke={
+                  isVolume
+                    ? "#38bdf8"
+                    : isRunning
+                      ? "#30d158"
+                      : isDark
+                        ? "#a855f7"
+                        : "#8b5cf6"
+                }
                 strokeWidth="5"
                 opacity="0.4"
                 filter="url(#glow)"
@@ -210,12 +250,12 @@ export const ComposeEdgeOverlay: React.FC<ComposeEdgeOverlayProps> = ({
                 isVolume
                   ? "#38bdf8"
                   : isRunning
-                  ? isHighlighted
-                    ? "#30d158"
-                    : "url(#edge-running-gradient)"
-                  : isDark
-                  ? "#4b4b53"
-                  : "#94a3b8"
+                    ? isHighlighted
+                      ? "#30d158"
+                      : "url(#edge-running-gradient)"
+                    : isDark
+                      ? "#4b4b53"
+                      : "#94a3b8"
               }
               strokeWidth={isHighlighted ? 2.6 : isVolume ? 1.4 : 1.6}
               strokeDasharray={isVolume ? "4 3" : undefined}
@@ -226,7 +266,11 @@ export const ComposeEdgeOverlay: React.FC<ComposeEdgeOverlayProps> = ({
 
             {isRunning && !isVolume && !hasActiveFocus && (
               <circle r="2.5" fill="#30d158">
-                <animateMotion dur="2.8s" repeatCount="indefinite" path={pathD} />
+                <animateMotion
+                  dur="2.8s"
+                  repeatCount="indefinite"
+                  path={pathD}
+                />
               </circle>
             )}
             {isRunning && !isVolume && isHighlighted && (

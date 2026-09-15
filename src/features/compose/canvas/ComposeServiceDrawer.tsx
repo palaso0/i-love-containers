@@ -21,7 +21,7 @@ interface ComposeServiceDrawerProps {
   handleServiceAction: (
     serviceId: string,
     containerId: string,
-    action: "start" | "stop" | "restart"
+    action: "start" | "stop" | "restart",
   ) => Promise<void>;
   setActiveTab: (tab: any) => void;
   setSelectedContainerId: (id: string) => void;
@@ -45,8 +45,8 @@ export const ComposeServiceDrawer: React.FC<ComposeServiceDrawerProps> = ({
               selectedService.state === "running"
                 ? "bg-status-running shadow-[0_0_8px_rgba(48,209,88,0.8)]"
                 : selectedService.state === "paused"
-                ? "bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]"
-                : "bg-status-stopped"
+                  ? "bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]"
+                  : "bg-status-stopped"
             }`}
           />
           <div className="min-w-0">
@@ -64,10 +64,20 @@ export const ComposeServiceDrawer: React.FC<ComposeServiceDrawerProps> = ({
             <div className="flex items-center space-x-1.5 mt-0.5">
               <span
                 className={`text-[9px] font-mono uppercase px-1.5 py-0.2 rounded-full border shrink-0 ${
-                  getTechBadgeInfo(selectedService.image, selectedService.name, selectedService.role).badgeStyle
+                  getTechBadgeInfo(
+                    selectedService.image,
+                    selectedService.name,
+                    selectedService.role,
+                  ).badgeStyle
                 }`}
               >
-                {getTechBadgeInfo(selectedService.image, selectedService.name, selectedService.role).label}
+                {
+                  getTechBadgeInfo(
+                    selectedService.image,
+                    selectedService.name,
+                    selectedService.role,
+                  ).label
+                }
               </span>
               <span className="text-[10px] font-mono text-muted-foreground uppercase">
                 • {selectedService.state}
@@ -92,7 +102,11 @@ export const ComposeServiceDrawer: React.FC<ComposeServiceDrawerProps> = ({
                 disabled={actionLoading}
                 onClick={() =>
                   selectedService.containerId &&
-                  handleServiceAction(selectedService.id, selectedService.containerId, "stop")
+                  handleServiceAction(
+                    selectedService.id,
+                    selectedService.containerId,
+                    "stop",
+                  )
                 }
                 className="flex-1 flex items-center justify-center space-x-1 py-1.5 rounded-lg bg-surface border border-border text-status-restarting hover:bg-status-restarting/10 transition-colors shadow-xs disabled:opacity-50"
               >
@@ -107,11 +121,17 @@ export const ComposeServiceDrawer: React.FC<ComposeServiceDrawerProps> = ({
                 disabled={actionLoading}
                 onClick={() =>
                   selectedService.containerId &&
-                  handleServiceAction(selectedService.id, selectedService.containerId, "restart")
+                  handleServiceAction(
+                    selectedService.id,
+                    selectedService.containerId,
+                    "restart",
+                  )
                 }
                 className="flex-1 flex items-center justify-center space-x-1 py-1.5 rounded-lg bg-surface border border-border text-sky-400 hover:bg-sky-400/10 transition-colors shadow-xs disabled:opacity-50"
               >
-                <RotateCw className={`w-3 h-3 ${actionLoading ? "animate-spin" : ""}`} />
+                <RotateCw
+                  className={`w-3 h-3 ${actionLoading ? "animate-spin" : ""}`}
+                />
                 <span>{t.containers.restart}</span>
               </button>
             </>
@@ -120,7 +140,11 @@ export const ComposeServiceDrawer: React.FC<ComposeServiceDrawerProps> = ({
               disabled={actionLoading}
               onClick={() =>
                 selectedService.containerId &&
-                handleServiceAction(selectedService.id, selectedService.containerId, "start")
+                handleServiceAction(
+                  selectedService.id,
+                  selectedService.containerId,
+                  "start",
+                )
               }
               className="flex-1 flex items-center justify-center space-x-1 py-1.5 rounded-lg bg-status-running text-white hover:opacity-90 transition-opacity shadow-xs disabled:opacity-50"
             >
@@ -226,7 +250,9 @@ export const ComposeServiceDrawer: React.FC<ComposeServiceDrawerProps> = ({
               ))}
             </div>
           ) : (
-            <p className="text-muted-foreground/70 italic text-[11px]">No exposed ports</p>
+            <p className="text-muted-foreground/70 italic text-[11px]">
+              No exposed ports
+            </p>
           )}
         </div>
 
@@ -264,23 +290,24 @@ export const ComposeServiceDrawer: React.FC<ComposeServiceDrawerProps> = ({
           </div>
         )}
 
-        {selectedService.environment && selectedService.environment.length > 0 && (
-          <div className="space-y-1.5">
-            <div className="text-[10px] font-mono uppercase text-muted-foreground font-semibold">
-              {t.compose.environment} ({selectedService.environment.length})
+        {selectedService.environment &&
+          selectedService.environment.length > 0 && (
+            <div className="space-y-1.5">
+              <div className="text-[10px] font-mono uppercase text-muted-foreground font-semibold">
+                {t.compose.environment} ({selectedService.environment.length})
+              </div>
+              <div className="space-y-1 font-mono text-[10px] max-h-36 overflow-y-auto">
+                {selectedService.environment.map((env, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-surface-secondary/50 p-1.5 rounded-md border border-border/60 text-foreground break-all"
+                  >
+                    {env}
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="space-y-1 font-mono text-[10px] max-h-36 overflow-y-auto">
-              {selectedService.environment.map((env, idx) => (
-                <div
-                  key={idx}
-                  className="bg-surface-secondary/50 p-1.5 rounded-md border border-border/60 text-foreground break-all"
-                >
-                  {env}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+          )}
 
         {selectedService.dependsOn.length > 0 && (
           <div className="space-y-1.5">

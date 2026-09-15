@@ -9,13 +9,15 @@ export interface FileManagerCachedState {
 
 const cache = new Map<string, FileManagerCachedState>();
 
-export function getFileManagerCache(containerId: string): FileManagerCachedState | undefined {
+export function getFileManagerCache(
+  containerId: string,
+): FileManagerCachedState | undefined {
   return cache.get(containerId);
 }
 
 export function setFileManagerCache(
   containerId: string,
-  state: Partial<FileManagerCachedState>
+  state: Partial<FileManagerCachedState>,
 ): void {
   const existing = cache.get(containerId) || {
     currentPath: "/",

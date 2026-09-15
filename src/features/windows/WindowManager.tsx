@@ -73,8 +73,12 @@ export const WindowManager: React.FC = () => {
                 }`}
                 title={`Focus ${w.title}`}
               >
-                <Icon className={`w-3 h-3 ${w.type === "terminal" ? "text-primary" : "text-sky-400"}`} />
-                <span className="truncate max-w-[100px]">{w.containerName || w.title}</span>
+                <Icon
+                  className={`w-3 h-3 ${w.type === "terminal" ? "text-primary" : "text-sky-400"}`}
+                />
+                <span className="truncate max-w-[100px]">
+                  {w.containerName || w.title}
+                </span>
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
                     w.isMinimized ? "bg-amber-500" : "bg-status-running"
@@ -113,7 +117,9 @@ export const WindowManager: React.FC = () => {
                         <Terminal className="w-3 h-3 text-primary shrink-0" />
                         <span className="truncate">{c.name}</span>
                       </div>
-                      <span className="text-[10px] text-muted-foreground shrink-0">{c.state}</span>
+                      <span className="text-[10px] text-muted-foreground shrink-0">
+                        {c.state}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -144,7 +150,10 @@ export const WindowManager: React.FC = () => {
                   {composeProjects.map((p) => {
                     const services = containers
                       .filter((c) => c.composeProject === p.name)
-                      .map((c) => ({ id: c.id, name: c.composeService || c.name }));
+                      .map((c) => ({
+                        id: c.id,
+                        name: c.composeService || c.name,
+                      }));
                     return (
                       <button
                         key={p.name}
