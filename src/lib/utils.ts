@@ -28,3 +28,18 @@ export function formatRelativeTime(dateString: string): string {
   const elapsedDays = Math.floor(elapsedHours / 24);
   return `${elapsedDays}d ago`;
 }
+
+export function normalizePath(p: string): string {
+  const clean = (p || "").replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
+  if (!clean || clean === "/") return "/";
+  const segments = clean.split("/").filter(Boolean);
+  return "/" + segments.join("/");
+}
+
+export function getParentPath(p: string): string | null {
+  const norm = normalizePath(p);
+  if (norm === "/") return null;
+  const segments = norm.split("/").filter(Boolean);
+  segments.pop();
+  return segments.length === 0 ? "/" : "/" + segments.join("/");
+}
