@@ -9,6 +9,7 @@ import {
 import { useAppStore } from "@/stores/useAppStore";
 import { EngineSelector } from "@/components/EngineSelector";
 import { handleWindowDragStart } from "@/lib/windowDrag";
+import { isMac } from "@/lib/platform";
 
 export const Header: React.FC = () => {
   const {
@@ -36,7 +37,7 @@ export const Header: React.FC = () => {
       data-tauri-drag-region
       onMouseDown={handleWindowDragStart}
       className={`relative z-40 h-11 border-b border-border/80 bg-surface/80 backdrop-blur-xl flex items-center justify-between transition-all ${
-        !isSidebarOpen ? "pl-20 pr-3" : "px-3.5"
+        !isSidebarOpen ? (isMac ? "pl-20 pr-3" : "px-3.5") : "px-3.5"
       }`}
     >
       <div className="flex items-center space-x-2 min-w-0">

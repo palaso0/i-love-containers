@@ -12,6 +12,7 @@ import {
 import { useAppStore } from "@/stores/useAppStore";
 import { ActiveTab } from "@/types";
 import { handleWindowDragStart } from "@/lib/windowDrag";
+import { isMac } from "@/lib/platform";
 
 interface NavItem {
   id: ActiveTab;
@@ -313,7 +314,9 @@ export const Sidebar: React.FC = () => {
               ? "justify-center px-2"
               : isCompact
                 ? "justify-center"
-                : "pl-20 pr-3 justify-start"
+                : isMac
+                  ? "pl-20 pr-3 justify-start"
+                  : "px-3 justify-start"
           }`}
         >
           {(!isCompact || isFullscreen) && (

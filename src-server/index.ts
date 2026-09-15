@@ -1,28 +1,40 @@
 import http from "node:http";
 import os from "node:os";
+import path from "node:path";
 import { createEngineHandler } from "../vite-engine-plugin";
 
 const home = os.homedir();
-const defaultPaths = [
-  "/usr/local/bin",
-  "/opt/homebrew/bin",
-  "/opt/homebrew/sbin",
-  "/usr/bin",
-  "/bin",
-  "/usr/sbin",
-  "/sbin",
-  `${home}/.docker/bin`,
-  `${home}/.orbstack/bin`,
-  `${home}/.rd/bin`,
-  `${home}/.local/bin`,
-];
-const currentPaths = (process.env.PATH || "").split(":");
+const isWin = process.platform === "win32";
+
+const defaultPaths = isWin
+  ? [
+      "C:\\Program Files\\Docker\\Docker\\resources\\bin",
+      "C:\\Program Files\\Docker\\Docker\\resources",
+      "C:\\Program Files\\RedHat\\Podman",
+      path.join(home, "AppData\\Local\\Programs\\Rancher Desktop\\resources\\resources\\win32\\bin"),
+    ]
+  : [
+      "/usr/local/bin",
+      "/opt/homebrew/bin",
+      "/opt/homebrew/sbin",
+      "/usr/bin",
+      "/bin",
+      "/usr/sbin",
+      "/sbin",
+      `${home}/.docker/bin`,
+      `${home}/.orbstack/bin`,
+      `${home}/.rd/bin`,
+      `${home}/.local/bin`,
+    ];
+
+const delimiter = path.delimiter || (isWin ? ";" : ":");
+const currentPaths = (process.env.PATH || "").split(delimiter);
 for (const p of defaultPaths) {
   if (!currentPaths.includes(p)) {
     currentPaths.unshift(p);
   }
 }
-process.env.PATH = currentPaths.join(":");
+process.env.PATH = currentPaths.join(delimiter);
 
 const PORT = 41785;
 const HOST = "127.0.0.1";

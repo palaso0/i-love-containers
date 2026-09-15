@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { AppTheme, AccentColor, Language } from "@/types";
+import { modKeySymbol } from "@/lib/platform";
 
 function getEngineIcon(type: string, className = "w-4 h-4") {
   switch (type) {
@@ -146,13 +147,13 @@ export const SettingsView: React.FC = () => {
 
   const shortcuts = [
     {
-      key: "⌘K",
+      key: `${modKeySymbol}K`,
       action: isEs
         ? "Abrir Paleta de Comandos / Búsqueda"
         : "Open Command Palette / Search",
     },
     {
-      key: "⌘B",
+      key: `${modKeySymbol}B`,
       action: isEs ? "Alternar barra lateral" : "Toggle Sidebar navigation",
     },
     {

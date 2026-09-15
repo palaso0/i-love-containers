@@ -1,19 +1,19 @@
 # I Love Containers (ILC)
 
-A fast, lightweight, and modern macOS desktop client for managing local container engines (Docker Desktop, OrbStack, Rancher Desktop, Colima, and Podman) built with **Tauri 2**, **React 18**, **TypeScript**, and **Tailwind CSS**.
+A fast, lightweight, and modern cross-platform desktop client for managing local container engines (Docker Desktop / Docker Engine, OrbStack, Rancher Desktop, Colima, and Podman) built with **Tauri 2**, **React 18**, **TypeScript**, and **Tailwind CSS**.
 
 ---
 
 ## Features
 
 ### Multi-Engine Support
-- Automatic detection and one-click switching between local container runtimes:
-  - **Docker Desktop**
-  - **OrbStack**
-  - **Rancher Desktop**
-  - **Colima**
-  - **Podman Desktop**
-- Live engine health checks, socket detection, and daemon version status.
+- Automatic detection and one-click switching between local container runtimes across **macOS**, **Windows**, and **Linux**:
+  - **Docker Desktop / Docker Engine** (UNIX sockets & Windows Named Pipes)
+  - **OrbStack** (macOS)
+  - **Rancher Desktop** (macOS, Windows, Linux)
+  - **Colima** (macOS / Linux)
+  - **Podman** (macOS, Windows, Linux)
+- Live engine health checks, socket/pipe detection, and daemon version status.
 
 ### Containers Management
 - **Fleet & System Views**: Grid and table views of all containers with real-time status badges (`running`, `stopped`, `paused`, `restarting`).
@@ -33,7 +33,7 @@ A fast, lightweight, and modern macOS desktop client for managing local containe
 - Raw Compose YAML viewer and editor with line numbering and clipboard copy.
 
 ### Native Multi-Window Experience
-- Pop out any container view into independent native macOS windows:
+- Pop out any container view into independent native desktop windows:
   - Container Terminal
   - Live Logs
   - Live Stats
@@ -43,10 +43,10 @@ A fast, lightweight, and modern macOS desktop client for managing local containe
 - Shared theme, accent color, and language state synchronized live across all open native windows.
 
 ### Keyboard Shortcuts & Command Palette
-- **Command Palette (`⌘K`)**: Quick navigation to any container, stack, image, volume, or setting.
+- **Command Palette (`Cmd/Ctrl+K`)**: Quick navigation to any container, stack, image, volume, or setting.
 - Global keyboard shortcuts:
-  - `⌘K`: Open Command Palette
-  - `⌘B`: Toggle Sidebar
+  - `Cmd/Ctrl+K`: Open Command Palette
+  - `Cmd/Ctrl+B`: Toggle Sidebar
   - `R`: Refresh all resources
   - `M`: Toggle Fleet / System view
   - `L`: Open Logs (when a container is selected)
@@ -54,8 +54,8 @@ A fast, lightweight, and modern macOS desktop client for managing local containe
   - `S`: Open Stats (when a container is selected)
   - `Esc`: Dismiss modals and overlays
 
-### Customization & macOS Native Feel
-- Native macOS `Overlay` titlebar with drag region and window controls (traffic lights) spacing.
+### Customization & Native Look
+- Adaptive titlebar spacing: macOS traffic lights spacing on macOS, standard compact header on Windows and Linux.
 - Responsive branding: logo dynamically adapts between windowed mode and fullscreen mode.
 - Multiple themes (Dark, Light, System) and custom accent colors.
 - Multilingual interface (English, Spanish).
@@ -64,13 +64,13 @@ A fast, lightweight, and modern macOS desktop client for managing local containe
 
 ## Tech Stack & Architecture
 
-- **Desktop Shell**: [Tauri 2](https://v2.tauri.app/) (Rust + macOS WebKit)
+- **Desktop Shell**: [Tauri 2](https://v2.tauri.app/) (Rust + OS native Webview)
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, Lucide Icons
 - **Terminal**: [xterm.js](https://xtermjs.org/) (`@xterm/xterm`, `@xterm/addon-fit`, `@xterm/addon-web-links`)
 - **Charts**: [Recharts](https://recharts.org/)
 - **Backend Service**: Node.js HTTP API server (`127.0.0.1:41785`).
   - `src-server/index.ts`: Bundled via esbuild to `src-tauri/server.mjs`.
-  - `vite-engine-plugin.ts`: Unified Docker Engine API proxy communicating with local UNIX domain sockets (`/var/run/docker.sock`, OrbStack, Colima, Podman).
+  - `vite-engine-plugin.ts`: Unified Docker Engine API proxy communicating with local UNIX domain sockets and Windows named pipes (`//./pipe/docker_engine`).
   - During desktop execution, the Tauri Rust shell automatically spawns and manages the Node.js server child process.
   - During browser development (`npm run dev`), Vite dev middleware proxies the API directly without needing the desktop shell.
   - Offline fallback: if no engine daemon is reachable, the UI remains functional with optimistic state.
@@ -81,10 +81,10 @@ A fast, lightweight, and modern macOS desktop client for managing local containe
 
 ### Prerequisites
 
-- **macOS** (Apple Silicon or Intel)
+- **macOS**, **Windows 10/11**, or **Linux**
 - **Node.js** (v18+)
 - **Rust** & Cargo (for compiling the desktop shell via Tauri)
-- Any local container engine (Docker Desktop, OrbStack, Colima, Podman, or Rancher)
+- Any local container engine (Docker Desktop, Docker Engine, OrbStack, Colima, Podman, or Rancher)
 
 ### Installation
 
@@ -101,7 +101,7 @@ npm run dev
 ```
 
 #### Run Full Desktop Application
-Launches the full native macOS desktop app using Tauri:
+Launches the full native desktop app using Tauri:
 ```bash
 npm run desktop
 ```
@@ -114,8 +114,8 @@ Bundles the background Node.js server (`server.mjs`), typechecks TypeScript, and
 npm run build
 ```
 
-#### Export macOS `.dmg` Installer
-Compiles the release desktop application, packages the `.dmg` installer, and places it at the project root:
+#### Package Desktop Application
+Compiles the release desktop application with Tauri for your platform:
 ```bash
-npm run export
+npm run tauri build
 ```

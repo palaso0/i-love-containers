@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -37,6 +38,84 @@ type EngineDefinition struct {
 
 func getEngineDefinitions() []EngineDefinition {
 	homeDir, _ := os.UserHomeDir()
+
+	if runtime.GOOS == "windows" {
+		programFiles := os.Getenv("ProgramFiles")
+		if programFiles == "" {
+			programFiles = "C:\\Program Files"
+		}
+		localAppData := os.Getenv("LOCALAPPDATA")
+
+		return []EngineDefinition{
+			{
+				ID:          "docker-desktop",
+				Name:        "Docker Desktop",
+				Type:        "docker-desktop",
+				Sockets:     []string{"//./pipe/docker_engine"},
+				AppPaths:    []string{filepath.Join(programFiles, "Docker", "Docker", "Docker Desktop.exe")},
+				ConfigPaths: []string{filepath.Join(homeDir, ".docker")},
+				Description: "Official Docker Desktop for Windows",
+				Icon:        "docker",
+			},
+			{
+				ID:          "podman",
+				Name:        "Podman",
+				Type:        "podman",
+				Sockets:     []string{"//./pipe/podman-machine-default", "//./pipe/podman-desktop"},
+				AppPaths:    []string{filepath.Join(programFiles, "RedHat", "Podman", "podman.exe")},
+				ConfigPaths: []string{filepath.Join(homeDir, ".config", "containers")},
+				Description: "Podman on Windows",
+				Icon:        "podman",
+			},
+			{
+				ID:          "rancher",
+				Name:        "Rancher Desktop",
+				Type:        "rancher",
+				Sockets:     []string{"//./pipe/rancher_desktop"},
+				AppPaths:    []string{filepath.Join(localAppData, "Programs", "Rancher Desktop", "Rancher Desktop.exe")},
+				ConfigPaths: []string{filepath.Join(homeDir, ".rd")},
+				Description: "Container management and local Kubernetes",
+				Icon:        "rancher",
+			},
+		}
+	}
+
+	if runtime.GOOS == "linux" {
+		uid := os.Getuid()
+		return []EngineDefinition{
+			{
+				ID:          "docker-desktop",
+				Name:        "Docker Engine",
+				Type:        "docker-desktop",
+				Sockets:     []string{"/var/run/docker.sock", filepath.Join(homeDir, ".docker/run/docker.sock")},
+				AppPaths:    []string{"/usr/bin/docker", "/usr/local/bin/docker"},
+				ConfigPaths: []string{filepath.Join(homeDir, ".docker")},
+				Description: "Docker Engine daemon",
+				Icon:        "docker",
+			},
+			{
+				ID:          "podman",
+				Name:        "Podman",
+				Type:        "podman",
+				Sockets:     []string{fmt.Sprintf("/run/user/%d/podman/podman.sock", uid), "/var/run/podman/podman.sock"},
+				AppPaths:    []string{"/usr/bin/podman", "/usr/local/bin/podman"},
+				ConfigPaths: []string{filepath.Join(homeDir, ".config/containers")},
+				Description: "Daemonless container engine by Red Hat",
+				Icon:        "podman",
+			},
+			{
+				ID:          "rancher",
+				Name:        "Rancher Desktop",
+				Type:        "rancher",
+				Sockets:     []string{filepath.Join(homeDir, ".rd/docker.sock"), filepath.Join(homeDir, ".rd2/docker.sock"), "/var/run/docker.sock"},
+				AppPaths:    []string{"/opt/Rancher Desktop/rancher-desktop"},
+				ConfigPaths: []string{filepath.Join(homeDir, ".rd")},
+				Description: "Container management and local Kubernetes",
+				Icon:        "rancher",
+			},
+		}
+	}
+
 	return []EngineDefinition{
 		{
 			ID:          "docker-desktop",
@@ -92,15 +171,22 @@ func getEngineDefinitions() []EngineDefinition {
 }
 
 func probeSocket(path string) (bool, string, string, string, string) {
-	if _, err := os.Stat(path); err != nil {
-		return false, "", "", "", ""
+	if !strings.HasPrefix(path, "//./pipe/") && !strings.HasPrefix(path, `\\.\pipe\`) {
+		if _, err := os.Stat(path); err != nil {
+			return false, "", "", "", ""
+		}
+	}
+
+	proto := "unix"
+	if strings.HasPrefix(path, "//./pipe/") || strings.HasPrefix(path, `\\.\pipe\`) {
+		proto = "npipe"
 	}
 
 	client := &http.Client{
 		Transport: &http.Transport{
 			DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
 				dialer := net.Dialer{Timeout: 1 * time.Second}
-				return dialer.DialContext(ctx, "unix", path)
+				return dialer.DialContext(ctx, proto, path)
 			},
 		},
 		Timeout: 2 * time.Second,
@@ -123,21 +209,29 @@ func probeSocket(path string) (bool, string, string, string, string) {
 }
 
 func NewDockerProvider() *DockerProvider {
+	defaultSocket := "/var/run/docker.sock"
+	if runtime.GOOS == "windows" {
+		defaultSocket = "//./pipe/docker_engine"
+	}
 	p := &DockerProvider{
 		activeEngineID: "docker-desktop",
-		socketPath:     "/var/run/docker.sock",
+		socketPath:     defaultSocket,
 	}
 	_, _, _ = p.DetectEngines(context.Background())
 	return p
 }
 
 func (p *DockerProvider) setSocket(socketPath string) {
+	proto := "unix"
+	if strings.HasPrefix(socketPath, "//./pipe/") || strings.HasPrefix(socketPath, `\\.\pipe\`) {
+		proto = "npipe"
+	}
 	p.socketPath = socketPath
 	p.client = &http.Client{
 		Transport: &http.Transport{
 			DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
 				dialer := net.Dialer{Timeout: 3 * time.Second}
-				return dialer.DialContext(ctx, "unix", socketPath)
+				return dialer.DialContext(ctx, proto, socketPath)
 			},
 		},
 		Timeout: 10 * time.Second,

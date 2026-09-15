@@ -1,12 +1,13 @@
 import { ContainerEngineInfo, SystemOverview } from "@/types";
+import { isWindows } from "@/lib/platform";
 
 export const DEFAULT_ENGINES: ContainerEngineInfo[] = [
   {
     id: "docker-desktop",
     name: "Docker Desktop",
     type: "docker-desktop",
-    socketPath: "/var/run/docker.sock",
-    appPath: "/Applications/Docker.app",
+    socketPath: isWindows ? "//./pipe/docker_engine" : "/var/run/docker.sock",
+    appPath: isWindows ? undefined : "/Applications/Docker.app",
     status: "stopped",
     isDefault: true,
     isActive: true,

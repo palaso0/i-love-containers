@@ -34,78 +34,175 @@ export interface EngineInfo {
 }
 
 const home = os.homedir();
+const isWin = process.platform === "win32";
+const isLinux = process.platform === "linux";
 
-const DEFAULT_CANDIDATES: EngineCandidate[] = [
-  {
-    id: "docker-desktop",
-    name: "Docker Desktop",
-    type: "docker-desktop",
-    socketCandidates: [
-      path.join(home, ".docker/run/docker.sock"),
-      "/var/run/docker.sock",
-    ],
-    appPaths: ["/Applications/Docker.app"],
-    configPaths: [path.join(home, ".docker")],
-    description: "Official Docker Desktop daemon & VM",
-    icon: "docker",
-  },
-  {
-    id: "orbstack",
-    name: "OrbStack",
-    type: "orbstack",
-    socketCandidates: [
-      path.join(home, ".orbstack/run/docker.sock"),
-    ],
-    appPaths: ["/Applications/OrbStack.app"],
-    configPaths: [path.join(home, ".orbstack")],
-    description: "Ultra-fast, lightweight Docker & Linux alternative",
-    icon: "orbstack",
-  },
-  {
-    id: "rancher",
-    name: "Rancher Desktop",
-    type: "rancher",
-    socketCandidates: [
-      path.join(home, ".rd/docker.sock"),
-      path.join(home, ".rd2/docker.sock"),
-      "/var/run/docker.sock",
-    ],
-    appPaths: ["/Applications/Rancher Desktop.app"],
-    configPaths: [
-      path.join(home, ".rd"),
-      path.join(home, ".rd2"),
-    ],
-    description: "Container management and local Kubernetes",
-    icon: "rancher",
-  },
-  {
-    id: "colima",
-    name: "Colima",
-    type: "colima",
-    socketCandidates: [
-      path.join(home, ".colima/default/docker.sock"),
-      path.join(home, ".colima/docker.sock"),
-    ],
-    appPaths: [],
-    configPaths: [path.join(home, ".colima")],
-    description: "Minimal container runtimes on macOS with Lima",
-    icon: "colima",
-  },
-  {
-    id: "podman",
-    name: "Podman",
-    type: "podman",
-    socketCandidates: [
-      path.join(home, ".local/share/containers/podman/machine/podman-machine-default/podman.sock"),
-      path.join(home, ".local/share/containers/podman/machine/qemu/podman.sock"),
-      "/var/run/podman/podman.sock",
-    ],
-    appPaths: ["/Applications/Podman Desktop.app"],
-    configPaths: [path.join(home, ".config/containers")],
-    description: "Daemonless container engine by Red Hat",
-    icon: "podman",
-  },
-];
+const DEFAULT_CANDIDATES: EngineCandidate[] = isWin
+  ? [
+      {
+        id: "docker-desktop",
+        name: "Docker Desktop",
+        type: "docker-desktop",
+        socketCandidates: [
+          "//./pipe/docker_engine",
+          path.join(home, ".docker/run/docker.sock"),
+        ],
+        appPaths: [
+          "C:\\Program Files\\Docker\\Docker\\Docker Desktop.exe",
+          path.join(home, "AppData\\Local\\Programs\\Docker\\Docker\\Docker Desktop.exe"),
+        ],
+        configPaths: [path.join(home, ".docker")],
+        description: "Official Docker Desktop for Windows",
+        icon: "docker",
+      },
+      {
+        id: "podman",
+        name: "Podman",
+        type: "podman",
+        socketCandidates: [
+          "//./pipe/podman-machine-default",
+          "//./pipe/podman-desktop",
+        ],
+        appPaths: [
+          "C:\\Program Files\\RedHat\\Podman\\podman.exe",
+          path.join(home, "AppData\\Local\\Programs\\Podman Desktop\\Podman Desktop.exe"),
+        ],
+        configPaths: [path.join(home, ".config/containers")],
+        description: "Podman on Windows",
+        icon: "podman",
+      },
+      {
+        id: "rancher",
+        name: "Rancher Desktop",
+        type: "rancher",
+        socketCandidates: [
+          "//./pipe/rancher_desktop",
+          path.join(home, ".rd/docker.sock"),
+        ],
+        appPaths: [
+          path.join(home, "AppData\\Local\\Programs\\Rancher Desktop\\Rancher Desktop.exe"),
+          "C:\\Program Files\\Rancher Desktop\\Rancher Desktop.exe",
+        ],
+        configPaths: [path.join(home, ".rd")],
+        description: "Container management and local Kubernetes",
+        icon: "rancher",
+      },
+    ]
+  : isLinux
+  ? [
+      {
+        id: "docker-desktop",
+        name: "Docker Engine",
+        type: "docker-desktop",
+        socketCandidates: [
+          "/var/run/docker.sock",
+          path.join(home, ".docker/run/docker.sock"),
+          path.join(home, ".docker/desktop/docker.sock"),
+        ],
+        appPaths: ["/usr/bin/docker", "/usr/local/bin/docker"],
+        configPaths: [path.join(home, ".docker")],
+        description: "Docker Engine daemon",
+        icon: "docker",
+      },
+      {
+        id: "podman",
+        name: "Podman",
+        type: "podman",
+        socketCandidates: [
+          `/run/user/${process.getuid ? process.getuid() : 1000}/podman/podman.sock`,
+          "/var/run/podman/podman.sock",
+        ],
+        appPaths: ["/usr/bin/podman", "/usr/local/bin/podman"],
+        configPaths: [path.join(home, ".config/containers")],
+        description: "Daemonless container engine by Red Hat",
+        icon: "podman",
+      },
+      {
+        id: "rancher",
+        name: "Rancher Desktop",
+        type: "rancher",
+        socketCandidates: [
+          path.join(home, ".rd/docker.sock"),
+          path.join(home, ".rd2/docker.sock"),
+          "/var/run/docker.sock",
+        ],
+        appPaths: ["/opt/Rancher Desktop/rancher-desktop"],
+        configPaths: [path.join(home, ".rd"), path.join(home, ".rd2")],
+        description: "Container management and local Kubernetes",
+        icon: "rancher",
+      },
+    ]
+  : [
+      {
+        id: "docker-desktop",
+        name: "Docker Desktop",
+        type: "docker-desktop",
+        socketCandidates: [
+          path.join(home, ".docker/run/docker.sock"),
+          "/var/run/docker.sock",
+        ],
+        appPaths: ["/Applications/Docker.app"],
+        configPaths: [path.join(home, ".docker")],
+        description: "Official Docker Desktop daemon & VM",
+        icon: "docker",
+      },
+      {
+        id: "orbstack",
+        name: "OrbStack",
+        type: "orbstack",
+        socketCandidates: [
+          path.join(home, ".orbstack/run/docker.sock"),
+        ],
+        appPaths: ["/Applications/OrbStack.app"],
+        configPaths: [path.join(home, ".orbstack")],
+        description: "Ultra-fast, lightweight Docker & Linux alternative",
+        icon: "orbstack",
+      },
+      {
+        id: "rancher",
+        name: "Rancher Desktop",
+        type: "rancher",
+        socketCandidates: [
+          path.join(home, ".rd/docker.sock"),
+          path.join(home, ".rd2/docker.sock"),
+          "/var/run/docker.sock",
+        ],
+        appPaths: ["/Applications/Rancher Desktop.app"],
+        configPaths: [
+          path.join(home, ".rd"),
+          path.join(home, ".rd2"),
+        ],
+        description: "Container management and local Kubernetes",
+        icon: "rancher",
+      },
+      {
+        id: "colima",
+        name: "Colima",
+        type: "colima",
+        socketCandidates: [
+          path.join(home, ".colima/default/docker.sock"),
+          path.join(home, ".colima/docker.sock"),
+        ],
+        appPaths: [],
+        configPaths: [path.join(home, ".colima")],
+        description: "Minimal container runtimes on macOS with Lima",
+        icon: "colima",
+      },
+      {
+        id: "podman",
+        name: "Podman",
+        type: "podman",
+        socketCandidates: [
+          path.join(home, ".local/share/containers/podman/machine/podman-machine-default/podman.sock"),
+          path.join(home, ".local/share/containers/podman/machine/qemu/podman.sock"),
+          "/var/run/podman/podman.sock",
+        ],
+        appPaths: ["/Applications/Podman Desktop.app"],
+        configPaths: [path.join(home, ".config/containers")],
+        description: "Daemonless container engine by Red Hat",
+        icon: "podman",
+      },
+    ];
 
 async function pingSocket(socketPath: string): Promise<{
   ok: boolean;
@@ -116,7 +213,8 @@ async function pingSocket(socketPath: string): Promise<{
 }> {
   return new Promise((resolve) => {
     try {
-      if (!fs.existsSync(socketPath)) {
+      const isNamedPipe = socketPath.startsWith("//./pipe/") || socketPath.startsWith("\\\\.\\pipe\\");
+      if (!isNamedPipe && !fs.existsSync(socketPath)) {
         return resolve({ ok: false });
       }
 
@@ -516,7 +614,8 @@ export async function detectEngines(activeId?: string): Promise<{
       : candidate.socketCandidates;
 
     for (const sock of socketCandidates) {
-      if (fs.existsSync(sock)) {
+      const isPipe = sock.startsWith("//./pipe/") || sock.startsWith("\\\\.\\pipe\\");
+      if (isPipe || fs.existsSync(sock)) {
         resolvedSocket = sock;
         const ping = await pingSocket(sock);
         if (ping.ok) {
@@ -544,11 +643,11 @@ export async function detectEngines(activeId?: string): Promise<{
     }
 
     let status: "running" | "stopped" | "not_installed" = "not_installed";
-    if (candidate.id === "docker-desktop" && !installedAppPath) {
+    if (candidate.id === "docker-desktop" && !installedAppPath && !hasConfig && !isWin) {
       status = "not_installed";
     } else if (isRunning) {
       status = "running";
-    } else if (installedAppPath || hasConfig || fs.existsSync(resolvedSocket)) {
+    } else if (installedAppPath || hasConfig || (resolvedSocket.startsWith("//./pipe/") || resolvedSocket.startsWith("\\\\.\\pipe\\") ? isWin : fs.existsSync(resolvedSocket))) {
       status = "stopped";
     }
 
