@@ -124,6 +124,120 @@ async fn copy_host_file_to_container(
     }
 }
 
+#[tauri::command]
+async fn copy_file_from_container(
+    container_id: String,
+    file_path: String,
+) -> Result<String, String> {
+    let base_name = std::path::Path::new(&file_path)
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| "file".to_string());
+
+    let drag_cache_dir = std::path::PathBuf::from("/tmp/ilc-drag");
+    let _ = std::fs::create_dir_all(&drag_cache_dir);
+
+    let session_dir = drag_cache_dir.join(format!("{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis()));
+    let _ = std::fs::create_dir_all(&session_dir);
+
+    let dest_file = session_dir.join(&base_name);
+
+    let home = std::env::var("HOME").unwrap_or_else(|_| "/Users".to_string());
+    let default_paths = format!(
+        "/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin:{}/.docker/bin:{}/.orbstack/bin:{}/.rd/bin:{}/.local/bin",
+        home, home, home, home
+    );
+    let current_path = std::env::var("PATH").unwrap_or_default();
+    let full_path = format!("{}:{}", default_paths, current_path);
+
+    let docker_candidates = [
+        "/usr/local/bin/docker",
+        "/opt/homebrew/bin/docker",
+        "/usr/bin/docker",
+        "docker",
+    ];
+    let docker_bin = docker_candidates
+        .iter()
+        .find(|&&p| std::path::Path::new(p).exists())
+        .copied()
+        .unwrap_or("docker");
+
+    let output = Command::new(docker_bin)
+        .env("PATH", &full_path)
+        .args(["cp", &format!("{}:{}", container_id, file_path), &dest_file.to_string_lossy()])
+        .output();
+
+    match output {
+        Ok(out) if out.status.success() => Ok(dest_file.to_string_lossy().to_string()),
+        Ok(out) => {
+            let err_msg = String::from_utf8_lossy(&out.stderr).trim().to_string();
+            Err(if !err_msg.is_empty() { err_msg } else { format!("Failed with code {:?}", out.status.code()) })
+        }
+        Err(e) => Err(format!("Failed to run docker cp: {}", e)),
+    }
+}
+
+#[tauri::command]
+async fn prepare_container_drag_files(
+    container_id: String,
+    file_paths: Vec<String>,
+) -> Result<Vec<String>, String> {
+    let drag_cache_dir = std::path::PathBuf::from("/tmp/ilc-drag");
+    let _ = std::fs::create_dir_all(&drag_cache_dir);
+
+    let session_dir = drag_cache_dir.join(format!("{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis()));
+    let _ = std::fs::create_dir_all(&session_dir);
+
+    let home = std::env::var("HOME").unwrap_or_else(|_| "/Users".to_string());
+    let default_paths = format!(
+        "/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin:{}/.docker/bin:{}/.orbstack/bin:{}/.rd/bin:{}/.local/bin",
+        home, home, home, home
+    );
+    let current_path = std::env::var("PATH").unwrap_or_default();
+    let full_path = format!("{}:{}", default_paths, current_path);
+
+    let docker_candidates = [
+        "/usr/local/bin/docker",
+        "/opt/homebrew/bin/docker",
+        "/usr/bin/docker",
+        "docker",
+    ];
+    let docker_bin = docker_candidates
+        .iter()
+        .find(|&&p| std::path::Path::new(p).exists())
+        .copied()
+        .unwrap_or("docker");
+
+    let mut result_paths = Vec::new();
+
+    for file_path in file_paths {
+        let base_name = std::path::Path::new(&file_path)
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| "file".to_string());
+
+        let dest_file = session_dir.join(&base_name);
+
+        let output = Command::new(docker_bin)
+            .env("PATH", &full_path)
+            .args(["cp", &format!("{}:{}", container_id, file_path), &dest_file.to_string_lossy()])
+            .output();
+
+        match output {
+            Ok(out) if out.status.success() => {
+                result_paths.push(dest_file.to_string_lossy().to_string());
+            }
+            Ok(out) => {
+                let err_msg = String::from_utf8_lossy(&out.stderr).trim().to_string();
+                return Err(if !err_msg.is_empty() { err_msg } else { format!("Failed to copy file: {:?}", file_path) });
+            }
+            Err(e) => return Err(format!("Failed to run docker cp: {}", e)),
+        }
+    }
+
+    Ok(result_paths)
+}
+
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -366,6 +480,7 @@ fn find_server_script(app: &tauri::AppHandle) -> Option<PathBuf> {
 
 fn main() {
     let app = tauri::Builder::default()
+        .plugin(tauri_plugin_drag::init())
         .manage(BackgroundServer(Mutex::new(None)))
         .invoke_handler(tauri::generate_handler![
             open_native_window,
@@ -373,7 +488,9 @@ fn main() {
             broadcast_theme_settings,
             check_fullscreen,
             drag_window,
-            copy_host_file_to_container
+            copy_host_file_to_container,
+            copy_file_from_container,
+            prepare_container_drag_files
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();

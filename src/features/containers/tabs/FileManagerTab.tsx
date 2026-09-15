@@ -158,6 +158,8 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
     message: string;
   } | null>(null);
 
+  const [dropTarget, setDropTarget] = useState<ContainerFileItem | null>(null);
+
   const lastProcessedPathsRef = useRef<{ timestamp: number; key: string }>({
     timestamp: 0,
     key: "",
@@ -196,10 +198,18 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
   const editorGutterRef = useRef<HTMLDivElement>(null);
   const editorTextareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const gridContainerRef = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const lastClickedIndexRef = useRef<number>(-1);
   const shiftAnchorIndexRef = useRef<number>(-1);
   const cursorIndexRef = useRef<number>(-1);
+  const isDraggingInternalRef = useRef<boolean>(false);
+  const lastOperationRef = useRef<
+    | { type: "move"; items: { from: string; to: string }[] }
+    | { type: "copy"; items: { to: string }[] }
+    | null
+  >(null);
 
   const currentPathRef = useRef(currentPath);
   currentPathRef.current = currentPath;
@@ -322,6 +332,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
         const currentWebview = getCurrentWebview();
         const unlistenFn = await currentWebview.onDragDropEvent(async (event) => {
           if (!isMounted) return;
+          if (isDraggingInternalRef.current) return;
           if (event.payload.type === "over" || event.payload.type === "enter") {
             setIsDraggingOver(true);
           } else if (event.payload.type === "drop") {
@@ -344,6 +355,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
         const { listen } = await import("@tauri-apps/api/event");
         const unlistenFn = await listen<any>("tauri://drag-drop", async (event) => {
           if (!isMounted) return;
+          if (isDraggingInternalRef.current) return;
           const payload = event.payload;
           if (payload.type === "over" || payload.type === "enter") {
             setIsDraggingOver(true);
@@ -374,7 +386,15 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
   useEffect(() => {
     let dragEnterCount = 0;
 
+    const hasExternalFiles = (e: DragEvent): boolean => {
+      if (isDraggingInternalRef.current) return false;
+      if (!e.dataTransfer) return false;
+      const types = Array.from(e.dataTransfer.types || []);
+      return types.includes("Files") && !types.includes("application/json");
+    };
+
     const onDragOver = (e: DragEvent) => {
+      if (!hasExternalFiles(e)) return;
       e.preventDefault();
       if (e.dataTransfer) {
         e.dataTransfer.dropEffect = "copy";
@@ -383,6 +403,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
     };
 
     const onDragEnter = (e: DragEvent) => {
+      if (!hasExternalFiles(e)) return;
       e.preventDefault();
       dragEnterCount++;
       setIsDraggingOver(true);
@@ -630,6 +651,9 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
     if (!clipboard || clipboard.items.length === 0) return;
     setIsLoading(true);
     const existingNames = new Set(files.map((f) => f.name));
+    const movedItems: { from: string; to: string }[] = [];
+    const copiedItems: { to: string }[] = [];
+
     for (const item of clipboard.items) {
       let destName = item.name;
       if (clipboard.action === "copy") {
@@ -646,15 +670,48 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
         currentPath === "/" ? `/${destName}` : `${currentPath}/${destName}`;
       if (clipboard.action === "copy") {
         await copyContainerFile(containerId, item.path, target);
+        copiedItems.push({ to: target });
       } else {
         await renameContainerFile(containerId, item.path, target);
+        movedItems.push({ from: item.path, to: target });
       }
     }
-    if (clipboard.action === "cut") setClipboard(null);
+
+    if (clipboard.action === "cut") {
+      setClipboard(null);
+      if (movedItems.length > 0) {
+        lastOperationRef.current = { type: "move", items: movedItems };
+      }
+    } else if (copiedItems.length > 0) {
+      lastOperationRef.current = { type: "copy", items: copiedItems };
+    }
+
     await loadFiles(currentPath);
     setIsLoading(false);
     setContextMenu(null);
   }, [clipboard, containerId, currentPath, files, loadFiles]);
+
+  const handleUndo = useCallback(async () => {
+    const op = lastOperationRef.current;
+    if (!op) return;
+
+    lastOperationRef.current = null;
+    setIsLoading(true);
+
+    if (op.type === "move") {
+      for (const item of op.items) {
+        await renameContainerFile(containerId, item.to, item.from);
+      }
+    } else if (op.type === "copy") {
+      await deleteContainerFiles(
+        containerId,
+        op.items.map((i) => i.to)
+      );
+    }
+
+    await loadFiles(currentPath);
+    setIsLoading(false);
+  }, [containerId, currentPath, loadFiles]);
 
   const handleDownload = async (item?: ContainerFileItem) => {
     const target = item || files.find((f) => selectedPaths.has(f.path));
@@ -672,45 +729,187 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
     setContextMenu(null);
   };
 
-  const handleFileDragStart = async (e: React.DragEvent, file: ContainerFileItem) => {
+  const handleFileDragStart = (e: React.DragEvent, file: ContainerFileItem) => {
     e.stopPropagation();
-    if (file.isDirectory) return;
 
     const filesToDrag = selectedPaths.has(file.path)
-      ? files.filter((f) => selectedPaths.has(f.path) && !f.isDirectory)
+      ? files.filter((f) => selectedPaths.has(f.path))
       : [file];
 
     if (filesToDrag.length === 0) return;
 
-    try {
-      const { invoke } = await import("@tauri-apps/api/core");
-      const { startDrag } = await import("@crabnebula/tauri-plugin-drag");
+    isDraggingInternalRef.current = true;
+    e.dataTransfer.effectAllowed = "copy";
+    e.dataTransfer.setData(
+      "application/json",
+      JSON.stringify({
+        type: "container-files",
+        paths: filesToDrag.map((f) => f.path),
+        names: filesToDrag.map((f) => f.name),
+      })
+    );
+  };
 
-      setDropStatus({ type: "loading", message: `Preparing ${filesToDrag.length} file(s)...` });
+  const handleFileDragEnd = () => {
+    isDraggingInternalRef.current = false;
+    setDropTarget(null);
+    setIsDraggingOver(false);
+  };
 
-      const tempPaths: string[] = [];
-      for (const f of filesToDrag) {
-        const tempPath = await invoke<string>("copy_file_from_container", {
-          containerId,
-          filePath: f.path,
-        });
-        tempPaths.push(tempPath);
+  const handleItemDragOver = (e: React.DragEvent, targetItem: ContainerFileItem) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "copy";
+    setDropTarget(targetItem);
+  };
+
+  const handleItemDragLeave = (e: React.DragEvent, targetItem: ContainerFileItem) => {
+    e.stopPropagation();
+    if (dropTarget?.path === targetItem.path) {
+      setDropTarget(null);
+    }
+  };
+
+  const handleItemDrop = async (e: React.DragEvent, targetItem: ContainerFileItem) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDropTarget(null);
+    setIsDraggingOver(false);
+
+    const internalData = e.dataTransfer.getData("application/json");
+    if (internalData) {
+      try {
+        const parsed = JSON.parse(internalData);
+        if (parsed.type === "container-files" && Array.isArray(parsed.paths)) {
+          const sourcePaths: string[] = parsed.paths;
+          if (sourcePaths.includes(targetItem.path)) return;
+
+          let targetDir = targetItem.path;
+          if (!targetItem.isDirectory) {
+            const parts = targetItem.path.split("/").filter(Boolean);
+            parts.pop();
+            targetDir = parts.length === 0 ? "/" : `/${parts.join("/")}`;
+          }
+
+          setIsLoading(true);
+          const currentDirFiles = targetDir === currentPath ? files : (await fetchContainerFiles(containerId, targetDir)).entries || [];
+          const existingNames = new Set(currentDirFiles.map((f) => f.name));
+          const movedItems: { from: string; to: string }[] = [];
+
+          for (const srcPath of sourcePaths) {
+            const fileName = srcPath.split("/").filter(Boolean).pop() || "file";
+            let destName = fileName;
+            if (existingNames.has(fileName)) {
+              destName = getUniqueDuplicateName(fileName, existingNames);
+            }
+            existingNames.add(destName);
+            const targetDest = targetDir === "/" ? `/${destName}` : `${targetDir}/${destName}`;
+            if (srcPath !== targetDest) {
+              await renameContainerFile(containerId, srcPath, targetDest);
+              movedItems.push({ from: srcPath, to: targetDest });
+            }
+          }
+
+          if (movedItems.length > 0) {
+            lastOperationRef.current = { type: "move", items: movedItems };
+          }
+
+          await loadFiles(currentPath);
+          setIsLoading(false);
+          setDropStatus({ type: "success", message: fm.uploadSuccess });
+          setTimeout(() => setDropStatus(null), 3000);
+          return;
+        }
+      } catch {}
+    }
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      let targetDir = targetItem.path;
+      if (!targetItem.isDirectory) {
+        const parts = targetItem.path.split("/").filter(Boolean);
+        parts.pop();
+        targetDir = parts.length === 0 ? "/" : `/${parts.join("/")}`;
+      }
+      const filesList = Array.from(e.dataTransfer.files);
+      setDropStatus({
+        type: "loading",
+        message: `${fm.uploading} (${filesList.length})`,
+      });
+      setIsLoading(true);
+
+      let anyError = false;
+      let successCount = 0;
+      for (const file of filesList) {
+        try {
+          const res = await uploadContainerFile(containerId, targetDir, file);
+          if (res.ok) successCount++;
+          else anyError = true;
+        } catch {
+          anyError = true;
+        }
       }
 
-      setDropStatus(null);
+      await loadFiles(currentPath);
+      setIsLoading(false);
 
-      await startDrag({
-        item: tempPaths,
-        icon: tempPaths[0],
-      });
-    } catch (err) {
-      setDropStatus(null);
+      if (anyError && successCount === 0) {
+        setDropStatus({ type: "error", message: fm.uploadFailed });
+      } else if (anyError) {
+        setDropStatus({
+          type: "error",
+          message: `${fm.uploadSuccess} (${successCount}/${filesList.length}) - ${fm.uploadFailed}`,
+        });
+      } else {
+        setDropStatus({ type: "success", message: fm.uploadSuccess });
+      }
+
+      setTimeout(() => setDropStatus(null), 4000);
     }
   };
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingOver(false);
+    setDropTarget(null);
+
+    const internalData = e.dataTransfer.getData("application/json");
+    if (internalData) {
+      try {
+        const parsed = JSON.parse(internalData);
+        if (parsed.type === "container-files" && Array.isArray(parsed.paths)) {
+          const sourcePaths: string[] = parsed.paths;
+          const targetDir = currentPathRef.current;
+
+          setIsLoading(true);
+          const existingNames = new Set(files.map((f) => f.name));
+          const movedItems: { from: string; to: string }[] = [];
+
+          for (const srcPath of sourcePaths) {
+            const fileName = srcPath.split("/").filter(Boolean).pop() || "file";
+            let destName = fileName;
+            if (existingNames.has(fileName)) {
+              destName = getUniqueDuplicateName(fileName, existingNames);
+            }
+            existingNames.add(destName);
+            const targetDest = targetDir === "/" ? `/${destName}` : `${targetDir}/${destName}`;
+            if (srcPath !== targetDest) {
+              await renameContainerFile(containerId, srcPath, targetDest);
+              movedItems.push({ from: srcPath, to: targetDest });
+            }
+          }
+
+          if (movedItems.length > 0) {
+            lastOperationRef.current = { type: "move", items: movedItems };
+          }
+
+          await loadFiles(targetDir);
+          setIsLoading(false);
+          setDropStatus({ type: "success", message: fm.uploadSuccess });
+          setTimeout(() => setDropStatus(null), 3000);
+          return;
+        }
+      } catch {}
+    }
 
     if (Date.now() - lastProcessedPathsRef.current.timestamp < 1500) {
       return;
@@ -834,7 +1033,10 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
       const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
       const cmdKey = isMac ? e.metaKey : e.ctrlKey;
 
-      if (cmdKey && e.key.toLowerCase() === "c") {
+      if (cmdKey && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        handleUndo();
+      } else if (cmdKey && e.key.toLowerCase() === "c") {
         e.preventDefault();
         handleCopy();
       } else if (cmdKey && e.key.toLowerCase() === "x") {
@@ -879,11 +1081,34 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
             ? sortedFiles.findIndex((f) => selectedPaths.has(f.path))
             : -1);
 
+        let cols = 1;
+        if (viewMode === "grid" && gridContainerRef.current) {
+          const containerWidth = gridContainerRef.current.clientWidth;
+          const itemEls = gridContainerRef.current.children;
+          if (itemEls.length > 1) {
+            const firstTop = (itemEls[0] as HTMLElement).offsetTop;
+            let count = 0;
+            for (let i = 0; i < itemEls.length; i++) {
+              if ((itemEls[i] as HTMLElement).offsetTop === firstTop) count++;
+              else break;
+            }
+            if (count > 0) cols = count;
+          } else {
+            cols = Math.max(1, Math.floor(containerWidth / 92));
+          }
+        }
+
         let nextIdx: number;
-        if (e.key === "ArrowDown" || e.key === "ArrowRight") {
-          nextIdx = currentIdx < sortedFiles.length - 1 ? currentIdx + 1 : 0;
+        if (currentIdx === -1) {
+          nextIdx = 0;
+        } else if (e.key === "ArrowRight") {
+          nextIdx = Math.min(sortedFiles.length - 1, currentIdx + 1);
+        } else if (e.key === "ArrowLeft") {
+          nextIdx = Math.max(0, currentIdx - 1);
+        } else if (e.key === "ArrowDown") {
+          nextIdx = Math.min(sortedFiles.length - 1, currentIdx + cols);
         } else {
-          nextIdx = currentIdx > 0 ? currentIdx - 1 : sortedFiles.length - 1;
+          nextIdx = Math.max(0, currentIdx - cols);
         }
 
         cursorIndexRef.current = nextIdx;
@@ -911,11 +1136,13 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
     files,
     sortedFiles,
     selectedPaths,
+    viewMode,
     clipboard,
     currentPath,
     handleCopy,
     handleCut,
     handlePaste,
+    handleUndo,
     viewerModal,
     renameModal,
     newFolderModal,
@@ -946,7 +1173,9 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
       onContextMenu={(e) => handleContextMenu(e)}
       onDragOver={(e) => {
         e.preventDefault();
-        setIsDraggingOver(true);
+        if (!isDraggingInternalRef.current) {
+          setIsDraggingOver(true);
+        }
       }}
       onDragLeave={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node)) {
@@ -1176,6 +1405,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
       </div>
 
       <div
+        ref={scrollContainerRef}
         className="flex-1 overflow-auto p-2 relative"
         onClick={() => {
           setSelectedPaths(new Set());
@@ -1273,16 +1503,23 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
               {sortedFiles.map((file) => {
                 const Icon = getFileIcon(file);
                 const isSelected = selectedPaths.has(file.path);
+                const isDropTarget = dropTarget?.path === file.path;
                 return (
                   <div
                     key={file.path}
-                    draggable={!file.isDirectory}
+                    draggable={true}
                     onDragStart={(e) => handleFileDragStart(e, file)}
+                    onDragEnd={handleFileDragEnd}
+                    onDragOver={(e) => handleItemDragOver(e, file)}
+                    onDragLeave={(e) => handleItemDragLeave(e, file)}
+                    onDrop={(e) => handleItemDrop(e, file)}
                     onClick={(e) => handleSelect(e, file)}
                     onDoubleClick={() => handleItemDoubleClick(file)}
                     onContextMenu={(e) => handleContextMenu(e, file)}
                     className={`grid grid-cols-12 gap-2 px-3 py-2 items-center cursor-pointer rounded-lg transition-colors ${
-                      isSelected
+                      isDropTarget
+                        ? "bg-primary/30 ring-2 ring-primary border-primary text-foreground"
+                        : isSelected
                         ? "bg-primary text-white font-semibold shadow-xs"
                         : "hover:bg-surface-secondary/60 text-foreground"
                     }`}
@@ -1319,20 +1556,27 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(84px,1fr))] gap-2 p-2">
+          <div ref={gridContainerRef} className="grid grid-cols-[repeat(auto-fill,minmax(84px,1fr))] gap-2 p-2">
             {sortedFiles.map((file) => {
               const Icon = getFileIcon(file);
               const isSelected = selectedPaths.has(file.path);
+              const isDropTarget = dropTarget?.path === file.path;
               return (
                 <div
                   key={file.path}
-                  draggable={!file.isDirectory}
+                  draggable={true}
                   onDragStart={(e) => handleFileDragStart(e, file)}
+                  onDragEnd={handleFileDragEnd}
+                  onDragOver={(e) => handleItemDragOver(e, file)}
+                  onDragLeave={(e) => handleItemDragLeave(e, file)}
+                  onDrop={(e) => handleItemDrop(e, file)}
                   onClick={(e) => handleSelect(e, file)}
                   onDoubleClick={() => handleItemDoubleClick(file)}
                   onContextMenu={(e) => handleContextMenu(e, file)}
                   className={`flex flex-col items-center justify-center p-2 rounded-xl cursor-pointer border transition-all text-center min-w-0 ${
-                    isSelected
+                    isDropTarget
+                      ? "bg-primary/30 border-primary ring-2 ring-primary scale-[1.03]"
+                      : isSelected
                       ? "bg-primary/20 border-primary ring-2 ring-primary/60 shadow-md scale-[1.02]"
                       : "bg-surface/50 hover:bg-surface border-border/60 hover:border-border"
                   }`}
