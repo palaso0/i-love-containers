@@ -387,7 +387,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   }, []);
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>("containers");
+  const [activeTab, setActiveTab] = useState<ActiveTab>("overview");
   const [selectedContainerId, setSelectedContainerId] = useState<string | null>(
     null,
   );
@@ -396,60 +396,72 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   >("overview");
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
 
-  const [navigationHistory, setNavigationHistory] = useState<NavigationEntry[]>(
-    [
-      {
-        activeTab: "containers",
-        selectedContainerId: null,
-        containerDetailTab: "overview",
-        selectedImageId: null,
-      },
-    ],
-  );
+  const [navigationHistory, setNavigationHistory] = useState<NavigationEntry[]>([
+    {
+      activeTab: "overview",
+      selectedContainerId: null,
+      containerDetailTab: "overview",
+      selectedImageId: null,
+    },
+  ]);
   const [historyIndex, setHistoryIndex] = useState<number>(0);
+
+  const historyIndexRef = useRef(0);
+  const navigationHistoryRef = useRef<NavigationEntry[]>([
+    {
+      activeTab: "overview",
+      selectedContainerId: null,
+      containerDetailTab: "overview",
+      selectedImageId: null,
+    },
+  ]);
   const isNavigatingHistoryRef = useRef(false);
 
-  const pushHistory = useCallback(
-    (newEntry: Partial<NavigationEntry>) => {
-      if (isNavigatingHistoryRef.current) return;
-      setNavigationHistory((prev) => {
-        const current = prev[historyIndex] || {
-          activeTab: "containers",
-          selectedContainerId: null,
-          containerDetailTab: "overview",
-          selectedImageId: null,
-        };
-        const nextEntry: NavigationEntry = {
-          activeTab: newEntry.activeTab ?? current.activeTab,
-          selectedContainerId:
-            newEntry.selectedContainerId !== undefined
-              ? newEntry.selectedContainerId
-              : current.selectedContainerId,
-          containerDetailTab:
-            newEntry.containerDetailTab ?? current.containerDetailTab,
-          selectedImageId:
-            newEntry.selectedImageId !== undefined
-              ? newEntry.selectedImageId
-              : current.selectedImageId,
-        };
+  const pushHistory = useCallback((newEntry: Partial<NavigationEntry>) => {
+    if (isNavigatingHistoryRef.current) return;
 
-        if (
-          nextEntry.activeTab === current.activeTab &&
-          nextEntry.selectedContainerId === current.selectedContainerId &&
-          nextEntry.containerDetailTab === current.containerDetailTab &&
-          nextEntry.selectedImageId === current.selectedImageId
-        ) {
-          return prev;
-        }
+    const currentHistory = navigationHistoryRef.current;
+    const currentIndex = historyIndexRef.current;
+    const current = currentHistory[currentIndex] || {
+      activeTab: "overview",
+      selectedContainerId: null,
+      containerDetailTab: "overview",
+      selectedImageId: null,
+    };
 
-        const sliced = prev.slice(0, historyIndex + 1);
-        sliced.push(nextEntry);
-        setHistoryIndex(sliced.length - 1);
-        return sliced;
-      });
-    },
-    [historyIndex],
-  );
+    const nextEntry: NavigationEntry = {
+      activeTab: newEntry.activeTab ?? current.activeTab,
+      selectedContainerId:
+        newEntry.selectedContainerId !== undefined
+          ? newEntry.selectedContainerId
+          : current.selectedContainerId,
+      containerDetailTab:
+        newEntry.containerDetailTab ?? current.containerDetailTab,
+      selectedImageId:
+        newEntry.selectedImageId !== undefined
+          ? newEntry.selectedImageId
+          : current.selectedImageId,
+    };
+
+    if (
+      nextEntry.activeTab === current.activeTab &&
+      nextEntry.selectedContainerId === current.selectedContainerId &&
+      nextEntry.containerDetailTab === current.containerDetailTab &&
+      nextEntry.selectedImageId === current.selectedImageId
+    ) {
+      return;
+    }
+
+    const sliced = currentHistory.slice(0, currentIndex + 1);
+    sliced.push(nextEntry);
+    const newIdx = sliced.length - 1;
+
+    navigationHistoryRef.current = sliced;
+    historyIndexRef.current = newIdx;
+
+    setNavigationHistory(sliced);
+    setHistoryIndex(newIdx);
+  }, []);
 
   const handleSetActiveTab = useCallback(
     (tab: ActiveTab) => {
@@ -487,38 +499,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const canGoForward = historyIndex < navigationHistory.length - 1;
 
   const goBack = useCallback(() => {
-    if (historyIndex <= 0) return;
-    const prevIdx = historyIndex - 1;
-    const target = navigationHistory[prevIdx];
+    const currentIdx = historyIndexRef.current;
+    if (currentIdx <= 0) return;
+    const prevIdx = currentIdx - 1;
+    const target = navigationHistoryRef.current[prevIdx];
     if (!target) return;
 
     isNavigatingHistoryRef.current = true;
+    historyIndexRef.current = prevIdx;
     setHistoryIndex(prevIdx);
+
     setActiveTab(target.activeTab);
     setSelectedContainerId(target.selectedContainerId);
     setContainerDetailTab(target.containerDetailTab);
     setSelectedImageId(target.selectedImageId);
+
     setTimeout(() => {
       isNavigatingHistoryRef.current = false;
-    }, 60);
-  }, [historyIndex, navigationHistory]);
+    }, 100);
+  }, []);
 
   const goForward = useCallback(() => {
-    if (historyIndex >= navigationHistory.length - 1) return;
-    const nextIdx = historyIndex + 1;
-    const target = navigationHistory[nextIdx];
+    const currentIdx = historyIndexRef.current;
+    if (currentIdx >= navigationHistoryRef.current.length - 1) return;
+    const nextIdx = currentIdx + 1;
+    const target = navigationHistoryRef.current[nextIdx];
     if (!target) return;
 
     isNavigatingHistoryRef.current = true;
+    historyIndexRef.current = nextIdx;
     setHistoryIndex(nextIdx);
+
     setActiveTab(target.activeTab);
     setSelectedContainerId(target.selectedContainerId);
     setContainerDetailTab(target.containerDetailTab);
     setSelectedImageId(target.selectedImageId);
+
     setTimeout(() => {
       isNavigatingHistoryRef.current = false;
-    }, 60);
-  }, [historyIndex, navigationHistory]);
+    }, 100);
+  }, []);
 
   const [systemOverview, setSystemOverview] = useState<SystemOverview | null>(
     null,

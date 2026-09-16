@@ -22,6 +22,7 @@ export const LogsTab: React.FC<LogsTabProps> = ({ containerId }) => {
   const { theme } = useAppStore();
   const isDark = theme === "dark";
   const [logs, setLogs] = useState<string[]>([]);
+  const [clearedTimestamp, setClearedTimestamp] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
   const [showTimestamps, setShowTimestamps] = useState(true);
@@ -33,6 +34,11 @@ export const LogsTab: React.FC<LogsTabProps> = ({ containerId }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setLogs([]);
+    setClearedTimestamp(null);
+  }, [containerId]);
+
+  useEffect(() => {
     let isMounted = true;
 
     const fetchLogs = async () => {
@@ -40,7 +46,16 @@ export const LogsTab: React.FC<LogsTabProps> = ({ containerId }) => {
       try {
         const realLogs = await api.fetchContainerLogs(containerId);
         if (isMounted && Array.isArray(realLogs)) {
-          setLogs(realLogs);
+          if (!clearedTimestamp) {
+            setLogs(realLogs);
+          } else {
+            const newerLogs = realLogs.filter((log) => {
+              const parts = log.split(" ");
+              const logTime = parts[0];
+              return logTime > clearedTimestamp;
+            });
+            setLogs(newerLogs);
+          }
         }
       } catch (err) {
         console.error("Failed to fetch container logs:", err);
@@ -54,7 +69,7 @@ export const LogsTab: React.FC<LogsTabProps> = ({ containerId }) => {
       isMounted = false;
       clearInterval(streamInterval);
     };
-  }, [containerId, isPaused]);
+  }, [containerId, isPaused, clearedTimestamp]);
 
   useEffect(() => {
     if (autoScroll && containerRef.current) {
@@ -181,7 +196,10 @@ export const LogsTab: React.FC<LogsTabProps> = ({ containerId }) => {
           <div className="h-4 w-[1px] bg-border mx-0.5" />
 
           <button
-            onClick={() => setLogs([])}
+            onClick={() => {
+              setLogs([]);
+              setClearedTimestamp(new Date().toISOString());
+            }}
             className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
             title="Clear logs"
           >

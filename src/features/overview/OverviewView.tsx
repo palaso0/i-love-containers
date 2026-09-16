@@ -239,7 +239,7 @@ export const OverviewView: React.FC = () => {
             className="px-2.5 py-1 rounded-lg text-2xs font-medium text-muted-foreground hover:text-foreground bg-surface-secondary/70 border border-border/60 hover:bg-surface-secondary transition-colors flex items-center space-x-1.5"
           >
             <Sliders className="w-3 h-3 text-primary" />
-            <span>Engines & Settings</span>
+            <span>{t.overview.enginesAndSettings}</span>
           </button>
         </div>
       </div>
@@ -247,11 +247,11 @@ export const OverviewView: React.FC = () => {
       <div className="flex items-center justify-between border-b border-border/70 pb-3">
         <div>
           <h1 className="text-base font-semibold text-foreground tracking-tight">
-            Overview
+            {t.overview.title}
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            System overview and running engine resources
-            {viewMode === "minimal" && " • Minimal Mode"}
+            {t.overview.subtitle}
+            {viewMode === "minimal" && ` • ${t.overview.minimalMode}`}
           </p>
         </div>
 
@@ -277,14 +277,14 @@ export const OverviewView: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <span className="w-2 h-2 rounded-full bg-status-running shadow-[0_0_6px_rgba(48,209,88,0.6)]" />
                 <span className="text-sm font-semibold text-foreground">
-                  {runningContainers.length} Running
+                  {runningContainers.length} {t.overview.running}
                 </span>
               </div>
               <span className="text-muted-foreground text-xs">•</span>
               <div className="flex items-center space-x-2">
                 <span className="w-2 h-2 rounded-full bg-status-stopped" />
                 <span className="text-sm font-semibold text-muted-foreground">
-                  {stoppedContainers.length} Stopped
+                  {stoppedContainers.length} {t.overview.stopped}
                 </span>
               </div>
             </div>
@@ -293,7 +293,7 @@ export const OverviewView: React.FC = () => {
               onClick={() => setActiveTab("containers")}
               className="text-xs font-medium text-primary hover:underline flex items-center space-x-1"
             >
-              <span>View All Containers</span>
+              <span>{t.overview.viewAllContainers}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -351,7 +351,7 @@ export const OverviewView: React.FC = () => {
                       ) : (
                         <Play className="w-2.5 h-2.5 fill-current" />
                       )}
-                      <span>{isRunning ? "Stop" : "Start"}</span>
+                      <span>{isRunning ? t.overview.stop : t.overview.start}</span>
                     </button>
                   </div>
                 </div>
@@ -367,7 +367,7 @@ export const OverviewView: React.FC = () => {
               className="bg-surface/80 backdrop-blur-sm border border-border/70 hover:border-border hover:bg-surface rounded-xl p-3.5 transition-all cursor-pointer group shadow-xs"
             >
               <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground/80 mb-2">
-                <span>CONTAINERS</span>
+                <span>{t.overview.containers}</span>
                 <Box className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
               <div className="flex items-baseline space-x-2">
@@ -375,7 +375,9 @@ export const OverviewView: React.FC = () => {
                   {runningContainers.length}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  running • {stoppedContainers.length} stopped
+                  {t.overview.runningStat
+                    .replace("{running}", String(runningContainers.length))
+                    .replace("{stopped}", String(stoppedContainers.length))}
                 </span>
               </div>
               <div className="w-full bg-surface-secondary h-1 rounded-full overflow-hidden mt-3">
@@ -393,17 +395,17 @@ export const OverviewView: React.FC = () => {
               className="bg-surface/80 backdrop-blur-sm border border-border/70 hover:border-border hover:bg-surface rounded-xl p-3.5 transition-all cursor-pointer group shadow-xs"
             >
               <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground/80 mb-2">
-                <span>IMAGES</span>
+                <span>{t.overview.images}</span>
                 <Layers className="w-4 h-4 text-muted-foreground group-hover:text-sky-400 transition-colors" />
               </div>
               <div className="flex items-baseline space-x-2">
                 <span className="text-2xl font-semibold text-foreground tracking-tight">
                   {systemOverview?.totalImages ?? 0}
                 </span>
-                <span className="text-xs text-muted-foreground">cached</span>
+                <span className="text-xs text-muted-foreground">{t.overview.cached}</span>
               </div>
               <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-                <span>Base layers</span>
+                <span>{t.overview.baseLayers}</span>
                 <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </div>
@@ -413,17 +415,17 @@ export const OverviewView: React.FC = () => {
               className="bg-surface/80 backdrop-blur-sm border border-border/70 hover:border-border hover:bg-surface rounded-xl p-3.5 transition-all cursor-pointer group shadow-xs"
             >
               <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground/80 mb-2">
-                <span>VOLUMES</span>
+                <span>{t.overview.volumes}</span>
                 <HardDrive className="w-4 h-4 text-muted-foreground group-hover:text-amber-400 transition-colors" />
               </div>
               <div className="flex items-baseline space-x-2">
                 <span className="text-2xl font-semibold text-foreground tracking-tight">
                   {systemOverview?.totalVolumes ?? 0}
                 </span>
-                <span className="text-xs text-muted-foreground">mounts</span>
+                <span className="text-xs text-muted-foreground">{t.overview.mounts}</span>
               </div>
               <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-                <span>Persistent stores</span>
+                <span>{t.overview.persistentStores}</span>
                 <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </div>
@@ -433,17 +435,17 @@ export const OverviewView: React.FC = () => {
               className="bg-surface/80 backdrop-blur-sm border border-border/70 hover:border-border hover:bg-surface rounded-xl p-3.5 transition-all cursor-pointer group shadow-xs"
             >
               <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground/80 mb-2">
-                <span>NETWORKS</span>
+                <span>{t.overview.networks}</span>
                 <Network className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
               <div className="flex items-baseline space-x-2">
                 <span className="text-2xl font-semibold text-foreground tracking-tight">
                   {systemOverview?.totalNetworks ?? 0}
                 </span>
-                <span className="text-xs text-muted-foreground">bridges</span>
+                <span className="text-xs text-muted-foreground">{t.overview.bridges}</span>
               </div>
               <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-                <span>Virtual topologies</span>
+                <span>{t.overview.virtualTopologies}</span>
                 <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </div>
@@ -454,7 +456,7 @@ export const OverviewView: React.FC = () => {
               <div className="flex items-center justify-between text-xs mb-2">
                 <span className="text-muted-foreground font-semibold flex items-center gap-1.5">
                   <Activity className="w-3.5 h-3.5 text-status-running" />
-                  Container CPU Usage
+                  {t.overview.containerCpuUsage}
                 </span>
                 <span className="font-semibold text-foreground font-mono text-xs">
                   {systemOverview?.systemCpuPercent ?? 0}%
@@ -474,7 +476,7 @@ export const OverviewView: React.FC = () => {
               <div className="flex items-center justify-between text-xs mb-2">
                 <span className="text-muted-foreground font-semibold flex items-center gap-1.5">
                   <Server className="w-3.5 h-3.5 text-sky-400" />
-                  Container Memory Usage
+                  {t.overview.containerMemoryUsage}
                 </span>
                 <span className="font-semibold text-foreground font-mono text-xs">
                   {formatBytes(systemOverview?.systemMemoryUsed ?? 0)} /{" "}
@@ -502,7 +504,7 @@ export const OverviewView: React.FC = () => {
             <div className="px-4 py-2.5 border-b border-border/70 flex items-center justify-between bg-surface-secondary/40">
               <div className="flex items-center space-x-2">
                 <span className="text-xs font-semibold text-foreground">
-                  Recent Containers
+                  {t.overview.recentContainers}
                 </span>
                 <span className="text-2xs font-mono text-muted-foreground bg-surface-secondary px-1.5 py-0.5 rounded-full">
                   {containers.length}
@@ -512,7 +514,7 @@ export const OverviewView: React.FC = () => {
                 onClick={() => setActiveTab("containers")}
                 className="text-xs font-medium text-primary hover:underline flex items-center space-x-1"
               >
-                <span>Manage all</span>
+                <span>{t.overview.manageAll}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -558,7 +560,7 @@ export const OverviewView: React.FC = () => {
                         </div>
                       ) : (
                         <span className="text-2xs font-mono text-muted-foreground hidden sm:inline">
-                          Exited
+                          {t.overview.exited}
                         </span>
                       )}
 
@@ -583,7 +585,7 @@ export const OverviewView: React.FC = () => {
                           <Play className="w-2.5 h-2.5 fill-current" />
                         )}
                         <span className="text-2xs">
-                          {isRunning ? "Stop" : "Start"}
+                          {isRunning ? t.overview.stop : t.overview.start}
                         </span>
                       </button>
                     </div>

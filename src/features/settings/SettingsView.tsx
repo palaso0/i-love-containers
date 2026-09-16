@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Server,
   Keyboard,
@@ -13,6 +13,8 @@ import {
   Sun,
   Moon,
   Laptop,
+  Terminal,
+  RotateCcw,
 } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { AppTheme, AccentColor, Language } from "@/types";
@@ -124,24 +126,24 @@ export const SettingsView: React.FC = () => {
     { id: "es", label: "Español" },
   ];
 
-  const hosts = [
-    {
-      id: "localhost",
-      name: "Local Engine",
-      socket: "unix:///var/run/docker.sock",
-    },
-    {
-      id: "production",
-      name: "Production Swarm",
-      socket: "ssh://root@prod.internal",
-    },
-    {
-      id: "server-01",
-      name: "Staging Cluster",
-      socket: "tcp://192.168.1.100:2375",
-    },
-    { id: "raspberrypi", name: "Homelab Pi", socket: "ssh://pi@pi.local" },
-  ];
+  const [customEndpoint, setCustomEndpoint] = useState(() => {
+    return selectedHost === "localhost" ? "" : selectedHost;
+  });
+
+  useEffect(() => {
+    setCustomEndpoint(selectedHost === "localhost" ? "" : selectedHost);
+  }, [selectedHost]);
+
+  const handleApplyEndpoint = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const trimmed = customEndpoint.trim();
+    setSelectedHost(trimmed ? trimmed : "localhost");
+  };
+
+  const handleResetToLocal = () => {
+    setCustomEndpoint("");
+    setSelectedHost("localhost");
+  };
 
   const isEs = language === "es";
 
@@ -465,57 +467,52 @@ export const SettingsView: React.FC = () => {
       </div>
 
       <div className="bg-surface/80 backdrop-blur-sm border border-border/70 rounded-xl p-4 space-y-3 shadow-xs">
-        <div className="flex items-center space-x-2">
-          <Server className="w-4 h-4 text-primary" />
-          <h2 className="text-xs font-semibold text-muted-foreground/80 uppercase tracking-wider">
-            {t.settings.hostsSection}
-          </h2>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Server className="w-4 h-4 text-primary" />
+            <h2 className="text-xs font-semibold text-muted-foreground/80 uppercase tracking-wider">
+              {t.settings.hostsSection}
+            </h2>
+          </div>
+          <div className="flex items-center space-x-2 text-2xs font-mono">
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                selectedHost === "localhost" ? "bg-status-running" : "bg-sky-400"
+              }`}
+            />
+            <span className="text-foreground font-medium">{selectedHost}</span>
+          </div>
         </div>
 
-        <div className="divide-y divide-border/60 border border-border/70 rounded-lg overflow-hidden bg-surface/50 text-xs">
-          {hosts.map((host) => {
-            const isSelected = selectedHost === host.id;
-            return (
-              <div
-                key={host.id}
-                onClick={() => setSelectedHost(host.id)}
-                className={`p-3 flex items-center justify-between cursor-pointer transition-colors ${
-                  isSelected
-                    ? "bg-surface-secondary/80 text-foreground"
-                    : "hover:bg-surface-hover text-muted-foreground"
-                }`}
-              >
-                <div className="flex items-center space-x-3">
-                  <span
-                    className={`w-2 h-2 rounded-full shrink-0 ${
-                      isSelected
-                        ? "bg-status-running shadow-[0_0_6px_rgba(48,209,88,0.6)]"
-                        : "bg-status-stopped"
-                    }`}
-                  />
-                  <div>
-                    <div className="font-medium text-foreground text-xs">
-                      {host.name}
-                    </div>
-                    <div className="text-[10px] font-mono text-muted-foreground">
-                      {host.socket}
-                    </div>
-                  </div>
-                </div>
-
-                <span
-                  className={`text-[10px] font-mono uppercase font-semibold px-2 py-0.5 rounded-full border ${
-                    isSelected
-                      ? "border-status-running/30 text-status-running bg-status-running/10"
-                      : "border-border/60 text-muted-foreground"
-                  }`}
-                >
-                  {isSelected ? t.settings.activeHost : t.settings.readyHost}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+        <form onSubmit={handleApplyEndpoint} className="flex items-center space-x-2">
+          <div className="relative flex-1">
+            <Terminal className="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-2.5" />
+            <input
+              type="text"
+              value={customEndpoint}
+              onChange={(e) => setCustomEndpoint(e.target.value)}
+              placeholder={t.settings.hostInputPlaceholder}
+              className="w-full bg-surface-secondary/60 border border-border/70 rounded-lg pl-9 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-hidden focus:border-primary font-mono transition-colors shadow-2xs"
+            />
+          </div>
+          <button
+            type="submit"
+            className="px-3 py-1.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-xs font-medium transition-colors shadow-xs shrink-0"
+          >
+            {t.settings.connectHost}
+          </button>
+          {selectedHost !== "localhost" && (
+            <button
+              type="button"
+              onClick={handleResetToLocal}
+              className="px-2.5 py-1.5 bg-surface hover:bg-surface-secondary border border-border/70 text-muted-foreground hover:text-foreground rounded-lg text-xs font-medium transition-colors flex items-center space-x-1 shadow-xs shrink-0"
+              title={t.settings.resetLocalHost}
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{t.settings.resetLocalHost}</span>
+            </button>
+          )}
+        </form>
       </div>
 
       <div className="bg-surface/80 backdrop-blur-sm border border-border/70 rounded-xl p-4 space-y-3 shadow-xs">
