@@ -25,8 +25,10 @@ import {
   ComposeGroupSection,
   ContainerDetailHeader,
   ContainerDeleteModals,
+  PortConflictModal,
   useContainersSplitState,
 } from "./split-view";
+
 
 const getStatusDot = (state: ContainerState, size: "sm" | "md" = "sm") => {
   const sizeClass = size === "sm" ? "w-2 h-2" : "w-2.5 h-2.5";
@@ -99,7 +101,12 @@ export const ContainersSplitView: React.FC = () => {
     handleBulkStart,
     handleBulkStop,
     handleBulkRestart,
+    portConflict,
+    setPortConflict,
+    safeStartContainer,
+    confirmPortConflictStart,
   } = useContainersSplitState(
+
     containers,
     composeProjects,
     selectedContainerId,
@@ -111,6 +118,7 @@ export const ContainersSplitView: React.FC = () => {
     upComposeProject,
     refreshData,
   );
+
 
   const tabs: {
     id: "overview" | "stats" | "logs" | "terminal" | "files";
@@ -253,9 +261,10 @@ export const ContainersSplitView: React.FC = () => {
               setStackToDelete={setStackToDelete}
               onStart={async (id, e) => {
                 e.stopPropagation();
-                await startContainer(id);
+                await safeStartContainer(id);
               }}
               onStop={async (id, e) => {
+
                 e.stopPropagation();
                 await stopContainer(id);
               }}
@@ -307,8 +316,9 @@ export const ContainersSplitView: React.FC = () => {
               containerDetailTab={containerDetailTab}
               tabs={tabs}
               getStatusDot={getStatusDot}
-              startContainer={startContainer}
+              startContainer={safeStartContainer}
               stopContainer={stopContainer}
+
               pauseContainer={pauseContainer}
               unpauseContainer={unpauseContainer}
               restartContainer={restartContainer}
@@ -441,6 +451,23 @@ export const ContainersSplitView: React.FC = () => {
         removeComposeProject={removeComposeProject}
         refreshData={refreshData}
       />
+
+      <PortConflictModal
+        t={t}
+        isOpen={Boolean(portConflict)}
+        targetContainer={portConflict ? portConflict.targetContainer : null}
+        conflictDetails={
+          portConflict
+            ? {
+                port: portConflict.port,
+                conflictingContainer: portConflict.conflictingContainer,
+              }
+            : null
+        }
+        onClose={() => setPortConflict(null)}
+        onConfirmStart={confirmPortConflictStart}
+      />
     </div>
   );
 };
+

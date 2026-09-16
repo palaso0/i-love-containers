@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { ContainerDetail } from "@/types";
-import { Copy, Check, Layers } from "lucide-react";
+import { Copy, Check, Layers, ExternalLink } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { InspectTab } from "./InspectTab";
 import { fetchContainer } from "@/lib/api";
+import { openExternalUrl } from "@/lib/nativeWindow";
+
 
 interface OverviewTabProps {
   container: ContainerDetail;
@@ -206,14 +208,24 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
                         {port.ip || "0.0.0.0"}:{port.publicPort}
                       </span>
                       <button
+                        type="button"
+                        onClick={() =>
+                          openExternalUrl(`http://localhost:${port.publicPort}`)
+                        }
+                        className="text-primary hover:text-primary-hover p-1 rounded hover:bg-surface transition-colors select-none"
+                        title={`Abrir http://localhost:${port.publicPort} en el navegador`}
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </button>
+                      <button
                         onClick={() =>
                           copyToClipboard(
-                            `${port.ip || "0.0.0.0"}:${port.publicPort}`,
+                            `http://localhost:${port.publicPort}`,
                             `port-${index}`,
                           )
                         }
                         className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-surface transition-colors select-none"
-                        title="Copiar puerto mapeado"
+                        title="Copiar URL"
                       >
                         {copiedKey === `port-${index}` ? (
                           <Check className="w-3.5 h-3.5 text-status-running" />
@@ -222,6 +234,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ container }) => {
                         )}
                       </button>
                     </div>
+
                   ) : (
                     <div className="flex items-center space-x-2 select-text">
                       <span className="px-2 py-0.5 rounded-md bg-surface-secondary border border-border/70 text-muted-foreground text-2xs font-sans select-none">

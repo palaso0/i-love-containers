@@ -241,3 +241,41 @@ export interface NavigationEntry {
     "overview" | "logs" | "terminal" | "stats" | "inspect" | "files";
   selectedImageId: string | null;
 }
+
+export interface SystemDiskUsage {
+  imagesSize: number;
+  imagesReclaimable: number;
+  imagesCount: number;
+  containersSize: number;
+  containersReclaimable: number;
+  containersCount: number;
+  volumesSize: number;
+  volumesReclaimable: number;
+  volumesCount: number;
+  buildCacheSize: number;
+  buildCacheReclaimable: number;
+  totalSize: number;
+  totalReclaimable: number;
+}
+
+export interface PruneOptions {
+  containers?: boolean;
+  containerIds?: string[];
+  images?: boolean;
+  imageIds?: string[];
+  allImages?: boolean;
+  volumes?: boolean;
+  volumeNames?: string[];
+  buildCache?: boolean;
+}
+
+
+export interface PruneResult {
+  ok: boolean;
+  spaceReclaimed: number;
+  containersDeleted?: number;
+  imagesDeleted?: number;
+  volumesDeleted?: number;
+  buildCacheDeleted?: number;
+}
+

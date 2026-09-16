@@ -1,4 +1,10 @@
-import { ContainerEngineInfo, SystemOverview } from "@/types";
+import {
+  ContainerEngineInfo,
+  SystemOverview,
+  SystemDiskUsage,
+  PruneOptions,
+  PruneResult,
+} from "@/types";
 import { DEFAULT_ENGINES, DEFAULT_OVERVIEW } from "../engines";
 import { apiFetch } from "./client";
 
@@ -141,3 +147,30 @@ export async function fetchSystemOverview(): Promise<SystemOverview> {
     detectedEngines: localEngines,
   };
 }
+
+export async function fetchSystemDiskUsage(): Promise<SystemDiskUsage | null> {
+  try {
+    const response = await apiFetch("/api/system/df");
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch {}
+  return null;
+}
+
+export async function executeSystemPrune(
+  options: PruneOptions,
+): Promise<PruneResult> {
+  try {
+    const response = await apiFetch("/api/system/prune", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(options),
+    });
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch {}
+  return { ok: false, spaceReclaimed: 0 };
+}
+

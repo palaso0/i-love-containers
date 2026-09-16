@@ -1,10 +1,19 @@
 import React from "react";
-import { Play, Square, Pause, RotateCw, Trash2, Terminal } from "lucide-react";
+import {
+  Play,
+  Square,
+  Pause,
+  RotateCw,
+  Trash2,
+  Terminal,
+} from "lucide-react";
 import { ContainerDetail, ContainerState } from "@/types";
+
 import { TechIcon } from "@/components/TechIcon";
 import { formatBytes } from "@/lib/utils";
 import { openRealNativeWindow } from "@/lib/nativeWindow";
 import { IndeterminateCheckbox } from "./IndeterminateCheckbox";
+
 
 interface ContainerRowItemProps {
   container: ContainerDetail;
@@ -85,20 +94,27 @@ export const ContainerRowItem: React.FC<ContainerRowItemProps> = ({
               );
               if (publicPorts.length > 0) {
                 return (
-                  <span
-                    className="text-[10px] font-mono text-primary font-medium bg-primary/10 border border-primary/25 px-1.5 py-0.2 rounded"
-                    title={`Host port: ${publicPorts.map((p) => `:${p}`).join(", ")}`}
-                  >
-                    {publicPorts
-                      .slice(0, 2)
-                      .map((p) => `:${p}`)
-                      .join(" ")}
-                    {publicPorts.length > 2 && ` +${publicPorts.length - 2}`}
+                  <span className="flex items-center gap-1">
+                    {publicPorts.slice(0, 2).map((port) => (
+                      <span
+                        key={port}
+                        className="text-[10px] font-mono text-primary font-medium bg-primary/10 border border-primary/25 px-1.5 py-0.2 rounded"
+                      >
+                        :{port}
+                      </span>
+                    ))}
+
+                    {publicPorts.length > 2 && (
+                      <span className="text-[10px] font-mono text-muted-foreground">
+                        +{publicPorts.length - 2}
+                      </span>
+                    )}
                   </span>
                 );
               }
               return null;
             })()}
+
           </div>
           <div className="text-[11px] font-mono text-muted-foreground truncate flex items-center gap-1.5 mt-0.5">
             {isRunning && container.cpuPercent !== undefined ? (

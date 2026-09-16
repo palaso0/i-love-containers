@@ -25,6 +25,13 @@ export function useContainersSplitState(
   const [bulkToDelete, setBulkToDelete] = useState<string[] | null>(null);
   const [isBulkOperating, setIsBulkOperating] = useState(false);
 
+  const [portConflict, setPortConflict] = useState<{
+    targetContainer: ContainerDetail;
+    conflictingContainer: ContainerDetail;
+    port: number;
+  } | null>(null);
+
+
   const [hiddenStacks, setHiddenStacks] = useState<Set<string>>(() => {
     try {
       const saved = localStorage.getItem("ilc_hidden_container_stacks");
@@ -413,6 +420,53 @@ export function useContainersSplitState(
     }
   };
 
+  const checkPortConflict = (target: ContainerDetail) => {
+
+
+    if (!target.ports || target.ports.length === 0) return null;
+    const targetPublicPorts = new Set(
+      target.ports.filter((p) => p.publicPort).map((p) => p.publicPort!),
+    );
+    if (targetPublicPorts.size === 0) return null;
+
+    const running = containers.filter(
+      (c) => c.state === "running" && c.id !== target.id,
+    );
+    for (const other of running) {
+      if (!other.ports) continue;
+      for (const p of other.ports) {
+        if (p.publicPort && targetPublicPorts.has(p.publicPort)) {
+          return {
+            targetContainer: target,
+            conflictingContainer: other,
+            port: p.publicPort,
+          };
+        }
+      }
+    }
+    return null;
+  };
+
+  const safeStartContainer = async (id: string) => {
+    const target = containers.find((c) => c.id === id);
+    if (target) {
+      const conflict = checkPortConflict(target);
+      if (conflict) {
+        setPortConflict(conflict);
+        return;
+      }
+    }
+    await startContainer(id);
+  };
+
+  const confirmPortConflictStart = async () => {
+    if (!portConflict) return;
+    const id = portConflict.targetContainer.id;
+    setPortConflict(null);
+    await startContainer(id);
+  };
+
+
   return {
     searchQuery,
     setSearchQuery,
@@ -448,5 +502,10 @@ export function useContainersSplitState(
     handleBulkStart,
     handleBulkStop,
     handleBulkRestart,
+    portConflict,
+    setPortConflict,
+    safeStartContainer,
+    confirmPortConflictStart,
   };
 }
+

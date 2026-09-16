@@ -15,9 +15,13 @@ import {
   Check,
   RefreshCw,
   Sliders,
+  Broom,
 } from "lucide-react";
+
 import { useAppStore } from "@/stores/useAppStore";
 import { formatBytes } from "@/lib/utils";
+import { SystemCleanerModal } from "./SystemCleanerModal";
+
 
 function getEngineIcon(type: string, className = "w-4 h-4") {
   switch (type) {
@@ -42,7 +46,10 @@ export const OverviewView: React.FC = () => {
     viewMode,
     systemOverview,
     containers,
+    images,
+    volumes,
     setActiveTab,
+
     setSelectedContainerId,
     startContainer,
     stopContainer,
@@ -53,6 +60,8 @@ export const OverviewView: React.FC = () => {
     switchEngine,
     rescanEngines,
   } = useAppStore();
+
+  const [isCleanerOpen, setIsCleanerOpen] = React.useState(false);
 
   const isConnected = systemOverview?.dockerConnected ?? false;
   const currentEngine =
@@ -235,6 +244,14 @@ export const OverviewView: React.FC = () => {
 
         <div className="flex items-center space-x-2 shrink-0">
           <button
+            onClick={() => setIsCleanerOpen(true)}
+            className="px-2.5 py-1 rounded-lg text-2xs font-medium text-primary hover:text-primary-hover bg-primary/10 border border-primary/25 hover:bg-primary/15 transition-colors flex items-center space-x-1.5 shadow-xs"
+          >
+            <Broom className="w-3 h-3 text-primary" />
+            <span>{t.overview.cleaner.buttonLabel}</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab("settings")}
             className="px-2.5 py-1 rounded-lg text-2xs font-medium text-muted-foreground hover:text-foreground bg-surface-secondary/70 border border-border/60 hover:bg-surface-secondary transition-colors flex items-center space-x-1.5"
           >
@@ -243,6 +260,7 @@ export const OverviewView: React.FC = () => {
           </button>
         </div>
       </div>
+
 
       <div className="flex items-center justify-between border-b border-border/70 pb-3">
         <div>
@@ -596,6 +614,18 @@ export const OverviewView: React.FC = () => {
           </div>
         </div>
       )}
+
+      <SystemCleanerModal
+        t={t}
+        isOpen={isCleanerOpen}
+        onClose={() => setIsCleanerOpen(false)}
+        onSuccess={refreshData}
+        containers={containers}
+        images={images}
+        volumes={volumes}
+      />
+
     </div>
   );
 };
+

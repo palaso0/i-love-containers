@@ -52,3 +52,12 @@ export async function openRealNativeWindow(options: NativeWindowOptions) {
     );
   }
 }
+
+export async function openExternalUrl(url: string) {
+  try {
+    await invoke("open_external_url", { url });
+  } catch (_tauriError) {
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+}
+

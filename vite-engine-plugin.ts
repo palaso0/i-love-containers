@@ -2218,6 +2218,213 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
             return;
           }
 
+          if (url === "/api/system/df" && req.method === "GET") {
+            try {
+              const dfRaw = await requestUnixSocket(socketPath, "/system/df");
+              const data = dfRaw.data || {};
+
+              let imagesSize = 0;
+              let imagesReclaimable = 0;
+              const imagesList = Array.isArray(data.Images) ? data.Images : [];
+              for (const img of imagesList) {
+                const sz = typeof img.Size === "number" ? img.Size : 0;
+                imagesSize += sz;
+                const isShared = (img.Containers ?? 0) > 0;
+                if (!isShared) {
+                  imagesReclaimable += sz;
+                }
+              }
+
+              let containersSize = 0;
+              let containersReclaimable = 0;
+              const containersList = Array.isArray(data.Containers) ? data.Containers : [];
+              for (const c of containersList) {
+                const sz = typeof c.SizeRw === "number" ? c.SizeRw : 0;
+                containersSize += sz;
+                const isRunning = c.State === "running";
+                if (!isRunning) {
+                  containersReclaimable += sz;
+                }
+              }
+
+              let volumesSize = 0;
+              let volumesReclaimable = 0;
+              const volumesList = Array.isArray(data.Volumes) ? data.Volumes : [];
+              for (const v of volumesList) {
+                const sz = typeof v.UsageData?.Size === "number" ? v.UsageData.Size : 0;
+                volumesSize += sz;
+                const refCount = typeof v.UsageData?.RefCount === "number" ? v.UsageData.RefCount : 0;
+                if (refCount <= 0) {
+                  volumesReclaimable += sz;
+                }
+              }
+
+              let buildCacheSize = 0;
+              let buildCacheReclaimable = 0;
+              const builderList = Array.isArray(data.BuildCache) ? data.BuildCache : [];
+              for (const b of builderList) {
+                const sz = typeof b.Size === "number" ? b.Size : 0;
+                buildCacheSize += sz;
+                if (!b.InUse) {
+                  buildCacheReclaimable += sz;
+                }
+              }
+              if (buildCacheSize === 0 && typeof data.BuilderSize === "number") {
+                buildCacheSize = data.BuilderSize;
+                buildCacheReclaimable = data.BuilderSize;
+              }
+
+              const totalSize = imagesSize + containersSize + volumesSize + buildCacheSize;
+              const totalReclaimable = imagesReclaimable + containersReclaimable + volumesReclaimable + buildCacheReclaimable;
+
+              res.setHeader("Content-Type", "application/json");
+              res.end(JSON.stringify({
+                imagesSize,
+                imagesReclaimable,
+                imagesCount: imagesList.length,
+                containersSize,
+                containersReclaimable,
+                containersCount: containersList.length,
+                volumesSize,
+                volumesReclaimable,
+                volumesCount: volumesList.length,
+                buildCacheSize,
+                buildCacheReclaimable,
+                totalSize,
+                totalReclaimable,
+              }));
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.setHeader("Content-Type", "application/json");
+              res.end(JSON.stringify({ error: err?.message || "Failed to retrieve disk usage" }));
+            }
+            return;
+          }
+
+          if (url === "/api/system/prune" && req.method === "POST") {
+            let body = "";
+            req.on("data", (chunk) => (body += chunk));
+            req.on("end", async () => {
+              try {
+                const options = JSON.parse(body || "{}");
+                let spaceReclaimed = 0;
+                let containersDeleted = 0;
+                let imagesDeleted = 0;
+                let volumesDeleted = 0;
+                let buildCacheDeleted = 0;
+
+                if (Array.isArray(options.containerIds) && options.containerIds.length > 0) {
+                  for (const cid of options.containerIds) {
+                    try {
+                      await requestUnixSocket(socketPath, `/containers/${cid}?v=true&force=true`, "DELETE");
+                      containersDeleted++;
+                    } catch {
+                      await new Promise<void>((resolve) => {
+                        exec(`docker rm -f -v ${cid}`, () => resolve());
+                      });
+                      containersDeleted++;
+                    }
+                  }
+                } else if (options.containers) {
+                  try {
+                    const cPrune = await requestUnixSocket(socketPath, "/containers/prune", "POST");
+                    if (cPrune.data) {
+                      spaceReclaimed += cPrune.data.SpaceReclaimed || 0;
+                      containersDeleted += Array.isArray(cPrune.data.ContainersDeleted) ? cPrune.data.ContainersDeleted.length : 0;
+                    }
+                  } catch {
+                    await new Promise<void>((resolve) => {
+                      exec("docker container prune -f", () => resolve());
+                    });
+                  }
+                }
+
+                if (Array.isArray(options.imageIds) && options.imageIds.length > 0) {
+                  for (const iid of options.imageIds) {
+                    try {
+                      await requestUnixSocket(socketPath, `/images/${encodeURIComponent(iid)}?force=true`, "DELETE");
+                      imagesDeleted++;
+                    } catch {
+                      await new Promise<void>((resolve) => {
+                        exec(`docker rmi -f ${iid}`, () => resolve());
+                      });
+                      imagesDeleted++;
+                    }
+                  }
+                } else if (options.images) {
+                  const imgFilter = options.allImages ? "?filters=%7B%22dangling%22%3A%5B%22false%22%5D%7D" : "";
+                  try {
+                    const iPrune = await requestUnixSocket(socketPath, `/images/prune${imgFilter}`, "POST");
+                    if (iPrune.data) {
+                      spaceReclaimed += iPrune.data.SpaceReclaimed || 0;
+                      imagesDeleted += Array.isArray(iPrune.data.ImagesDeleted) ? iPrune.data.ImagesDeleted.length : 0;
+                    }
+                  } catch {
+                    const flag = options.allImages ? "-a -f" : "-f";
+                    await new Promise<void>((resolve) => {
+                      exec(`docker image prune ${flag}`, () => resolve());
+                    });
+                  }
+                }
+
+                if (Array.isArray(options.volumeNames) && options.volumeNames.length > 0) {
+                  for (const vname of options.volumeNames) {
+                    try {
+                      await requestUnixSocket(socketPath, `/volumes/${encodeURIComponent(vname)}?force=true`, "DELETE");
+                      volumesDeleted++;
+                    } catch {
+                      await new Promise<void>((resolve) => {
+                        exec(`docker volume rm -f ${vname}`, () => resolve());
+                      });
+                      volumesDeleted++;
+                    }
+                  }
+                } else if (options.volumes) {
+                  try {
+                    const vPrune = await requestUnixSocket(socketPath, "/volumes/prune", "POST");
+                    if (vPrune.data) {
+                      spaceReclaimed += vPrune.data.SpaceReclaimed || 0;
+                      volumesDeleted += Array.isArray(vPrune.data.VolumesDeleted) ? vPrune.data.VolumesDeleted.length : 0;
+                    }
+                  } catch {
+                    await new Promise<void>((resolve) => {
+                      exec("docker volume prune -f", () => resolve());
+                    });
+                  }
+                }
+
+                if (options.buildCache) {
+                  try {
+                    const bPrune = await requestUnixSocket(socketPath, "/build/prune", "POST");
+                    if (bPrune.data) {
+                      spaceReclaimed += bPrune.data.SpaceReclaimed || 0;
+                    }
+                  } catch {
+                    await new Promise<void>((resolve) => {
+                      exec("docker builder prune -f", () => resolve());
+                    });
+                  }
+                }
+
+
+                res.setHeader("Content-Type", "application/json");
+                res.end(JSON.stringify({
+                  ok: true,
+                  spaceReclaimed,
+                  containersDeleted,
+                  imagesDeleted,
+                  volumesDeleted,
+                  buildCacheDeleted,
+                }));
+              } catch (err: any) {
+                res.statusCode = 500;
+                res.setHeader("Content-Type", "application/json");
+                res.end(JSON.stringify({ ok: false, error: err?.message || "Failed to prune system" }));
+              }
+            });
+            return;
+          }
+
           if (next) {
             return next();
           }
