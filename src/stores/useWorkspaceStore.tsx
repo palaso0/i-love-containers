@@ -5,6 +5,7 @@ export type WorkspaceSessionType = "terminal" | "logs";
 export interface LogEntry {
   id: string;
   timestamp: string;
+  timestampMs?: number;
   source: string;
   color: string;
   message: string;
@@ -22,6 +23,7 @@ export interface WorkspaceSession {
   currentInput?: string;
   terminalCwd?: string;
   logs?: LogEntry[];
+  clearedAt?: number;
   activeServiceFilters?: string[];
   isPaused?: boolean;
   autoScroll?: boolean;
@@ -251,6 +253,8 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({
       prev.map((session: WorkspaceSession) => {
         if (session.id !== sessionId || !session.logs) return session;
         if (session.isPaused) return session;
+        if (session.clearedAt && (entry.timestampMs || 0) <= session.clearedAt) return session;
+        if (session.logs.some((existing) => existing.id === entry.id)) return session;
         return {
           ...session,
           logs: [...session.logs.slice(-800), entry],
@@ -260,12 +264,14 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const clearSessionLogs = useCallback((sessionId: string) => {
+    const now = Date.now();
     setSessions((prev) =>
       prev.map((session: WorkspaceSession) => {
         if (session.id !== sessionId) return session;
         return {
           ...session,
           logs: [],
+          clearedAt: now,
         };
       }),
     );

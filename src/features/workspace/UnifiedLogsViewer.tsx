@@ -91,19 +91,22 @@ export const UnifiedLogsViewer: React.FC<UnifiedLogsViewerProps> = ({
                 : colorPaletteLight[idx % colorPaletteLight.length];
 
               return rawLogs.map((line) => {
-                const parts = line.split(" ");
-                const hasTimestamp =
-                  parts.length > 1 && /^\d{4}-\d{2}-\d{2}/.test(line);
-                const timestamp = hasTimestamp
-                  ? parts.slice(0, 2).join(" ").substring(0, 19)
+                const firstSpace = line.indexOf(" ");
+                const firstToken = firstSpace > 0 ? line.slice(0, firstSpace) : line;
+                const hasTimestamp = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(firstToken);
+                const rawTimestamp = hasTimestamp ? firstToken : "";
+                const displayTimestamp = hasTimestamp
+                  ? rawTimestamp.substring(0, 19).replace("T", " ")
                   : "";
-                const message = hasTimestamp ? parts.slice(2).join(" ") : line;
+                const message = hasTimestamp ? line.slice(firstSpace + 1) : line;
+                const timestampMs = hasTimestamp ? new Date(rawTimestamp).getTime() : 0;
 
                 return {
-                  id: `${c.id}-${timestamp}-${line.substring(0, 40)}`,
+                  id: `${c.id}-${rawTimestamp}-${line.substring(0, 40)}`,
                   timestamp:
-                    timestamp ||
+                    displayTimestamp ||
                     new Date().toISOString().substring(0, 19).replace("T", " "),
+                  timestampMs,
                   source: serviceName,
                   color,
                   message,
@@ -128,19 +131,22 @@ export const UnifiedLogsViewer: React.FC<UnifiedLogsViewerProps> = ({
           const color = isDark ? "#38bdf8" : "#0284c7";
 
           rawLogs.slice(-100).forEach((line) => {
-            const parts = line.split(" ");
-            const hasTimestamp =
-              parts.length > 1 && /^\d{4}-\d{2}-\d{2}/.test(line);
-            const timestamp = hasTimestamp
-              ? parts.slice(0, 2).join(" ").substring(0, 19)
+            const firstSpace = line.indexOf(" ");
+            const firstToken = firstSpace > 0 ? line.slice(0, firstSpace) : line;
+            const hasTimestamp = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(firstToken);
+            const rawTimestamp = hasTimestamp ? firstToken : "";
+            const displayTimestamp = hasTimestamp
+              ? rawTimestamp.substring(0, 19).replace("T", " ")
               : "";
-            const message = hasTimestamp ? parts.slice(2).join(" ") : line;
+            const message = hasTimestamp ? line.slice(firstSpace + 1) : line;
+            const timestampMs = hasTimestamp ? new Date(rawTimestamp).getTime() : 0;
 
             appendLog(session.id, {
-              id: `${session.containerId}-${timestamp}-${line.substring(0, 40)}`,
+              id: `${session.containerId}-${rawTimestamp}-${line.substring(0, 40)}`,
               timestamp:
-                timestamp ||
+                displayTimestamp ||
                 new Date().toISOString().substring(0, 19).replace("T", " "),
+              timestampMs,
               source: serviceName,
               color,
               message,

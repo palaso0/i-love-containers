@@ -39,6 +39,9 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
   const isDark = theme === "dark";
 
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [clearedAt, setClearedAt] = useState<number>(0);
+  const clearedAtRef = useRef<number>(0);
+  clearedAtRef.current = clearedAt;
   const [searchQuery, setSearchQuery] = useState("");
   const [isPaused, setIsPaused] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
@@ -89,19 +92,20 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
                 : colorPaletteLight[idx % colorPaletteLight.length];
 
               return rawLogs.map((line) => {
-                const parts = line.split(" ");
-                const hasTimestamp =
-                  parts.length > 1 && /^\d{4}-\d{2}-\d{2}/.test(line);
-                const timestamp = hasTimestamp
-                  ? parts.slice(0, 2).join(" ").substring(0, 19)
+                const firstSpace = line.indexOf(" ");
+                const firstToken = firstSpace > 0 ? line.slice(0, firstSpace) : line;
+                const hasTimestamp = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(firstToken);
+                const rawTimestamp = hasTimestamp ? firstToken : "";
+                const displayTimestamp = hasTimestamp
+                  ? rawTimestamp.substring(0, 19).replace("T", " ")
                   : "";
-                const message = hasTimestamp ? parts.slice(2).join(" ") : line;
+                const message = hasTimestamp ? line.slice(firstSpace + 1) : line;
+                const timestampMs = hasTimestamp ? new Date(rawTimestamp).getTime() : 0;
 
                 return {
-                  id: `${c.id}-${timestamp}-${line.substring(0, 40)}`,
-                  timestamp:
-                    timestamp ||
-                    new Date().toISOString().substring(0, 19).replace("T", " "),
+                  id: `${c.id}-${rawTimestamp}-${line.substring(0, 40)}`,
+                  timestamp: displayTimestamp || new Date().toISOString().substring(0, 19).replace("T", " "),
+                  timestampMs,
                   source: serviceName,
                   color,
                   message,
@@ -113,8 +117,12 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
           const combined = logsByContainer
             .flat()
             .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-          if (isMounted && combined.length > 0) {
-            setLogs(combined.slice(-1000));
+          if (isMounted) {
+            const cutoff = clearedAtRef.current;
+            const filtered = cutoff > 0
+              ? combined.filter((l) => l.timestampMs > cutoff)
+              : combined;
+            setLogs(filtered.slice(-1000));
           }
         } else if (containerId) {
           const rawLogs = await api.fetchContainerLogs(containerId);
@@ -124,27 +132,32 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
           const color = isDark ? "#38bdf8" : "#0284c7";
 
           const parsed = rawLogs.map((line) => {
-            const parts = line.split(" ");
-            const hasTimestamp =
-              parts.length > 1 && /^\d{4}-\d{2}-\d{2}/.test(line);
-            const timestamp = hasTimestamp
-              ? parts.slice(0, 2).join(" ").substring(0, 19)
+            const firstSpace = line.indexOf(" ");
+            const firstToken = firstSpace > 0 ? line.slice(0, firstSpace) : line;
+            const hasTimestamp = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(firstToken);
+            const rawTimestamp = hasTimestamp ? firstToken : "";
+            const displayTimestamp = hasTimestamp
+              ? rawTimestamp.substring(0, 19).replace("T", " ")
               : "";
-            const message = hasTimestamp ? parts.slice(2).join(" ") : line;
+            const message = hasTimestamp ? line.slice(firstSpace + 1) : line;
+            const timestampMs = hasTimestamp ? new Date(rawTimestamp).getTime() : 0;
 
             return {
-              id: `${containerId}-${timestamp}-${line.substring(0, 40)}`,
-              timestamp:
-                timestamp ||
-                new Date().toISOString().substring(0, 19).replace("T", " "),
+              id: `${containerId}-${rawTimestamp}-${line.substring(0, 40)}`,
+              timestamp: displayTimestamp || new Date().toISOString().substring(0, 19).replace("T", " "),
+              timestampMs,
               source: serviceName,
               color,
               message,
             };
           });
 
-          if (parsed.length > 0) {
-            setLogs(parsed.slice(-1000));
+          if (isMounted) {
+            const cutoff = clearedAtRef.current;
+            const filtered = cutoff > 0
+              ? parsed.filter((l) => l.timestampMs > cutoff)
+              : parsed;
+            setLogs(filtered.slice(-1000));
           }
         }
       } catch (err) {
@@ -287,7 +300,12 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
           </button>
 
           <button
-            onClick={() => setLogs([])}
+            onClick={() => {
+              const now = Date.now();
+              clearedAtRef.current = now;
+              setClearedAt(now);
+              setLogs([]);
+            }}
             className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-surface-secondary"
             title="Clear logs"
           >
