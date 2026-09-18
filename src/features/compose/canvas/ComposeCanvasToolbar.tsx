@@ -1,5 +1,4 @@
-import React from "react";
-import { Sparkles, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
+import { ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 import { ComposeNetworkNode } from "@/lib/composeParser";
 
 interface ComposeCanvasToolbarProps {
@@ -9,6 +8,7 @@ interface ComposeCanvasToolbarProps {
   volumesCount: number;
   zoom: number;
   t: any;
+  isActive?: boolean;
   onResetView: () => void;
   onFitView: () => void;
   onZoomStep: (factor: number) => void;
@@ -22,6 +22,7 @@ export const ComposeCanvasToolbar: React.FC<ComposeCanvasToolbarProps> = ({
   volumesCount,
   zoom,
   t,
+  isActive,
   onResetView,
   onFitView,
   onZoomStep,
@@ -32,13 +33,10 @@ export const ComposeCanvasToolbar: React.FC<ComposeCanvasToolbarProps> = ({
       <div className="absolute top-3 right-3 z-20 flex items-center space-x-1 bg-surface/90 backdrop-blur-xl border border-border/80 p-1 rounded-xl shadow-mac-segment canvas-interactive">
         <button
           onClick={onResetView}
-          className="flex items-center space-x-1 px-2 py-1 rounded-lg text-xs text-primary font-medium hover:bg-primary/10 transition-colors"
+          className="px-2 py-1 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-surface-secondary transition-colors"
           title={t.compose.autoArrange}
         >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span className="text-[11px] font-sans font-semibold">
-            {t.compose.autoArrange}
-          </span>
+          {t.compose.autoArrange}
         </button>
         <div className="w-[1px] h-3.5 bg-border/80" />
         <button
@@ -73,7 +71,13 @@ export const ComposeCanvasToolbar: React.FC<ComposeCanvasToolbarProps> = ({
           <span className="font-semibold text-foreground tracking-tight">
             {projectName}
           </span>
-          <span className="w-1.5 h-1.5 rounded-full bg-status-running shadow-[0_0_6px_rgba(48,209,88,0.7)]" />
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${
+              isActive
+                ? "bg-status-running shadow-[0_0_6px_rgba(48,209,88,0.7)]"
+                : "bg-muted-foreground/40"
+            }`}
+          />
           <span className="text-[11px] text-muted-foreground font-mono">
             {servicesCount} {t.compose.servicesCount} • {networks.length}{" "}
             {t.compose.networksCount} • {volumesCount} {t.compose.volumesCount}

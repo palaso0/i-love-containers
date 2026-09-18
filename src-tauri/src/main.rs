@@ -251,6 +251,15 @@ async fn copy_file_from_container(
 }
 
 #[tauri::command]
+async fn read_host_text_file(path: String) -> Result<String, String> {
+    let p = Path::new(&path);
+    if !p.exists() {
+        return Err("File does not exist".into());
+    }
+    std::fs::read_to_string(p).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 async fn prepare_container_drag_files(
     container_id: String,
     file_paths: Vec<String>,
@@ -651,7 +660,8 @@ fn main() {
             drag_window,
             copy_host_file_to_container,
             copy_file_from_container,
-            prepare_container_drag_files
+            prepare_container_drag_files,
+            read_host_text_file
         ])
 
         .setup(|app| {

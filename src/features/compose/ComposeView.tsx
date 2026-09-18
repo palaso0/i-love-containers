@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   FolderGit2,
   Play,
@@ -11,14 +11,27 @@ import {
   ListFilter,
   ChevronDown,
   Trash2,
+  Edit2,
+  Check,
+  Plus,
+  FileUp,
 } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { openRealNativeWindow } from "@/lib/nativeWindow";
 import { parseComposeYaml } from "@/lib/composeParser";
 import * as api from "@/lib/api";
-import { getCustomComposeConfig } from "@/lib/composeCustomStorage";
+import {
+  getCustomComposeConfig,
+  getSavedStackProjects,
+  saveStackProject,
+  SavedStackProject,
+  getProjectDisplayName,
+  getHiddenComposeProjects,
+  unhideComposeProject,
+} from "@/lib/composeCustomStorage";
 import { ComposeDiagramCanvas } from "./ComposeDiagramCanvas";
 import { ComposeYamlViewer } from "./ComposeYamlViewer";
+import { ComposeStackManagerModal } from "./ComposeStackManagerModal";
 import { DockerDisconnected } from "@/components/DockerDisconnected";
 
 export const ComposeView: React.FC = () => {
@@ -45,12 +58,68 @@ export const ComposeView: React.FC = () => {
   const [isDeploying, setIsDeploying] = useState(false);
   const [deploySuccess, setDeploySuccess] = useState(false);
 
+  const [savedStacks, setSavedStacks] = useState<SavedStackProject[]>(() =>
+    getSavedStackProjects(),
+  );
+  const [aliasesVersion, setAliasesVersion] = useState(0);
+  const [isStackModalOpen, setIsStackModalOpen] = useState(false);
+  const [editingStack, setEditingStack] = useState<SavedStackProject | null>(
+    null,
+  );
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const refreshSavedStacks = () => {
+    setSavedStacks(getSavedStackProjects());
+    setAliasesVersion((v) => v + 1);
+  };
+
   useEffect(() => {
     refreshData();
   }, []);
 
-  const activeProject = composeProjects[selectedProjectIndex] ||
-    composeProjects[0] || {
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    };
+    if (isDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isDropdownOpen]);
+
+  const mergedProjects = useMemo(() => {
+    const hidden = getHiddenComposeProjects();
+    const list = composeProjects.filter(
+      (p) => !hidden.includes(p.name.toLowerCase()),
+    );
+    for (const s of savedStacks) {
+      if (hidden.includes(s.name.toLowerCase())) continue;
+      const exists = list.some(
+        (p) => p.name.toLowerCase() === s.name.toLowerCase(),
+      );
+      if (!exists) {
+        list.push({
+          name: s.name,
+          workingDir: s.workingDir,
+          configFile: s.configFile,
+          containers: [],
+          status: "stopped",
+        });
+      }
+    }
+    return list;
+  }, [composeProjects, savedStacks, aliasesVersion]);
+
+  const activeProject = mergedProjects[selectedProjectIndex] ||
+    mergedProjects[0] || {
       name: "compose",
       containers: [],
     };
@@ -167,16 +236,23 @@ export const ComposeView: React.FC = () => {
   const handleStartStack = async () => {
     if (!activeProject) return;
     let success = false;
+    const saved = savedStacks.find(
+      (s) => s.name.toLowerCase() === activeProject.name.toLowerCase(),
+    );
     const customCfg = getCustomComposeConfig(activeProject.name);
     const customCommand =
-      customCfg.useAsDefault && customCfg.command.trim()
+      (saved?.command && saved.command.trim()) ||
+      (customCfg.useAsDefault && customCfg.command.trim()
         ? customCfg.command.trim()
-        : undefined;
-    if (activeProject.configFile || activeProject.workingDir || customCommand) {
+        : undefined);
+    const effectiveWorkingDir = saved?.workingDir || activeProject.workingDir;
+    const effectiveConfigFile = saved?.configFile || activeProject.configFile;
+
+    if (effectiveConfigFile || effectiveWorkingDir || customCommand) {
       const res = await api.upComposeProject(
         activeProject.name,
-        activeProject.workingDir,
-        activeProject.configFile,
+        effectiveWorkingDir,
+        effectiveConfigFile,
         customCommand,
       );
       success = res.ok;
@@ -196,13 +272,24 @@ export const ComposeView: React.FC = () => {
 
   const handleRestartAll = async (containerIds: string[]) => {
     if (activeProject) {
+      const saved = savedStacks.find(
+        (s) => s.name.toLowerCase() === activeProject.name.toLowerCase(),
+      );
       const customCfg = getCustomComposeConfig(activeProject.name);
-      if (customCfg.useAsDefault && customCfg.command.trim()) {
+      const customCommand =
+        (saved?.command && saved.command.trim()) ||
+        (customCfg.useAsDefault && customCfg.command.trim()
+          ? customCfg.command.trim()
+          : undefined);
+      const effectiveWorkingDir = saved?.workingDir || activeProject.workingDir;
+      const effectiveConfigFile = saved?.configFile || activeProject.configFile;
+
+      if (customCommand || effectiveConfigFile || effectiveWorkingDir) {
         await api.upComposeProject(
           activeProject.name,
-          activeProject.workingDir,
-          activeProject.configFile,
-          customCfg.command.trim(),
+          effectiveWorkingDir,
+          effectiveConfigFile,
+          customCommand,
         );
         await refreshData();
         return;
@@ -218,6 +305,139 @@ export const ComposeView: React.FC = () => {
     await refreshData();
   };
 
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const processDroppedYaml = async (filePath?: string, content?: string) => {
+    let text = content || "";
+    if (!text && filePath) {
+      try {
+        const { invoke } = await import("@tauri-apps/api/core");
+        text = await invoke<string>("read_host_text_file", { path: filePath });
+      } catch {}
+    }
+    if (!text && !filePath) return;
+
+    let derivedName = "compose-stack";
+    if (filePath) {
+      const parts = filePath.replace(/\\/g, "/").split("/");
+      const fileName = parts.pop() || "";
+      const parentDir = parts.pop();
+      if (fileName.toLowerCase().startsWith("docker-compose") || fileName.toLowerCase().startsWith("compose")) {
+        derivedName = parentDir || "compose-stack";
+      } else {
+        derivedName = fileName.replace(/\.(ya?ml)$/i, "") || parentDir || "compose-stack";
+      }
+    } else if (text) {
+      const match = text.match(/name:\s*([a-zA-Z0-9_-]+)/);
+      if (match && match[1]) {
+        derivedName = match[1].trim();
+      }
+    }
+
+    let workingDir = "";
+    if (filePath) {
+      const lastSlash = Math.max(filePath.lastIndexOf("/"), filePath.lastIndexOf("\\"));
+      if (lastSlash > 0) {
+        workingDir = filePath.substring(0, lastSlash);
+      }
+    }
+
+    unhideComposeProject(derivedName);
+    saveStackProject({
+      name: derivedName,
+      configFile: filePath || undefined,
+      workingDir: workingDir || "",
+      command: "docker compose up -d",
+      useAsDefault: true,
+    });
+
+    if (text) {
+      setComposeYaml(text);
+      try {
+        localStorage.setItem(`ilc-compose-yaml-${derivedName}`, text);
+        localStorage.setItem("ilc-compose-yaml-last", text);
+      } catch {}
+    }
+
+    refreshSavedStacks();
+    await refreshData();
+    setSelectedProjectIndex(0);
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+    let unlisten: (() => void) | null = null;
+
+    const initTauriDrag = async () => {
+      try {
+        const { getCurrentWebview } = await import("@tauri-apps/api/webview");
+        const webview = getCurrentWebview();
+        const unlistenFn = await webview.onDragDropEvent(async (event) => {
+          if (!isMounted) return;
+          if (event.payload.type === "over" || event.payload.type === "enter") {
+            setIsDraggingOver(true);
+          } else if (event.payload.type === "drop") {
+            setIsDraggingOver(false);
+            const paths = event.payload.paths;
+            if (paths && paths.length > 0) {
+              const yamlPath = paths.find((p) => p.endsWith(".yml") || p.endsWith(".yaml")) || paths[0];
+              if (yamlPath) {
+                await processDroppedYaml(yamlPath);
+              }
+            }
+          } else {
+            setIsDraggingOver(false);
+          }
+        });
+        if (isMounted) {
+          unlisten = unlistenFn;
+        } else {
+          unlistenFn();
+        }
+      } catch {}
+    };
+
+    initTauriDrag();
+    return () => {
+      isMounted = false;
+      if (unlisten) unlisten();
+    };
+  }, []);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!containerRef.current?.contains(e.relatedTarget as Node)) {
+      setIsDraggingOver(false);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+
+    const files = Array.from(e.dataTransfer?.files || []);
+    if (files.length === 0) return;
+
+    const targetFile = files.find(
+      (f) => f.name.endsWith(".yml") || f.name.endsWith(".yaml") || f.name.includes("compose"),
+    ) || files[0];
+
+    if (!targetFile) return;
+
+    const filePath = (targetFile as any).path || "";
+    const text = await targetFile.text();
+    await processDroppedYaml(filePath || undefined, text);
+  };
+
   const activeContainerIds = activeProject
     ? activeProject.containers.map((c) => c.id)
     : [];
@@ -226,9 +446,83 @@ export const ComposeView: React.FC = () => {
     : 0;
   const isInactive = runningCount === 0;
 
+  if (mergedProjects.length === 0) {
+    return (
+      <div
+        ref={containerRef}
+        onDragOver={handleDragOver}
+        onDragEnter={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className="flex-1 h-full flex flex-col items-center justify-center p-8 bg-background select-none relative"
+      >
+        {isDraggingOver && (
+          <div className="absolute inset-4 rounded-3xl border-2 border-dashed border-primary/60 bg-primary/10 backdrop-blur-xs flex flex-col items-center justify-center z-50 animate-in fade-in zoom-in-95 pointer-events-none">
+            <FileUp className="w-12 h-12 text-primary animate-bounce mb-3" />
+            <p className="text-sm font-semibold text-primary">
+              Suelta tu archivo compose.yml aquí
+            </p>
+          </div>
+        )}
+
+        <div className="flex flex-col items-center space-y-4 max-w-sm text-center">
+          <div className="w-16 h-16 rounded-2xl bg-surface-secondary/80 border border-border/80 flex items-center justify-center shadow-xs">
+            <FolderGit2 className="w-8 h-8 text-muted-foreground/60" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base font-semibold text-foreground">
+              Sin stacks de Compose
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Arrastra y suelta tu archivo YAML aquí o agrega un nuevo stack.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setEditingStack(null);
+              setIsStackModalOpen(true);
+            }}
+            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-colors cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Agregar Stack</span>
+          </button>
+        </div>
+
+        <ComposeStackManagerModal
+          isOpen={isStackModalOpen}
+          onClose={() => {
+            setIsStackModalOpen(false);
+            setEditingStack(null);
+          }}
+          onSuccess={() => {
+            refreshSavedStacks();
+            refreshData();
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-background ">
-      <div className="px-5 py-3 border-b border-border/70 bg-surface/50 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0">
+    <div
+      ref={containerRef}
+      onDragOver={handleDragOver}
+      onDragEnter={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className="flex-1 flex flex-col h-full overflow-hidden bg-background relative"
+    >
+      {isDraggingOver && (
+        <div className="absolute inset-4 rounded-3xl border-2 border-dashed border-primary/60 bg-primary/10 backdrop-blur-xs flex flex-col items-center justify-center z-50 animate-in fade-in zoom-in-95 pointer-events-none">
+          <FileUp className="w-12 h-12 text-primary animate-bounce mb-3" />
+          <p className="text-sm font-semibold text-primary">
+            Suelta tu archivo compose.yml aquí para cargarlo
+          </p>
+        </div>
+      )}
+      <div className="relative z-30 px-5 py-3 border-b border-border/70 bg-surface/90 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0">
         <div className="flex items-center space-x-3 min-w-0">
           <div
             className={`w-8 h-8 rounded-xl border flex items-center justify-center shadow-xs shrink-0 ${
@@ -242,50 +536,97 @@ export const ComposeView: React.FC = () => {
 
           <div className="min-w-0">
             <div className="flex items-center space-x-2">
-              {composeProjects.length > 1 ? (
-                <div className="relative inline-flex items-center">
-                  <select
-                    value={selectedProjectIndex}
-                    onChange={(e) =>
-                      setSelectedProjectIndex(Number(e.target.value))
-                    }
-                    className="appearance-none bg-surface-secondary/80 border border-border/80 text-foreground text-sm font-semibold rounded-lg pl-2.5 pr-7 py-0.5 focus:outline-none focus:border-primary cursor-pointer"
+              <div className="flex items-center space-x-1.5 shrink-0">
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsDropdownOpen((prev) => !prev)}
+                    className="flex items-center space-x-2 bg-surface-secondary/90 hover:bg-surface-secondary border border-border/80 text-foreground text-sm font-semibold rounded-lg px-2.5 py-1.5 focus:outline-none transition-colors max-w-[220px] shadow-xs cursor-pointer"
                   >
-                    {composeProjects.map((p, idx) => {
-                      const pActive = p.containers.some(
-                        (c) => c.state === "running",
-                      );
-                      return (
-                        <option
-                          key={p.name}
-                          value={idx}
-                          className="bg-surface text-foreground"
-                        >
-                          {pActive ? "● " : "○ "}
-                          {p.name}{" "}
-                          {pActive ? `(${p.containers.length})` : "(inactivo)"}
-                        </option>
-                      );
-                    })}
-                  </select>
-                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground absolute right-2 pointer-events-none" />
-                </div>
-              ) : (
-                <h1 className="text-sm font-semibold text-foreground tracking-tight truncate">
-                  {activeProject?.name || "Compose Stack"}
-                </h1>
-              )}
+                    <span
+                      className={`w-2 h-2 rounded-full shrink-0 ${
+                        !isInactive
+                          ? "bg-status-running shadow-[0_0_6px_rgba(48,209,88,0.7)]"
+                          : "bg-muted-foreground/40"
+                      }`}
+                    />
+                    <span className="truncate">
+                      {getProjectDisplayName(activeProject.name)}
+                    </span>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 text-muted-foreground transition-transform duration-150 shrink-0 ${
+                        isDropdownOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
 
-              {isInactive ? (
-                <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 px-2 py-0.2 rounded-full border border-amber-500/20">
-                  ○ Detenido (0/{activeProject?.containers.length || 0})
-                </span>
-              ) : (
-                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.2 rounded-full border border-emerald-500/20">
-                  ● {runningCount}/{activeProject?.containers.length || 0}{" "}
-                  {t.containers.active}
-                </span>
-              )}
+                  {isDropdownOpen && (
+                    <div className="absolute top-full left-0 mt-1 w-56 bg-popover border border-popover-border rounded-xl shadow-xl py-1 z-50 animate-in fade-in zoom-in-95 duration-100 backdrop-none">
+                      {mergedProjects.map((p, idx) => {
+                        const pActive = p.containers.some(
+                          (c) => c.state === "running",
+                        );
+                        const isSelected = idx === selectedProjectIndex;
+                        const displayName = getProjectDisplayName(p.name);
+                        return (
+                          <button
+                            key={p.name}
+                            type="button"
+                            onClick={() => {
+                              setSelectedProjectIndex(idx);
+                              setIsDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between transition-colors ${
+                              isSelected
+                                ? "bg-primary/15 text-primary font-medium"
+                                : "text-foreground hover:bg-surface-hover"
+                            }`}
+                          >
+                            <div className="flex items-center space-x-2 truncate mr-2">
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                                  pActive
+                                    ? "bg-status-running shadow-[0_0_5px_rgba(48,209,88,0.7)]"
+                                    : "bg-muted-foreground/40"
+                                }`}
+                              />
+                              <span className="truncate">{displayName}</span>
+                            </div>
+                            {isSelected && (
+                              <Check className="w-3.5 h-3.5 text-primary shrink-0" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => {
+                    const saved = savedStacks.find(
+                      (s) => s.name.toLowerCase() === activeProject.name.toLowerCase(),
+                    );
+                    setEditingStack(
+                      saved || {
+                        id: "",
+                        name: getProjectDisplayName(activeProject.name),
+                        workingDir: activeProject.workingDir || "",
+                        configFile: activeProject.configFile || "",
+                        command: getCustomComposeConfig(activeProject.name).command || "docker compose up -d",
+                        useAsDefault: true,
+                        createdAt: Date.now(),
+                        updatedAt: Date.now(),
+                      },
+                    );
+                    setIsStackModalOpen(true);
+                  }}
+                  className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-secondary transition-colors"
+                  title="Editar Configuración del Stack"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
             <p
               className="text-[11px] font-mono text-muted-foreground select-text cursor-text break-all"
@@ -344,6 +685,7 @@ export const ComposeView: React.FC = () => {
           <div className="h-4 w-[1px] bg-border/80 hidden sm:block" />
 
           <div className="flex items-center space-x-1.5">
+
             <button
               onClick={() =>
                 openRealNativeWindow({
@@ -537,6 +879,39 @@ export const ComposeView: React.FC = () => {
           </div>
         )}
       </div>
+
+      <ComposeStackManagerModal
+        isOpen={isStackModalOpen}
+        onClose={() => {
+          setIsStackModalOpen(false);
+          setEditingStack(null);
+        }}
+        currentProject={
+          activeProject
+            ? {
+                name: getProjectDisplayName(activeProject.name),
+                originalName: activeProject.name,
+                workingDir: activeProject.workingDir,
+                configFile: activeProject.configFile,
+              }
+            : undefined
+        }
+        editingStack={editingStack}
+        onSuccess={() => {
+          refreshSavedStacks();
+          refreshData();
+        }}
+        onDelete={async () => {
+          if (activeProject?.name) {
+            await api.forgetComposeProject(activeProject.name);
+          }
+          refreshSavedStacks();
+          await refreshData();
+          if (selectedProjectIndex > 0) {
+            setSelectedProjectIndex(selectedProjectIndex - 1);
+          }
+        }}
+      />
     </div>
   );
 };

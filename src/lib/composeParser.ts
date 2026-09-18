@@ -393,7 +393,7 @@ export function parseComposeYaml(
     });
   });
 
-  const tiers: ComposeServiceNode[][] = [[], [], [], [], [], []];
+  const tiers: ComposeServiceNode[][] = [[], [], [], [], []];
 
   rawServices.forEach((svc) => {
     switch (svc.role) {
@@ -410,10 +410,8 @@ export function parseComposeYaml(
         tiers[3].push(svc);
         break;
       case "database":
-        tiers[4].push(svc);
-        break;
       case "cache":
-        tiers[5].push(svc);
+        tiers[4].push(svc);
         break;
       default:
         if (svc.ports && svc.ports.length > 0) {
@@ -427,8 +425,8 @@ export function parseComposeYaml(
 
   const nodeWidth = 230;
   const nodeHeight = 96;
-  const horizontalGap = 44;
-  const verticalGap = 84;
+  const horizontalGap = 48;
+  const verticalGap = 92;
   const maxPerRow = 3;
 
   interface LayoutRow {

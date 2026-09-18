@@ -25,8 +25,6 @@ export const ComposeDiagramCanvas: React.FC<ComposeDiagramCanvasProps> = ({
     startContainer,
     stopContainer,
     restartContainer,
-    setSelectedContainerId,
-    setActiveTab,
   } = useAppStore();
 
   const isDark = theme === "dark";
@@ -123,6 +121,13 @@ export const ComposeDiagramCanvas: React.FC<ComposeDiagramCanvasProps> = ({
     }
   };
 
+  const hasRunningServices = useMemo(() => {
+    return topology.services.some((s) => {
+      const state = optimisticStates[s.id] || s.state;
+      return state === "running";
+    });
+  }, [topology.services, optimisticStates]);
+
   return (
     <div
       ref={containerRef}
@@ -148,6 +153,7 @@ export const ComposeDiagramCanvas: React.FC<ComposeDiagramCanvasProps> = ({
         volumesCount={topology.volumes.length}
         zoom={view.zoom}
         t={t}
+        isActive={hasRunningServices}
         onResetView={handleResetView}
         onFitView={handleFitView}
         onZoomStep={handleZoomStep}
@@ -242,8 +248,6 @@ export const ComposeDiagramCanvas: React.FC<ComposeDiagramCanvasProps> = ({
           t={t}
           onClose={() => setSelectedServiceId(null)}
           handleServiceAction={handleServiceAction}
-          setActiveTab={setActiveTab}
-          setSelectedContainerId={setSelectedContainerId}
         />
       )}
     </div>

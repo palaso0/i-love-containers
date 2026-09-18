@@ -121,53 +121,51 @@ export function useCanvasInteraction({
     try {
       localStorage.removeItem(`ilc-compose-layout-${projectName}`);
     } catch {}
-    if (containerRef.current) {
-      const { clientWidth, clientHeight } = containerRef.current;
-      const padX = 64;
-      const padTop = 72;
-      const padBottom = 48;
-      const scaleX = (clientWidth - padX * 2) / topology.canvasWidth;
-      const scaleY =
-        (clientHeight - padTop - padBottom) / topology.canvasHeight;
-      const fitZoom = Math.min(1, Math.max(0.35, Math.min(scaleX, scaleY)));
-      const initialX = Math.round(
-        (clientWidth - topology.canvasWidth * fitZoom) / 2,
-      );
-      const initialY = Math.round(
-        padTop +
-          Math.max(
-            0,
-            (clientHeight -
-              padTop -
-              padBottom -
-              topology.canvasHeight * fitZoom) /
-              2,
-          ),
-      );
-      const nextView = { x: initialX, y: initialY, zoom: fitZoom };
-      updateView(nextView);
-      saveLayout({}, nextView);
-    }
+    handleFitView({});
   };
 
-  const handleFitView = () => {
+  const handleFitView = (overridePositions?: Record<string, { x: number; y: number }>) => {
     if (!containerRef.current) return;
     const { clientWidth, clientHeight } = containerRef.current;
     if (clientWidth <= 0 || clientHeight <= 0) return;
 
-    const allPositions = [
+    const positionsToUse = overridePositions !== undefined ? overridePositions : nodePositionsRef.current;
+
+    const allPositions: { x1: number; y1: number; x2: number; y2: number }[] = [
       ...topology.services.map((s) => {
-        const p = getServicePos(s);
+        const p = positionsToUse[s.id] || { x: s.x, y: s.y };
         return { x1: p.x, y1: p.y, x2: p.x + s.width, y2: p.y + s.height };
       }),
       ...topology.volumes.map((v) => {
-        const p = getVolumePos(v);
+        const p = positionsToUse[v.id] || { x: v.x, y: v.y };
         return { x1: p.x, y1: p.y, x2: p.x + 140, y2: p.y + 44 };
       }),
     ];
 
+    topology.networks.forEach((net, netIdx) => {
+      const memberServices = net.services
+        .map((sId) => topology.services.find((s) => s.id === sId))
+        .filter((s): s is ComposeServiceNode => !!s);
+      if (memberServices.length === 0) return;
+
+      const netPositions = memberServices.map((s) => {
+        const p = positionsToUse[s.id] || { x: s.x, y: s.y };
+        return { x: p.x, y: p.y, width: s.width, height: s.height };
+      });
+      const extraPad = netIdx * 8;
+      const padX = 24 + extraPad;
+      const padTop = 34 + extraPad;
+      const padBottom = 22 + extraPad;
+
+      const minNetX = Math.min(...netPositions.map((p) => p.x)) - padX;
+      const maxNetX = Math.max(...netPositions.map((p) => p.x + p.width)) + padX;
+      const minNetY = Math.min(...netPositions.map((p) => p.y)) - padTop;
+      const maxNetY = Math.max(...netPositions.map((p) => p.y + p.height)) + padBottom;
+
+      allPositions.push({ x1: minNetX, y1: minNetY, x2: maxNetX, y2: maxNetY });
+    });
+
     if (allPositions.length === 0) {
-      handleResetView();
       return;
     }
 
@@ -180,8 +178,8 @@ export function useCanvasInteraction({
     const contentHeight = Math.max(200, maxY - minY);
 
     const padX = 72;
-    const padTop = 80;
-    const padBottom = 56;
+    const padTop = 76;
+    const padBottom = 48;
 
     const scaleX = (clientWidth - padX * 2) / contentWidth;
     const scaleY = (clientHeight - padTop - padBottom) / contentHeight;
@@ -201,7 +199,7 @@ export function useCanvasInteraction({
 
     const nextView = { x: initialX, y: initialY, zoom: fitZoom };
     updateView(nextView);
-    saveLayout(nodePositionsRef.current, nextView);
+    saveLayout(positionsToUse, nextView);
   };
 
   const loadOrInitLayout = () => {

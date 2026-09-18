@@ -176,6 +176,22 @@ export const ComposeEdgeOverlay: React.FC<ComposeEdgeOverlayProps> = ({
             pathD = `M ${x1} ${y1} C ${x1 - dist} ${y1}, ${x2 + dist} ${y2}, ${x2} ${y2}`;
           }
         } else {
+          const isObstacleBetween = (toY: number, fromY: number, checkX: number) => {
+            const minY = Math.min(fromY, toY);
+            const maxY = Math.max(fromY, toY);
+            return topology.services.some((s) => {
+              if (s.id === fromService.id || (toService && s.id === toService.id)) {
+                return false;
+              }
+              const sPos = getServicePos(s);
+              const cardTop = sPos.y;
+              const cardBottom = sPos.y + s.height;
+              const cardLeft = sPos.x;
+              const cardRight = sPos.x + s.width;
+              return cardTop > minY && cardBottom < maxY && checkX >= cardLeft && checkX <= cardRight;
+            });
+          };
+
           if (dy >= 0) {
             let x1 = cFrom.x;
             if (totalOut > 1) {
@@ -184,9 +200,16 @@ export const ComposeEdgeOverlay: React.FC<ComposeEdgeOverlayProps> = ({
             }
             const y1 = fromBox.y + fromBox.height;
             const x2 = cTo.x;
-            const y2 = toBox.y - 6;
-            const dist = Math.max(28, Math.min(Math.abs(y2 - y1) * 0.45, 90));
-            pathD = `M ${x1} ${y1} C ${x1} ${y1 + dist}, ${x2} ${y2 - dist}, ${x2} ${y2}`;
+            const y2 = toBox.y - 2;
+
+            const hasBlock = isObstacleBetween(toBox.y, fromBox.y + fromBox.height, (x1 + x2) / 2);
+            if (hasBlock) {
+              const bypassX = Math.max(fromBox.x + fromBox.width, toBox.x + toBox.width) + 32;
+              pathD = `M ${fromBox.x + fromBox.width} ${y1 - 16} C ${bypassX} ${y1}, ${bypassX} ${y2 - 20}, ${x2} ${y2}`;
+            } else {
+              const dist = Math.max(28, Math.min(Math.abs(y2 - y1) * 0.45, 90));
+              pathD = `M ${x1} ${y1} C ${x1} ${y1 + dist}, ${x2} ${y2 - dist}, ${x2} ${y2}`;
+            }
           } else {
             let x1 = cFrom.x;
             if (totalOut > 1) {
@@ -195,9 +218,16 @@ export const ComposeEdgeOverlay: React.FC<ComposeEdgeOverlayProps> = ({
             }
             const y1 = fromBox.y;
             const x2 = cTo.x;
-            const y2 = toBox.y + toBox.height + 6;
-            const dist = Math.max(28, Math.min(Math.abs(y1 - y2) * 0.45, 90));
-            pathD = `M ${x1} ${y1} C ${x1} ${y1 - dist}, ${x2 + dist} ${y2}, ${x2} ${y2}`;
+            const y2 = toBox.y + toBox.height + 2;
+
+            const hasBlock = isObstacleBetween(fromBox.y, toBox.y + toBox.height, (x1 + x2) / 2);
+            if (hasBlock) {
+              const bypassX = Math.max(fromBox.x + fromBox.width, toBox.x + toBox.width) + 32;
+              pathD = `M ${fromBox.x + fromBox.width} ${y1 + 16} C ${bypassX} ${y1}, ${bypassX} ${y2 + 20}, ${x2} ${y2}`;
+            } else {
+              const dist = Math.max(28, Math.min(Math.abs(y1 - y2) * 0.45, 90));
+              pathD = `M ${x1} ${y1} C ${x1} ${y1 - dist}, ${x2 + dist} ${y2}, ${x2} ${y2}`;
+            }
           }
         }
 

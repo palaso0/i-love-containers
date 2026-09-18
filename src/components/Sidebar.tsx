@@ -13,6 +13,10 @@ import { useAppStore } from "@/stores/useAppStore";
 import { ActiveTab } from "@/types";
 import { handleWindowDragStart } from "@/lib/windowDrag";
 import { isMac } from "@/lib/platform";
+import {
+  getHiddenComposeProjects,
+  getSavedStackProjects,
+} from "@/lib/composeCustomStorage";
 
 interface NavItem {
   id: ActiveTab;
@@ -169,6 +173,20 @@ export const Sidebar: React.FC = () => {
     (c) => c.state === "running",
   ).length;
 
+  const hiddenComposeProjects = getHiddenComposeProjects();
+  const savedStacks = getSavedStackProjects();
+  const visibleComposeCount =
+    composeProjects.filter(
+      (p) => !hiddenComposeProjects.includes(p.name.toLowerCase()),
+    ).length +
+    savedStacks.filter(
+      (s) =>
+        !hiddenComposeProjects.includes(s.name.toLowerCase()) &&
+        !composeProjects.some(
+          (p) => p.name.toLowerCase() === s.name.toLowerCase(),
+        ),
+    ).length;
+
   const runtimeItems: NavItem[] = [
     {
       id: "containers",
@@ -201,7 +219,7 @@ export const Sidebar: React.FC = () => {
       id: "compose",
       label: t.nav.compose,
       icon: FolderGit2,
-      count: composeProjects.length,
+      count: visibleComposeCount > 0 ? visibleComposeCount : undefined,
     },
   ];
 

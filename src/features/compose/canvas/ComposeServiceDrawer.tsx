@@ -23,8 +23,6 @@ interface ComposeServiceDrawerProps {
     containerId: string,
     action: "start" | "stop" | "restart",
   ) => Promise<void>;
-  setActiveTab: (tab: any) => void;
-  setSelectedContainerId: (id: string) => void;
 }
 
 export const ComposeServiceDrawer: React.FC<ComposeServiceDrawerProps> = ({
@@ -33,8 +31,6 @@ export const ComposeServiceDrawer: React.FC<ComposeServiceDrawerProps> = ({
   t,
   onClose,
   handleServiceAction,
-  setActiveTab,
-  setSelectedContainerId,
 }) => {
   return (
     <div className="absolute top-3 right-3 bottom-3 w-80 max-w-[calc(100%-24px)] bg-popover border border-popover-border rounded-2xl shadow-2xl shadow-black/80 flex flex-col z-30 animate-in slide-in-from-right duration-200 canvas-interactive">
@@ -192,19 +188,6 @@ export const ComposeServiceDrawer: React.FC<ComposeServiceDrawerProps> = ({
             </>
           )}
         </div>
-
-        {selectedService.containerId && (
-          <button
-            onClick={() => {
-              setActiveTab("containers");
-              setSelectedContainerId(selectedService.containerId!);
-            }}
-            className="w-full flex items-center justify-center space-x-1.5 py-1.5 rounded-lg bg-primary-muted text-primary border border-primary/30 font-medium text-xs hover:bg-primary/20 transition-colors"
-          >
-            <span>{t.containers.selectToInspect}</span>
-            <ExternalLink className="w-3 h-3" />
-          </button>
-        )}
 
         <div className="bg-surface-secondary/50 rounded-xl p-3 border border-border/60 space-y-2">
           <div className="text-[10px] font-mono uppercase text-muted-foreground font-semibold">
