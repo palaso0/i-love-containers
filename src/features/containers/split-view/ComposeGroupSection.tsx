@@ -81,26 +81,138 @@ export const ComposeGroupSection: React.FC<ComposeGroupSectionProps> = ({
   return (
     <div key={groupName} className="space-y-1">
       {isCompose ? (
-        <div
-          onClick={() => toggleStackCollapse(groupName)}
-          className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-primary-muted border border-primary/30 text-xs text-foreground cursor-pointer hover:border-primary/50 transition-colors"
-        >
-          <div className="flex items-center space-x-1.5 min-w-0">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleStackCollapse(groupName);
-              }}
-              className="p-0.5 rounded text-primary hover:text-foreground transition-colors"
-              title={isCollapsed ? "Expand stack" : "Collapse stack"}
+        <div className="rounded-xl border border-border/80 bg-surface/50 overflow-hidden shadow-xs transition-colors">
+          <div
+            onClick={() => toggleStackCollapse(groupName)}
+            className={`flex items-center justify-between px-3 py-2 bg-surface-secondary/70 hover:bg-surface-secondary text-xs text-foreground cursor-pointer transition-colors select-none ${
+              !isCollapsed && groupList.length > 0 ? "border-b border-border/60" : ""
+            }`}
+          >
+            <div className="flex items-center space-x-2 min-w-0">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleStackCollapse(groupName);
+                }}
+                className="p-1 -ml-1 rounded hover:bg-surface/80 text-muted-foreground hover:text-foreground transition-colors"
+                title={isCollapsed ? "Expand stack" : "Collapse stack"}
+              >
+                {isCollapsed ? (
+                  <ChevronRight className="w-3.5 h-3.5" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5" />
+                )}
+              </button>
+              <div onClick={(e) => e.stopPropagation()}>
+                <IndeterminateCheckbox
+                  checked={
+                    groupList.length > 0 &&
+                    groupList.every((c) => selectedIds.has(c.id))
+                  }
+                  indeterminate={
+                    groupList.some((c) => selectedIds.has(c.id)) &&
+                    !groupList.every((c) => selectedIds.has(c.id))
+                  }
+                  onChange={() => toggleGroupSelect(groupList)}
+                  title="Seleccionar todo el stack"
+                />
+              </div>
+              <FolderGit2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <span className="font-semibold text-xs tracking-tight truncate text-foreground">
+                {groupName}
+              </span>
+              <span className="text-[10px] font-mono text-muted-foreground bg-surface border border-border/60 px-1.5 py-0.2 rounded-md">
+                {runningInGroup}/{groupList.length}
+              </span>
+            </div>
+
+            <div
+              className="flex items-center space-x-1 shrink-0"
+              onClick={(e) => e.stopPropagation()}
             >
-              {isCollapsed ? (
-                <ChevronRight className="w-3.5 h-3.5" />
-              ) : (
-                <ChevronDown className="w-3.5 h-3.5" />
-              )}
-            </button>
-            <div onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (groupList.length > 0) {
+                    openRealNativeWindow({
+                      id: `stack-logs-${groupName}-${Date.now()}`,
+                      title: `${groupName} — Unified Logs`,
+                      type: "logs",
+                      composeProject: groupName,
+                    });
+                  }
+                }}
+                disabled={groupList.length === 0}
+                className="flex items-center space-x-1 px-1.5 py-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-surface/80 transition-colors text-2xs font-mono disabled:opacity-40 disabled:pointer-events-none"
+                title="Open unified live logs in native window"
+              >
+                <FileText className="w-3 h-3" />
+                <span>Logs</span>
+              </button>
+              <button
+                onClick={(e) => handleStartAll(groupName, groupList, e)}
+                className="p-1 rounded text-muted-foreground hover:text-emerald-500 hover:bg-surface/80 transition-colors"
+                title={t.containers.startAll}
+              >
+                <Play className="w-3 h-3 fill-current" />
+              </button>
+              <button
+                onClick={(e) => handleStopAll(groupList, e)}
+                disabled={runningInGroup === 0}
+                className="p-1 rounded text-muted-foreground hover:text-amber-500 hover:bg-surface/80 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                title={t.containers.stopAll}
+              >
+                <Square className="w-3 h-3 fill-current" />
+              </button>
+              <button
+                onClick={(e) => handleRestartAll(groupName, groupList, e)}
+                className="p-1 rounded text-muted-foreground hover:text-primary hover:bg-surface/80 transition-colors"
+                title={t.containers.restartAll}
+              >
+                <RotateCw className="w-3 h-3" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setStackToDelete({ name: groupName, containers: groupList });
+                }}
+                className="p-1 rounded text-muted-foreground/60 hover:text-status-danger hover:bg-status-danger/10 transition-colors"
+                title={t.containers.remove}
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+
+          {!isCollapsed && groupList.length > 0 && (
+            <div className="divide-y divide-border/40 bg-surface/30">
+              {groupList.map((container) => (
+                <ContainerRowItem
+                  key={container.id}
+                  container={container}
+                  isSelected={activeContainer?.id === container.id}
+                  isActionInProgress={isActionInProgress}
+                  selectedIds={selectedIds}
+                  t={t}
+                  getStatusDot={getStatusDot}
+                  onSelectContainer={onSelectContainer}
+                  onToggleSelect={toggleContainerSelect}
+                  onStart={onStart}
+                  onStop={onStop}
+                  onPause={onPause}
+                  onUnpause={onUnpause}
+                  onRestart={onRestart}
+                  onDelete={onDelete}
+                  isNested={true}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between px-2 pt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            <div className="flex items-center space-x-2">
               <IndeterminateCheckbox
                 checked={
                   groupList.length > 0 &&
@@ -111,120 +223,38 @@ export const ComposeGroupSection: React.FC<ComposeGroupSectionProps> = ({
                   !groupList.every((c) => selectedIds.has(c.id))
                 }
                 onChange={() => toggleGroupSelect(groupList)}
-                title="Seleccionar todo el stack"
+                title="Seleccionar todos los standalone"
               />
+              <span>{t.containers.standalone}</span>
             </div>
-            <FolderGit2 className="w-3.5 h-3.5 text-primary shrink-0" />
-            <span className="font-semibold text-xs tracking-tight truncate text-primary-hover">
-              {groupName}
-            </span>
-            <span className="text-[10px] font-mono bg-primary/20 text-primary-hover px-1.5 py-0.2 rounded-full">
-              {runningInGroup}/{groupList.length}
+            <span className="text-2xs font-mono lowercase">
+              {groupList.filter((c) => c.state === "running").length}/
+              {groupList.length}
             </span>
           </div>
 
-          <div
-            className="flex items-center space-x-1 shrink-0"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (groupList.length > 0) {
-                  openRealNativeWindow({
-                    id: `stack-logs-${groupName}-${Date.now()}`,
-                    title: `${groupName} — Unified Logs`,
-                    type: "logs",
-                    composeProject: groupName,
-                  });
-                }
-              }}
-              disabled={groupList.length === 0}
-              className="flex items-center space-x-1 px-1.5 py-0.5 rounded text-sky-400 hover:text-sky-300 hover:bg-surface/80 transition-colors text-2xs font-mono disabled:opacity-40 disabled:pointer-events-none"
-              title="Open unified live logs in native window"
-            >
-              <FileText className="w-3 h-3" />
-              <span>Logs</span>
-            </button>
-            <button
-              onClick={(e) => handleStartAll(groupName, groupList, e)}
-              className="p-1 rounded text-muted-foreground hover:text-status-running hover:bg-surface/80 transition-colors"
-              title={t.containers.startAll}
-            >
-              <Play className="w-3 h-3 fill-current" />
-            </button>
-            <button
-              onClick={(e) => handleStopAll(groupList, e)}
-              disabled={runningInGroup === 0}
-              className="p-1 rounded text-muted-foreground hover:text-status-restarting hover:bg-surface/80 transition-colors disabled:opacity-40 disabled:pointer-events-none"
-              title={t.containers.stopAll}
-            >
-              <Square className="w-3 h-3 fill-current" />
-            </button>
-            <button
-              onClick={(e) => handleRestartAll(groupName, groupList, e)}
-              className="p-1 rounded text-muted-foreground hover:text-sky-400 hover:bg-surface/80 transition-colors"
-              title={t.containers.restartAll}
-            >
-              <RotateCw className="w-3 h-3" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setStackToDelete({ name: groupName, containers: groupList });
-              }}
-              className="p-1 rounded text-status-danger/70 hover:text-status-danger hover:bg-status-danger/15 transition-colors"
-              title={t.containers.remove}
-            >
-              <Trash2 className="w-3 h-3" />
-            </button>
+          <div className="rounded-xl border border-border/80 bg-surface/30 divide-y divide-border/40 overflow-hidden shadow-xs">
+            {groupList.map((container) => (
+              <ContainerRowItem
+                key={container.id}
+                container={container}
+                isSelected={activeContainer?.id === container.id}
+                isActionInProgress={isActionInProgress}
+                selectedIds={selectedIds}
+                t={t}
+                getStatusDot={getStatusDot}
+                onSelectContainer={onSelectContainer}
+                onToggleSelect={toggleContainerSelect}
+                onStart={onStart}
+                onStop={onStop}
+                onPause={onPause}
+                onUnpause={onUnpause}
+                onRestart={onRestart}
+                onDelete={onDelete}
+                isNested={false}
+              />
+            ))}
           </div>
-        </div>
-      ) : (
-        <div className="flex items-center justify-between px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-          <div className="flex items-center space-x-2">
-            <IndeterminateCheckbox
-              checked={
-                groupList.length > 0 &&
-                groupList.every((c) => selectedIds.has(c.id))
-              }
-              indeterminate={
-                groupList.some((c) => selectedIds.has(c.id)) &&
-                !groupList.every((c) => selectedIds.has(c.id))
-              }
-              onChange={() => toggleGroupSelect(groupList)}
-              title="Seleccionar todos los standalone"
-            />
-            <span>{t.containers.standalone}</span>
-          </div>
-          <span className="text-2xs font-mono lowercase">
-            {groupList.filter((c) => c.state === "running").length}/
-            {groupList.length}
-          </span>
-        </div>
-      )}
-
-      {!isCollapsed && groupList.length > 0 && (
-        <div className="space-y-1">
-          {groupList.map((container) => (
-            <ContainerRowItem
-              key={container.id}
-              container={container}
-              isSelected={activeContainer?.id === container.id}
-              isActionInProgress={isActionInProgress}
-              selectedIds={selectedIds}
-              t={t}
-              getStatusDot={getStatusDot}
-              onSelectContainer={onSelectContainer}
-              onToggleSelect={toggleContainerSelect}
-              onStart={onStart}
-              onStop={onStop}
-              onPause={onPause}
-              onUnpause={onUnpause}
-              onRestart={onRestart}
-              onDelete={onDelete}
-            />
-          ))}
         </div>
       )}
     </div>

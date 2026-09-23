@@ -30,7 +30,6 @@ export const Sidebar: React.FC = () => {
     t,
     activeTab,
     setActiveTab,
-    setSelectedContainerId,
     containers,
     images,
     volumes,
@@ -173,19 +172,48 @@ export const Sidebar: React.FC = () => {
     (c) => c.state === "running",
   ).length;
 
-  const hiddenComposeProjects = getHiddenComposeProjects();
+  let hiddenComposeProjects = getHiddenComposeProjects();
   const savedStacks = getSavedStackProjects();
-  const visibleComposeCount =
-    composeProjects.filter(
-      (p) => !hiddenComposeProjects.includes(p.name.toLowerCase()),
-    ).length +
-    savedStacks.filter(
-      (s) =>
-        !hiddenComposeProjects.includes(s.name.toLowerCase()) &&
-        !composeProjects.some(
-          (p) => p.name.toLowerCase() === s.name.toLowerCase(),
-        ),
-    ).length;
+  const allComposeProjectNames = new Set<string>();
+
+  const activeProjectNames = new Set(
+    containers
+      .map((c) => {
+        if (c.composeProject) return c.composeProject.toLowerCase();
+        const parts = c.name.split(/[-_]/);
+        if (parts.length >= 3) return parts[0].toLowerCase();
+        return undefined;
+      })
+      .filter((name): name is string => Boolean(name)),
+  );
+
+  if (activeProjectNames.size > 0) {
+    hiddenComposeProjects = hiddenComposeProjects.filter(
+      (h) => !activeProjectNames.has(h),
+    );
+  }
+
+  composeProjects.forEach((p) => {
+    if (!hiddenComposeProjects.includes(p.name.toLowerCase())) {
+      allComposeProjectNames.add(p.name.toLowerCase());
+    }
+  });
+  containers.forEach((c) => {
+    let pName = c.composeProject;
+    if (!pName) {
+      const parts = c.name.split(/[-_]/);
+      if (parts.length >= 3) pName = parts[0];
+    }
+    if (pName && !hiddenComposeProjects.includes(pName.toLowerCase())) {
+      allComposeProjectNames.add(pName.toLowerCase());
+    }
+  });
+  savedStacks.forEach((s) => {
+    if (!hiddenComposeProjects.includes(s.name.toLowerCase())) {
+      allComposeProjectNames.add(s.name.toLowerCase());
+    }
+  });
+  const visibleComposeCount = allComposeProjectNames.size;
 
   const runtimeItems: NavItem[] = [
     {
@@ -238,9 +266,6 @@ export const Sidebar: React.FC = () => {
 
   const handleSelectTab = (tab: ActiveTab) => {
     setActiveTab(tab);
-    if (tab !== "containers") {
-      setSelectedContainerId(null);
-    }
   };
 
   const renderNavGroup = (title: string, items: NavItem[]) => (

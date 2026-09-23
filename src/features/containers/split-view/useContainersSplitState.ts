@@ -196,15 +196,19 @@ export function useContainersSplitState(
   });
 
   useEffect(() => {
-    if (filteredContainers.length > 0) {
-      const exists = filteredContainers.some(
-        (c) => c.id === selectedContainerId,
-      );
-      if (!selectedContainerId || !exists) {
+    if (containers.length === 0) return;
+
+    // Check if the selected container still exists in the overall containers list
+    const existsInAll = containers.some((c) => c.id === selectedContainerId);
+
+    if (!selectedContainerId || !existsInAll) {
+      if (filteredContainers.length > 0) {
         setSelectedContainerId(filteredContainers[0].id);
+      } else if (containers.length > 0) {
+        setSelectedContainerId(containers[0].id);
       }
     }
-  }, [filteredContainers, selectedContainerId, setSelectedContainerId]);
+  }, [containers, filteredContainers, selectedContainerId, setSelectedContainerId]);
 
   const activeContainer =
     containers.find((c) => c.id === selectedContainerId) ||

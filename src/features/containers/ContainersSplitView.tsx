@@ -34,11 +34,11 @@ const getStatusDot = (state: ContainerState, size: "sm" | "md" = "sm") => {
   const sizeClass = size === "sm" ? "w-2 h-2" : "w-2.5 h-2.5";
   switch (state) {
     case "running":
-      return `${sizeClass} rounded-full shrink-0 bg-status-running shadow-[0_0_6px_rgba(48,209,88,0.7)]`;
+      return `${sizeClass} rounded-full shrink-0 bg-status-running`;
     case "paused":
-      return `${sizeClass} rounded-full shrink-0 bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.7)]`;
+      return `${sizeClass} rounded-full shrink-0 bg-amber-400`;
     case "restarting":
-      return `${sizeClass} rounded-full shrink-0 bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.7)]`;
+      return `${sizeClass} rounded-full shrink-0 bg-sky-400`;
     default:
       return `${sizeClass} rounded-full shrink-0 bg-status-stopped`;
   }

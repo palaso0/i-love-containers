@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import "@xterm/xterm/css/xterm.css";
-import { Trash2, RefreshCw } from "lucide-react";
+import { Trash2, RefreshCw, ZoomIn, ZoomOut } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { ContainerNotRunning } from "@/components/ContainerNotRunning";
 import { ContainerState } from "@/types";
@@ -134,6 +134,33 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
     session.reconnect(true);
   };
 
+  const handleZoomIn = () => {
+    const session = getOrCreateTerminalSession(
+      containerId,
+      containerName,
+      isDark,
+    );
+    session.zoomIn();
+  };
+
+  const handleZoomOut = () => {
+    const session = getOrCreateTerminalSession(
+      containerId,
+      containerName,
+      isDark,
+    );
+    session.zoomOut();
+  };
+
+  const handleResetZoom = () => {
+    const session = getOrCreateTerminalSession(
+      containerId,
+      containerName,
+      isDark,
+    );
+    session.resetZoom();
+  };
+
   if (!isRunning && state) {
     return (
       <ContainerNotRunning
@@ -151,6 +178,28 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
       }`}
     >
       <div className="absolute top-2 right-2 z-10 flex items-center space-x-1 opacity-40 group-hover:opacity-100 transition-opacity bg-surface/90 backdrop-blur-xs px-1.5 py-0.5 rounded-md border border-border/80 shadow-xs">
+        <button
+          onClick={handleZoomOut}
+          className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors cursor-pointer"
+          title="Zoom out (⌘-)"
+        >
+          <ZoomOut className="w-3 h-3" />
+        </button>
+        <button
+          onClick={handleResetZoom}
+          className="px-1 text-2xs font-mono text-muted-foreground hover:text-foreground rounded transition-colors cursor-pointer"
+          title="Reset zoom (⌘0)"
+        >
+          100%
+        </button>
+        <button
+          onClick={handleZoomIn}
+          className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors cursor-pointer"
+          title="Zoom in (⌘+)"
+        >
+          <ZoomIn className="w-3 h-3" />
+        </button>
+        <div className="h-3 w-[1px] bg-border mx-0.5" />
         <button
           onClick={handleReconnect}
           className="flex items-center space-x-1 px-1.5 py-0.5 text-2xs font-mono text-muted-foreground hover:text-foreground rounded transition-colors cursor-pointer"

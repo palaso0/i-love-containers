@@ -29,6 +29,30 @@ export function formatRelativeTime(dateString: string): string {
   return `${elapsedDays}d ago`;
 }
 
+export function formatUptime(status: string = "", startedAt?: string): string {
+  if (!status) return "";
+  // Check if status is like "Up 2 hours", "Up About an hour", "Up 45 minutes", etc.
+  const lower = status.toLowerCase();
+  if (lower.startsWith("up ")) {
+    // If it has health info like "Up 2 hours (healthy)", preserve or format
+    return status;
+  }
+  if (startedAt) {
+    const started = new Date(startedAt);
+    if (!isNaN(started.getTime())) {
+      const diffSec = Math.floor((Date.now() - started.getTime()) / 1000);
+      if (diffSec < 60) return `Up ${diffSec}s`;
+      const diffMin = Math.floor(diffSec / 60);
+      if (diffMin < 60) return `Up ${diffMin}m`;
+      const diffHr = Math.floor(diffMin / 60);
+      if (diffHr < 24) return `Up ${diffHr}h`;
+      const diffDays = Math.floor(diffHr / 24);
+      return `Up ${diffDays}d`;
+    }
+  }
+  return status;
+}
+
 export function normalizePath(p: string): string {
   const clean = (p || "").replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
   if (!clean || clean === "/") return "/";

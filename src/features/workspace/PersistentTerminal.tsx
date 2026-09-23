@@ -33,10 +33,23 @@ export const PersistentTerminal: React.FC<PersistentTerminalProps> = ({
     if (!terminalElementRef.current) return;
     if (xtermInstanceRef.current) return;
 
+    const savedFontSize = (() => {
+      try {
+        const val = localStorage.getItem("ilc_terminal_font_size");
+        if (val) {
+          const parsed = parseFloat(val);
+          if (!isNaN(parsed) && parsed >= 8 && parsed <= 32) return parsed;
+        }
+      } catch {}
+      return 12.5;
+    })();
+
+    let currentFontSize = savedFontSize;
+
     const term = new XTerm({
       cursorBlink: true,
       fontFamily: "SF Mono, JetBrains Mono, Menlo, Monaco, Consolas, monospace",
-      fontSize: 12.5,
+      fontSize: savedFontSize,
       lineHeight: 1.25,
       rightClickSelectsWord: true,
       theme: getTerminalTheme(isDark),
@@ -49,6 +62,36 @@ export const PersistentTerminal: React.FC<PersistentTerminalProps> = ({
     try {
       fitAddon.fit();
     } catch {}
+
+    const applyFontSize = (newSize: number) => {
+      const clamped = Math.max(9, Math.min(30, newSize));
+      currentFontSize = clamped;
+      term.options.fontSize = clamped;
+      try {
+        localStorage.setItem("ilc_terminal_font_size", String(clamped));
+      } catch {}
+      try {
+        fitAddon.fit();
+      } catch {}
+    };
+
+    term.attachCustomKeyEventHandler((event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey) {
+        if (event.key === "=" || event.key === "+") {
+          if (event.type === "keydown") applyFontSize(currentFontSize + 1.5);
+          return false;
+        }
+        if (event.key === "-" || event.key === "_") {
+          if (event.type === "keydown") applyFontSize(currentFontSize - 1.5);
+          return false;
+        }
+        if (event.key === "0") {
+          if (event.type === "keydown") applyFontSize(12.5);
+          return false;
+        }
+      }
+      return true;
+    });
 
     xtermInstanceRef.current = term;
     fitAddonRef.current = fitAddon;

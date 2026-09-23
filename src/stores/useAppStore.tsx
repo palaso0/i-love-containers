@@ -387,20 +387,67 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   }, []);
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>("overview");
+  const [activeTab, setActiveTab] = useState<ActiveTab>("containers");
   const [selectedContainerId, setSelectedContainerId] = useState<string | null>(
-    null,
+    () => {
+      try {
+        return localStorage.getItem("ilc-selected-container-id") || null;
+      } catch {
+        return null;
+      }
+    },
   );
   const [containerDetailTab, setContainerDetailTab] = useState<
     "overview" | "logs" | "terminal" | "stats" | "inspect" | "files"
-  >("overview");
+  >(() => {
+    try {
+      const saved = localStorage.getItem("ilc-container-detail-tab") as any;
+      if (
+        saved &&
+        ["overview", "logs", "terminal", "stats", "inspect", "files"].includes(
+          saved,
+        )
+      ) {
+        return saved;
+      }
+      return "overview";
+    } catch {
+      return "overview";
+    }
+  });
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
 
   const [navigationHistory, setNavigationHistory] = useState<NavigationEntry[]>([
     {
-      activeTab: "overview",
-      selectedContainerId: null,
-      containerDetailTab: "overview",
+      activeTab: "containers",
+      selectedContainerId: (() => {
+        try {
+          return localStorage.getItem("ilc-selected-container-id") || null;
+        } catch {
+          return null;
+        }
+      })(),
+      containerDetailTab: (() => {
+        try {
+          const saved = localStorage.getItem("ilc-container-detail-tab") as any;
+          if (
+            saved &&
+            [
+              "overview",
+              "logs",
+              "terminal",
+              "stats",
+              "inspect",
+              "files",
+            ].includes(saved)
+          ) {
+            return saved;
+          }
+          return "overview";
+        } catch {
+          return "overview";
+        }
+      })(),
       selectedImageId: null,
     },
   ]);
@@ -409,7 +456,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const historyIndexRef = useRef(0);
   const navigationHistoryRef = useRef<NavigationEntry[]>([
     {
-      activeTab: "overview",
+      activeTab: "containers",
       selectedContainerId: null,
       containerDetailTab: "overview",
       selectedImageId: null,
@@ -423,7 +470,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     const currentHistory = navigationHistoryRef.current;
     const currentIndex = historyIndexRef.current;
     const current = currentHistory[currentIndex] || {
-      activeTab: "overview",
+      activeTab: "containers",
       selectedContainerId: null,
       containerDetailTab: "overview",
       selectedImageId: null,
@@ -474,6 +521,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const handleSetSelectedContainerId = useCallback(
     (id: string | null) => {
       setSelectedContainerId(id);
+      try {
+        if (id) {
+          localStorage.setItem("ilc-selected-container-id", id);
+        } else {
+          localStorage.removeItem("ilc-selected-container-id");
+        }
+      } catch {}
       pushHistory({ selectedContainerId: id });
     },
     [pushHistory],
@@ -482,6 +536,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const handleSetContainerDetailTab = useCallback(
     (tab: "overview" | "logs" | "terminal" | "stats" | "inspect" | "files") => {
       setContainerDetailTab(tab);
+      try {
+        localStorage.setItem("ilc-container-detail-tab", tab);
+      } catch {}
       pushHistory({ containerDetailTab: tab });
     },
     [pushHistory],

@@ -2514,7 +2514,11 @@ export function attachPtyWebSocket(server: any) {
                 "COLORTERM=truecolor",
                 "LANG=C.UTF-8",
               ],
-              Cmd: ["sh"],
+              Cmd: [
+                "sh",
+                "-c",
+                "export PS1='\\h:\\W\\$ '; [ -d /etc ] && echo 'export PS1=\"\\\\h:\\\\W\\\\$ \"' > /tmp/.ilc_profile 2>/dev/null; [ -f /tmp/.ilc_profile ] && export ENV=/tmp/.ilc_profile; if [ -x /bin/bash ]; then exec /bin/bash --login; elif [ -x /usr/bin/bash ]; then exec /usr/bin/bash --login; elif [ -x /bin/ash ]; then exec /bin/ash; elif [ -x /bin/sh ]; then exec /bin/sh; else exec sh; fi",
+              ],
             }
           );
           if (createRes?.data?.Id) {
@@ -2545,6 +2549,33 @@ export function attachPtyWebSocket(server: any) {
             );
             if (fallbackRes?.data?.Id) {
               execId = fallbackRes.data.Id;
+            }
+          } catch {}
+        }
+
+        if (!execId) {
+          try {
+            const fallbackSh = await requestUnixSocket(
+              socketPath,
+              `/containers/${containerId}/exec`,
+              "POST",
+              {
+                AttachStdin: true,
+                AttachStdout: true,
+                AttachStderr: true,
+                Tty: true,
+                OpenStdin: true,
+                StdinOnce: false,
+                Env: [
+                  "TERM=xterm-256color",
+                  "COLORTERM=truecolor",
+                  "LANG=C.UTF-8",
+                ],
+                Cmd: ["sh"],
+              }
+            );
+            if (fallbackSh?.data?.Id) {
+              execId = fallbackSh.data.Id;
             }
           } catch {}
         }

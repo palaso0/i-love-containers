@@ -12,6 +12,7 @@ import { ContainerDetail, ContainerState } from "@/types";
 
 import { TechIcon } from "@/components/TechIcon";
 import { openRealNativeWindow } from "@/lib/nativeWindow";
+import { formatUptime } from "@/lib/utils";
 
 
 interface ContainerDetailHeaderProps {
@@ -87,6 +88,14 @@ export const ContainerDetailHeader: React.FC<ContainerDetailHeaderProps> = ({
               <span className="shrink-0">
                 {activeContainer.id.slice(0, 12)}
               </span>
+              {activeContainer.status && (
+                <>
+                  <span>•</span>
+                  <span className="shrink-0 text-foreground/80">
+                    {formatUptime(activeContainer.status, activeContainer.startedAt)}
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>

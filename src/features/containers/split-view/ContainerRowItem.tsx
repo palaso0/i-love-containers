@@ -10,7 +10,7 @@ import {
 import { ContainerDetail, ContainerState } from "@/types";
 
 import { TechIcon } from "@/components/TechIcon";
-import { formatBytes } from "@/lib/utils";
+import { formatUptime } from "@/lib/utils";
 import { openRealNativeWindow } from "@/lib/nativeWindow";
 import { IndeterminateCheckbox } from "./IndeterminateCheckbox";
 
@@ -30,6 +30,7 @@ interface ContainerRowItemProps {
   onUnpause: (id: string, e: React.MouseEvent) => void;
   onRestart: (id: string, e: React.MouseEvent) => void;
   onDelete: (c: ContainerDetail, e: React.MouseEvent) => void;
+  isNested?: boolean;
 }
 
 export const ContainerRowItem: React.FC<ContainerRowItemProps> = ({
@@ -46,6 +47,7 @@ export const ContainerRowItem: React.FC<ContainerRowItemProps> = ({
   onUnpause,
   onRestart,
   onDelete,
+  isNested = false,
 }) => {
   const isRunning = container.state === "running";
   const isPaused = container.state === "paused";
@@ -54,12 +56,20 @@ export const ContainerRowItem: React.FC<ContainerRowItemProps> = ({
     <div
       key={container.id}
       onClick={() => onSelectContainer(container.id)}
-      className={`group/row px-2.5 py-2 rounded-lg cursor-pointer transition-all duration-150 border flex items-center justify-between gap-2 ${
+      className={`group/row relative px-3 py-2 cursor-pointer transition-colors flex items-center justify-between gap-2 select-none ${
+        isNested ? "pl-7" : "pl-3"
+      } ${
         isSelected
-          ? "bg-white/[0.08] border-white/10 shadow-mac-segment text-foreground font-medium"
-          : "bg-surface/30 hover:bg-surface/90 hover:border-border/80 border-transparent text-foreground/80 hover:text-foreground hover:shadow-xs"
+          ? "bg-primary/10 text-foreground font-medium"
+          : "hover:bg-surface-secondary/60 text-foreground/85"
       }`}
     >
+      {isSelected && (
+        <span className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-primary rounded-r" />
+      )}
+      {isNested && (
+        <span className="absolute left-3.5 top-0 bottom-0 w-px bg-border/40" />
+      )}
       <div className="flex items-center space-x-2 min-w-0">
         <IndeterminateCheckbox
           checked={selectedIds.has(container.id)}
@@ -98,7 +108,7 @@ export const ContainerRowItem: React.FC<ContainerRowItemProps> = ({
                     {publicPorts.slice(0, 2).map((port) => (
                       <span
                         key={port}
-                        className="text-[10px] font-mono text-primary font-medium bg-primary/10 border border-primary/25 px-1.5 py-0.2 rounded"
+                        className="text-[10px] font-mono text-muted-foreground font-medium bg-surface-secondary border border-border/70 px-1.5 py-0.2 rounded hover:text-primary transition-colors"
                       >
                         :{port}
                       </span>
@@ -117,17 +127,14 @@ export const ContainerRowItem: React.FC<ContainerRowItemProps> = ({
 
           </div>
           <div className="text-[11px] font-mono text-muted-foreground truncate flex items-center gap-1.5 mt-0.5">
-            {isRunning && container.cpuPercent !== undefined ? (
-              <span>
-                {container.cpuPercent}% CPU •{" "}
-                {formatBytes(container.memoryUsage ?? 0)}
-              </span>
+            {isRunning ? (
+              <span>{formatUptime(container.status, container.startedAt)}</span>
             ) : isPaused ? (
               <span className="text-amber-400 font-medium">
                 {t.containers.paused}
               </span>
             ) : (
-              <span>{container.image}</span>
+              <span>{container.status || container.image}</span>
             )}
           </div>
         </div>

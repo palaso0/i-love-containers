@@ -2,15 +2,15 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   FileText,
   Search,
-  Play,
-  Pause,
-  ArrowDown,
+  ChevronsDown,
   Clock,
+  Tag,
   Trash2,
-  Copy,
-  Check,
   Download,
   Filter,
+  WrapText,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 
 import { useAppStore } from "@/stores/useAppStore";
@@ -35,20 +35,85 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
   containerName,
   composeProject,
 }) => {
-  const { theme } = useAppStore();
+  const { theme, language } = useAppStore();
   const isDark = theme === "dark";
+  const isEs = language === "es";
 
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [clearedAt, setClearedAt] = useState<number>(0);
   const clearedAtRef = useRef<number>(0);
   clearedAtRef.current = clearedAt;
   const [searchQuery, setSearchQuery] = useState("");
-  const [isPaused, setIsPaused] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
   const [showTimestamps, setShowTimestamps] = useState(true);
-  const [copied, setCopied] = useState(false);
+  const [showServiceTags, setShowServiceTags] = useState(() => {
+    try {
+      const saved = localStorage.getItem("ilc_logs_show_service_tags");
+      return saved !== null ? saved === "true" : true;
+    } catch {
+      return true;
+    }
+  });
+  const [fontSize, setFontSize] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem("ilc_logs_font_size");
+      if (saved) {
+        const parsed = parseFloat(saved);
+        if (!isNaN(parsed) && parsed >= 8 && parsed <= 30) return parsed;
+      }
+    } catch {}
+    return 11;
+  });
+  const [wrapLines, setWrapLines] = useState(false);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const logsEndRef = useRef<HTMLDivElement>(null);
+
+  const handleZoomIn = () => {
+    setFontSize((prev) => {
+      const next = Math.min(26, prev + 1);
+      try {
+        localStorage.setItem("ilc_logs_font_size", String(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const handleZoomOut = () => {
+    setFontSize((prev) => {
+      const next = Math.max(9, prev - 1);
+      try {
+        localStorage.setItem("ilc_logs_font_size", String(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const handleResetZoom = () => {
+    setFontSize(11);
+    try {
+      localStorage.setItem("ilc_logs_font_size", "11");
+    } catch {}
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey) {
+        if (e.key === "=" || e.key === "+") {
+          e.preventDefault();
+          handleZoomIn();
+        } else if (e.key === "-" || e.key === "_") {
+          e.preventDefault();
+          handleZoomOut();
+        } else if (e.key === "0") {
+          e.preventDefault();
+          handleResetZoom();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const availableServices = Array.from(new Set(logs.map((l) => l.source)));
 
@@ -56,8 +121,6 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
     let isMounted = true;
 
     const fetchRealLogs = async () => {
-      if (isPaused) return;
-
       try {
         if (composeProject) {
           const containers = await api.fetchContainers();
@@ -86,7 +149,19 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
           const logsByContainer = await Promise.all(
             projectContainers.map(async (c, idx) => {
               const rawLogs = await api.fetchContainerLogs(c.id);
-              const serviceName = c.composeService || c.name;
+              // Clean service name: prefer c.composeService, or strip project prefix/numbers from container name
+              let serviceName = c.composeService;
+              if (!serviceName) {
+                let name = c.name.replace(/^\//, "");
+                if (composeProject && name.toLowerCase().startsWith(`${composeProject.toLowerCase()}-`)) {
+                  name = name.slice(composeProject.length + 1);
+                } else if (composeProject && name.toLowerCase().startsWith(`${composeProject.toLowerCase()}_`)) {
+                  name = name.slice(composeProject.length + 1);
+                }
+                // Strip trailing container replica suffix like -1 or _1
+                name = name.replace(/[-_]\d+$/, "");
+                serviceName = name || c.name;
+              }
               const color = isDark
                 ? colorPaletteDark[idx % colorPaletteDark.length]
                 : colorPaletteLight[idx % colorPaletteLight.length];
@@ -128,7 +203,22 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
           const rawLogs = await api.fetchContainerLogs(containerId);
           if (!isMounted) return;
 
-          const serviceName = containerName || "container";
+          let serviceName = containerName?.replace(/^\//, "") || "container";
+          if (composeProject) {
+            if (serviceName.toLowerCase().startsWith(`${composeProject.toLowerCase()}-`)) {
+              serviceName = serviceName.slice(composeProject.length + 1);
+            } else if (serviceName.toLowerCase().startsWith(`${composeProject.toLowerCase()}_`)) {
+              serviceName = serviceName.slice(composeProject.length + 1);
+            }
+            serviceName = serviceName.replace(/[-_]\d+$/, "");
+          } else {
+            // Also try to detect common project-service-replica patterns even if composeProject wasn't passed in query
+            const parts = serviceName.split(/[-_]/);
+            if (parts.length >= 3 && /^\d+$/.test(parts[parts.length - 1])) {
+              // e.g. "nocodb-web-app-1" -> "web-app"
+              serviceName = parts.slice(1, -1).join("-");
+            }
+          }
           const color = isDark ? "#38bdf8" : "#0284c7";
 
           const parsed = rawLogs.map((line) => {
@@ -172,7 +262,7 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
       isMounted = false;
       clearInterval(interval);
     };
-  }, [containerId, containerName, composeProject, isPaused, isDark]);
+  }, [containerId, containerName, composeProject, isDark]);
 
   useEffect(() => {
     if (autoScroll && logsEndRef.current?.parentElement) {
@@ -180,18 +270,6 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
         logsEndRef.current.parentElement.scrollHeight;
     }
   }, [logs.length, autoScroll]);
-
-  const handleCopyLogs = () => {
-    const text = logs
-      .map(
-        (l) =>
-          `${showTimestamps ? l.timestamp + " " : ""}[${l.source}] ${l.message}`,
-      )
-      .join("\n");
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
 
   const handleDownload = () => {
     const text = logs
@@ -237,8 +315,8 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
           <FileText className="w-3.5 h-3.5 text-sky-400" />
           <span className="font-bold text-foreground">
             {composeProject
-              ? `${composeProject} (All Services)`
-              : containerName}
+              ? `${composeProject} ${isEs ? "(Registros unificados)" : "(Unified Logs)"}`
+              : containerName?.replace(/^\//, "") || (isEs ? "Registros de contenedor" : "Container Logs")}
           </span>
           {containerId && (
             <span className="text-muted-foreground hidden sm:inline">
@@ -254,50 +332,124 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search log stream..."
+              placeholder={isEs ? "Buscar en registros..." : "Search log stream..."}
               className="w-full pl-7 pr-2.5 py-1 text-2xs bg-surface-secondary border border-border rounded text-foreground focus:outline-none font-mono"
             />
           </div>
 
           <button
-            onClick={() => setIsPaused(!isPaused)}
-            className={`flex items-center space-x-1 px-2.5 py-1 rounded border transition-colors ${
-              isPaused
-                ? "bg-amber-500/10 border-amber-500/30 text-amber-500 font-semibold"
-                : "bg-surface-secondary border-border text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {isPaused ? (
-              <Play className="w-3 h-3 fill-current" />
-            ) : (
-              <Pause className="w-3 h-3 fill-current" />
-            )}
-            <span>{isPaused ? "Resume" : "Pause"}</span>
-          </button>
-
-          <button
             onClick={() => setAutoScroll(!autoScroll)}
-            className={`flex items-center space-x-1 px-2.5 py-1 rounded border transition-colors ${
+            title={
+              isEs
+                ? autoScroll
+                  ? "Seguir registros (Auto-scroll): ACTIVADO"
+                  : "Seguir registros (Auto-scroll): DESACTIVADO"
+                : autoScroll
+                  ? "Follow logs (Auto-scroll): ON"
+                  : "Follow logs (Auto-scroll): OFF"
+            }
+            className={`p-1.5 rounded border transition-colors ${
               autoScroll
                 ? "bg-primary/10 border-primary/30 text-primary font-semibold"
                 : "bg-surface-secondary border-border text-muted-foreground hover:text-foreground"
             }`}
           >
-            <ArrowDown className="w-3 h-3" />
-            <span>Auto-scroll</span>
+            <ChevronsDown className="w-3.5 h-3.5" />
           </button>
 
           <button
             onClick={() => setShowTimestamps(!showTimestamps)}
-            className={`flex items-center space-x-1 px-2.5 py-1 rounded border transition-colors ${
+            title={
+              isEs
+                ? showTimestamps
+                  ? "Hora / Marcas de tiempo: ACTIVADO"
+                  : "Hora / Marcas de tiempo: DESACTIVADO"
+                : showTimestamps
+                  ? "Time / Timestamps: ON"
+                  : "Time / Timestamps: OFF"
+            }
+            className={`p-1.5 rounded border transition-colors ${
               showTimestamps
-                ? "bg-surface-secondary border-border text-foreground font-semibold"
-                : "bg-surface border-border text-muted-foreground hover:text-foreground"
+                ? "bg-primary/10 border-primary/30 text-primary font-semibold"
+                : "bg-surface-secondary border-border text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Clock className="w-3 h-3" />
-            <span>Time</span>
+            <Clock className="w-3.5 h-3.5" />
           </button>
+
+          <button
+            onClick={() => {
+              const next = !showServiceTags;
+              setShowServiceTags(next);
+              try {
+                localStorage.setItem("ilc_logs_show_service_tags", String(next));
+              } catch {}
+            }}
+            className={`p-1.5 rounded border transition-colors ${
+              showServiceTags
+                ? "bg-primary/10 border-primary/30 text-primary font-semibold"
+                : "bg-surface-secondary border-border text-muted-foreground hover:text-foreground"
+            }`}
+            title={
+              isEs
+                ? showServiceTags
+                  ? "Etiqueta (Tag): ACTIVADO"
+                  : "Etiqueta (Tag): DESACTIVADO"
+                : showServiceTags
+                  ? "Tag: ON"
+                  : "Tag: OFF"
+            }
+          >
+            <Tag className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            onClick={() => setWrapLines(!wrapLines)}
+            title={
+              isEs
+                ? wrapLines
+                  ? "Ajuste de línea: ACTIVADO (clic para activar desplazamiento horizontal)"
+                  : "Ajuste de línea: DESACTIVADO (desplazamiento horizontal activo)"
+                : wrapLines
+                  ? "Word wrap: ON (click to scroll horizontally)"
+                  : "Word wrap: OFF (horizontal scroll enabled)"
+            }
+            className={`p-1.5 rounded border transition-colors ${
+              wrapLines
+                ? "bg-primary/10 border-primary/30 text-primary font-semibold"
+                : "bg-surface-secondary border-border text-muted-foreground hover:text-foreground hover:bg-surface-hover"
+            }`}
+          >
+            <WrapText className="w-3.5 h-3.5" />
+          </button>
+
+          <div className="h-4 w-[1px] bg-border mx-0.5" />
+
+          <button
+            onClick={handleZoomOut}
+            className="p-1.5 rounded border border-border bg-surface-secondary text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+            title={isEs ? "Alejar (⌘-)" : "Zoom out (⌘-)"}
+          >
+            <ZoomOut className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            onClick={handleResetZoom}
+            className="px-2 py-1 text-2xs font-mono rounded border border-border bg-surface-secondary text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+            title={isEs ? "Restablecer zoom (⌘0)" : "Reset zoom (⌘0)"}
+          >
+            {Math.round((fontSize / 11) * 100)}%
+          </button>
+
+          <button
+            onClick={handleZoomIn}
+            className="p-1.5 rounded border border-border bg-surface-secondary text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+            title={isEs ? "Acercar (⌘+)" : "Zoom in (⌘+)"}
+          >
+            <ZoomIn className="w-3.5 h-3.5" />
+          </button>
+
+          <div className="h-4 w-[1px] bg-border mx-0.5" />
 
           <button
             onClick={() => {
@@ -307,27 +459,15 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
               setLogs([]);
             }}
             className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-surface-secondary"
-            title="Clear logs"
+            title={isEs ? "Limpiar registros" : "Clear logs"}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
 
           <button
-            onClick={handleCopyLogs}
-            className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-surface-secondary"
-            title="Copy logs"
-          >
-            {copied ? (
-              <Check className="w-3.5 h-3.5 text-status-running" />
-            ) : (
-              <Copy className="w-3.5 h-3.5" />
-            )}
-          </button>
-
-          <button
             onClick={handleDownload}
             className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-surface-secondary"
-            title="Download log file"
+            title={isEs ? "Descargar archivo de registro" : "Download log file"}
           >
             <Download className="w-3.5 h-3.5" />
           </button>
@@ -337,7 +477,7 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
       {availableServices.length > 1 && (
         <div className="px-4 py-1.5 bg-surface/60 border-b border-border flex items-center space-x-2 font-mono text-2xs shrink-0 overflow-x-auto">
           <Filter className="w-3 h-3 text-muted-foreground" />
-          <span className="text-muted-foreground mr-1">Services:</span>
+          <span className="text-muted-foreground mr-1">{isEs ? "Servicios:" : "Services:"}</span>
           {availableServices.map((name) => {
             const active =
               activeFilters.length === 0 || activeFilters.includes(name);
@@ -360,7 +500,8 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
       )}
 
       <div
-        className={`flex-1 overflow-y-auto p-4 select-text font-mono text-2xs leading-relaxed space-y-0.5 min-h-0 ${
+        style={{ fontSize: `${fontSize}px` }}
+        className={`flex-1 overflow-y-auto overflow-x-auto p-4 select-text font-mono leading-relaxed space-y-0.5 min-h-0 visible-scrollbar ${
           isDark ? "bg-[#090b10] text-slate-200" : "bg-[#f8fafc] text-slate-800"
         }`}
       >
@@ -370,40 +511,49 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
               isDark ? "text-slate-500" : "text-slate-400"
             }`}
           >
-            No log entries found
+            {isEs ? "No se encontraron registros" : "No log entries found"}
           </div>
         ) : (
-          filteredLogs.map((log) => (
-            <div
-              key={log.id}
-              className={`flex items-start px-1 py-0.5 rounded font-mono ${
-                isDark ? "hover:bg-white/5" : "hover:bg-slate-200/70"
-              }`}
-            >
-              {showTimestamps && (
+          filteredLogs.map((log) => {
+            const shouldShowTag = showServiceTags;
+
+            return (
+              <div
+                key={log.id}
+                className={`flex items-start px-1 py-0.5 rounded font-mono ${
+                  wrapLines ? "w-full" : "w-max min-w-full"
+                } ${isDark ? "hover:bg-white/5" : "hover:bg-slate-200/70"}`}
+              >
+                {showTimestamps && (
+                  <span
+                    className={`mr-2.5 shrink-0 font-mono ${
+                      isDark ? "text-slate-500" : "text-slate-400"
+                    }`}
+                  >
+                    {log.timestamp}
+                  </span>
+                )}
+                {shouldShowTag && (
+                  <span
+                    className="font-semibold mr-2 shrink-0 truncate max-w-[140px]"
+                    style={{ color: log.color }}
+                    title={log.source}
+                  >
+                    [{log.source}]
+                  </span>
+                )}
                 <span
-                  className={`mr-2.5  shrink-0 font-mono ${
-                    isDark ? "text-slate-500" : "text-slate-400"
-                  }`}
+                  className={`${
+                    wrapLines
+                      ? "break-all whitespace-pre-wrap flex-1 min-w-0"
+                      : "whitespace-pre shrink-0"
+                  } ${isDark ? "text-slate-200" : "text-slate-800"}`}
                 >
-                  {log.timestamp}
+                  {log.message}
                 </span>
-              )}
-              <span
-                className="font-semibold mr-2 shrink-0 "
-                style={{ color: log.color }}
-              >
-                [{log.source}]
-              </span>
-              <span
-                className={`break-all whitespace-pre-wrap ${
-                  isDark ? "text-slate-200" : "text-slate-800"
-                }`}
-              >
-                {log.message}
-              </span>
-            </div>
-          ))
+              </div>
+            );
+          })
         )}
         <div ref={logsEndRef} />
       </div>

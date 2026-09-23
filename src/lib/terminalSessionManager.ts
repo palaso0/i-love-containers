@@ -12,12 +12,35 @@ export interface TerminalSession {
   wrapperEl: HTMLDivElement;
   isDark: boolean;
   isConnected: boolean;
+  fontSize: number;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  resetZoom: () => void;
   reconnect: (force?: boolean) => void;
   clear: () => void;
   dispose?: () => void;
 }
 
 const sessions = new Map<string, TerminalSession>();
+
+function getSavedTerminalFontSize(): number {
+  try {
+    const val = localStorage.getItem("ilc_terminal_font_size");
+    if (val) {
+      const parsed = parseFloat(val);
+      if (!isNaN(parsed) && parsed >= 8 && parsed <= 32) {
+        return parsed;
+      }
+    }
+  } catch {}
+  return 12.5;
+}
+
+function saveTerminalFontSize(size: number) {
+  try {
+    localStorage.setItem("ilc_terminal_font_size", String(size));
+  } catch {}
+}
 
 export function getOrCreateTerminalSession(
   containerId: string,
@@ -37,6 +60,8 @@ export function getOrCreateTerminalSession(
     return existing;
   }
 
+  const initialFontSize = getSavedTerminalFontSize();
+
   const wrapperEl = document.createElement("div");
   wrapperEl.className = "w-full h-full min-h-0 select-text font-mono";
   wrapperEl.style.height = "100%";
@@ -45,7 +70,7 @@ export function getOrCreateTerminalSession(
   const term = new XTerm({
     cursorBlink: true,
     fontFamily: "SF Mono, JetBrains Mono, Menlo, Monaco, Consolas, monospace",
-    fontSize: 12.5,
+    fontSize: initialFontSize,
     lineHeight: 1.25,
     rightClickSelectsWord: true,
     theme: getTerminalTheme(isDark),
@@ -112,6 +137,12 @@ export function getOrCreateTerminalSession(
               rows,
             }),
           );
+          // Set PS1 so that the prompt displays only the directory basename (\W) instead of full path (\w)
+          setTimeout(() => {
+            if (socket.readyState === WebSocket.OPEN) {
+              socket.send(" [ -n \"$BASH_VERSION\" ] && PS1='\\h:\\W\\$ ' || PS1='\\h:\\W\\$ '\r");
+            }
+          }, 350);
         }
       } catch {}
     };
@@ -173,7 +204,46 @@ export function getOrCreateTerminalSession(
       ws.send(text);
     }
   };
-  wrapperEl.addEventListener("paste", handlePaste);
+  let currentFontSize = initialFontSize;
+
+  const applyFontSize = (newSize: number) => {
+    const clamped = Math.max(9, Math.min(30, newSize));
+    currentFontSize = clamped;
+    session.fontSize = clamped;
+    term.options.fontSize = clamped;
+    saveTerminalFontSize(clamped);
+    try {
+      fitAddon.fit();
+    } catch {}
+  };
+
+  const zoomIn = () => applyFontSize(currentFontSize + 1.5);
+  const zoomOut = () => applyFontSize(currentFontSize - 1.5);
+  const resetZoom = () => applyFontSize(12.5);
+
+  term.attachCustomKeyEventHandler((event: KeyboardEvent) => {
+    if (event.metaKey || event.ctrlKey) {
+      if (event.key === "=" || event.key === "+") {
+        if (event.type === "keydown") {
+          zoomIn();
+        }
+        return false;
+      }
+      if (event.key === "-" || event.key === "_") {
+        if (event.type === "keydown") {
+          zoomOut();
+        }
+        return false;
+      }
+      if (event.key === "0") {
+        if (event.type === "keydown") {
+          resetZoom();
+        }
+        return false;
+      }
+    }
+    return true;
+  });
 
   const session: TerminalSession = {
     containerId,
@@ -184,6 +254,10 @@ export function getOrCreateTerminalSession(
     wrapperEl,
     isDark,
     isConnected: false,
+    fontSize: currentFontSize,
+    zoomIn,
+    zoomOut,
+    resetZoom,
     reconnect: (force = false) => {
       if (!force && ws && ws.readyState < WebSocket.CLOSING) {
         return;

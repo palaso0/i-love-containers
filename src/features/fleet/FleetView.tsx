@@ -436,11 +436,6 @@ export const FleetView: React.FC = () => {
             </div>
           )}
         </div>
-
-        <div className="py-2 text-center  font-mono text-[11px] text-muted-foreground">
-          Click any service row to inspect logs, interactive shell, and resource
-          metrics
-        </div>
       </div>
 
       {selectedService && (
