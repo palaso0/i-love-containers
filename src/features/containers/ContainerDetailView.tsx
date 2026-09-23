@@ -226,13 +226,17 @@ export const ContainerDetailView: React.FC = () => {
         </div>
         <div
           className={
-            containerDetailTab === "terminal" ? "h-full w-full" : "hidden"
+            containerDetailTab === "terminal"
+              ? "h-[calc(100vh-210px)] min-h-[500px] w-full flex flex-col min-h-0"
+              : "hidden"
           }
         >
           <TerminalTab
+            key={container.id}
             containerId={container.id}
             containerName={container.name}
             containerState={container.state}
+            isActive={containerDetailTab === "terminal"}
           />
         </div>
         <div

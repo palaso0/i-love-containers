@@ -4,6 +4,8 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 import { exec } from "child_process";
+import net from "net";
+import { WebSocketServer } from "ws";
 
 export interface EngineCandidate {
   id: string;
@@ -268,14 +270,26 @@ function requestUnixSocket(
   bodyData?: any
 ): Promise<{ status: number; data: any; rawBuffer?: Buffer }> {
   return new Promise((resolve, reject) => {
+    const payload =
+      bodyData !== undefined && bodyData !== null
+        ? typeof bodyData === "string"
+          ? bodyData
+          : JSON.stringify(bodyData)
+        : undefined;
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (payload !== undefined) {
+      headers["Content-Length"] = Buffer.byteLength(payload).toString();
+    }
+
     const options: http.RequestOptions = {
       socketPath,
       path: requestPath,
       method,
       timeout: 10000,
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
     };
 
     const req = http.request(options, (res) => {
@@ -299,10 +313,11 @@ function requestUnixSocket(
       reject(new Error("Socket request timed out"));
     });
 
-    if (bodyData) {
-      req.write(typeof bodyData === "string" ? bodyData : JSON.stringify(bodyData));
+    if (payload !== undefined) {
+      req.end(payload);
+    } else {
+      req.end();
     }
-    req.end();
   });
 }
 
@@ -2438,11 +2453,264 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
   };
 }
 
+export function attachPtyWebSocket(server: any) {
+  if (!server) return;
+
+  try {
+    const existing = server.rawListeners ? server.rawListeners("upgrade") : [];
+    for (const listener of existing) {
+      if (
+        listener.__isPtyHandler ||
+        (listener.toString && listener.toString().includes("/pty"))
+      ) {
+        server.removeListener("upgrade", listener);
+      }
+    }
+  } catch {}
+
+  const wss = new WebSocketServer({ noServer: true });
+
+  const ptyUpgradeHandler = (req: any, socket: any, head: any) => {
+    const url = req.url || "";
+    const match = url.match(/^\/api\/containers\/([a-zA-Z0-9_-]+)\/pty/);
+    if (!match) {
+      return;
+    }
+
+    const containerId = match[1];
+
+    try {
+      socket.setTimeout(0);
+      socket.setNoDelay(true);
+      socket.setKeepAlive(true, 10000);
+    } catch {}
+
+    wss.handleUpgrade(req, socket, head, async (ws: any) => {
+      try {
+        const { activeEngine } = await detectEngines();
+        if (!activeEngine || activeEngine.status !== "running") {
+          ws.send(`\r\n\x1b[31m[Error]: Container engine is not running.\x1b[0m\r\n`);
+          ws.close();
+          return;
+        }
+
+        const socketPath = activeEngine.socketPath;
+
+        let execId: string | null = null;
+        try {
+          const createRes = await requestUnixSocket(
+            socketPath,
+            `/containers/${containerId}/exec`,
+            "POST",
+            {
+              AttachStdin: true,
+              AttachStdout: true,
+              AttachStderr: true,
+              Tty: true,
+              OpenStdin: true,
+              StdinOnce: false,
+              Env: [
+                "TERM=xterm-256color",
+                "COLORTERM=truecolor",
+                "LANG=C.UTF-8",
+              ],
+              Cmd: ["sh"],
+            }
+          );
+          if (createRes?.data?.Id) {
+            execId = createRes.data.Id;
+          }
+        } catch {}
+
+        if (!execId) {
+          try {
+            const fallbackRes = await requestUnixSocket(
+              socketPath,
+              `/containers/${containerId}/exec`,
+              "POST",
+              {
+                AttachStdin: true,
+                AttachStdout: true,
+                AttachStderr: true,
+                Tty: true,
+                OpenStdin: true,
+                StdinOnce: false,
+                Env: [
+                  "TERM=xterm-256color",
+                  "COLORTERM=truecolor",
+                  "LANG=C.UTF-8",
+                ],
+                Cmd: ["/bin/sh"],
+              }
+            );
+            if (fallbackRes?.data?.Id) {
+              execId = fallbackRes.data.Id;
+            }
+          } catch {}
+        }
+
+        if (!execId) {
+          ws.send(`\r\n\x1b[31m[Error]: Failed to create exec instance in container.\x1b[0m\r\n`);
+          ws.close();
+          return;
+        }
+
+        const rawSocket = net.createConnection({ path: socketPath });
+        let upgraded = false;
+        let headerBuffer = Buffer.alloc(0);
+
+        rawSocket.on("connect", () => {
+          try {
+            rawSocket.setTimeout(0);
+            rawSocket.setNoDelay(true);
+            rawSocket.setKeepAlive(true, 5000);
+          } catch {}
+
+          const execStartBody = JSON.stringify({ Detach: false, Tty: true });
+          const reqLines = [
+            `POST /exec/${execId}/start HTTP/1.1`,
+            `Host: localhost`,
+            `Connection: Upgrade`,
+            `Upgrade: tcp`,
+            `Content-Type: application/json`,
+            `Content-Length: ${Buffer.byteLength(execStartBody)}`,
+            ``,
+            execStartBody,
+          ];
+          rawSocket.write(reqLines.join("\r\n"));
+        });
+
+        rawSocket.on("data", (chunk: Buffer) => {
+          if (!upgraded) {
+            headerBuffer = Buffer.concat([headerBuffer, chunk]);
+            let separatorIndex = headerBuffer.indexOf("\r\n\r\n");
+            let sepLen = 4;
+            if (separatorIndex === -1) {
+              separatorIndex = headerBuffer.indexOf("\n\n");
+              sepLen = 2;
+            }
+            if (separatorIndex !== -1) {
+              upgraded = true;
+              const headerStr = headerBuffer.subarray(0, separatorIndex).toString("utf8");
+              const remainder = headerBuffer.subarray(separatorIndex + sepLen);
+
+              if (!headerStr.includes("101") && !headerStr.includes("200")) {
+                if (ws.readyState === 1) {
+                  ws.send(`\r\n\x1b[31m[Exec Error]: ${headerStr.split("\r\n")[0]}\x1b[0m\r\n`);
+                  ws.close();
+                }
+                rawSocket.destroy();
+                return;
+              }
+
+              requestUnixSocket(
+                socketPath,
+                `/exec/${execId}/resize?h=24&w=80`,
+                "POST"
+              ).catch(() => {});
+
+              if (remainder.length > 0 && ws.readyState === 1) {
+                ws.send(remainder);
+              }
+            }
+            return;
+          }
+
+          if (ws.readyState === 1) {
+            ws.send(chunk);
+          }
+        });
+
+        rawSocket.on("end", () => {
+          if (ws.readyState === 1) {
+            ws.close();
+          }
+        });
+
+        rawSocket.on("close", () => {
+          if (ws.readyState === 1) {
+            ws.close();
+          }
+        });
+
+        rawSocket.on("error", (err: any) => {
+          if (ws.readyState === 1) {
+            ws.send(`\r\n\x1b[31m[Exec Socket Error]: ${err.message}\x1b[0m\r\n`);
+            ws.close();
+          }
+        });
+
+        ws.on("message", (msg: any) => {
+          let str = "";
+          if (typeof msg === "string") {
+            str = msg;
+          } else if (Buffer.isBuffer(msg)) {
+            str = msg.toString("utf8");
+          } else if (msg instanceof ArrayBuffer) {
+            str = Buffer.from(msg).toString("utf8");
+          }
+
+          if (str.startsWith('{"type":"ping"')) {
+            return;
+          }
+          if (str.startsWith('{"type":"resize"')) {
+            try {
+              const parsed = JSON.parse(str);
+              if (parsed.cols && parsed.rows) {
+                requestUnixSocket(
+                  socketPath,
+                  `/exec/${execId}/resize?h=${parsed.rows}&w=${parsed.cols}`,
+                  "POST"
+                ).catch(() => {});
+              }
+            } catch {}
+            return;
+          }
+
+          if (rawSocket && rawSocket.writable) {
+            const toSend = Buffer.isBuffer(msg)
+              ? msg
+              : msg instanceof ArrayBuffer
+              ? Buffer.from(msg)
+              : typeof msg === "string"
+              ? Buffer.from(msg, "utf8")
+              : Buffer.from(String(msg));
+            rawSocket.write(toSend);
+          }
+        });
+
+        ws.on("close", () => {
+          try {
+            rawSocket.destroy();
+          } catch {}
+        });
+
+        ws.on("error", () => {
+          try {
+            rawSocket.destroy();
+          } catch {}
+        });
+      } catch (err: any) {
+        if (ws.readyState === 1) {
+          ws.send(`\r\n\x1b[31m[Error]: ${err.message}\x1b[0m\r\n`);
+          ws.close();
+        }
+      }
+    });
+  };
+
+  (ptyUpgradeHandler as any).__isPtyHandler = true;
+  server.on("upgrade", ptyUpgradeHandler);
+}
+
 export function createContainerEnginePlugin(): Plugin {
   const handler = createEngineHandler({ cors: false });
   return {
     name: "vite-container-engine-plugin",
     configureServer(server: ViteDevServer) {
+      if (server.httpServer) {
+        attachPtyWebSocket(server.httpServer);
+      }
       server.middlewares.use((req, res, next) => {
         handler(req, res, next).catch(next);
       });

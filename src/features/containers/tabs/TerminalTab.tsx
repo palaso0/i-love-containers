@@ -1,41 +1,35 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import "@xterm/xterm/css/xterm.css";
-import { Terminal as TerminalIcon, Trash2 } from "lucide-react";
+import { Trash2, RefreshCw } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { ContainerNotRunning } from "@/components/ContainerNotRunning";
 import { ContainerState } from "@/types";
-import {
-  getOrCreateTerminalSession,
-  destroyTerminalSession,
-} from "@/lib/terminalSessionManager";
+import { getOrCreateTerminalSession } from "@/lib/terminalSessionManager";
 
 interface TerminalTabProps {
   containerId: string;
   containerName: string;
   containerState?: ContainerState;
+  isActive?: boolean;
 }
 
 export const TerminalTab: React.FC<TerminalTabProps> = ({
   containerId,
   containerName,
   containerState,
+  isActive = true,
 }) => {
   const { theme, containers } = useAppStore();
   const isDark = theme === "dark";
 
   const currentContainer = containers.find((c) => c.id === containerId);
-  const state = containerState ?? currentContainer?.state ?? "running";
-  const isRunning = state === "running";
+  const state = containerState ?? currentContainer?.state;
+  const isRunning = !currentContainer || state === "running";
 
   const terminalElementRef = useRef<HTMLDivElement>(null);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const [isCompact, setIsCompact] = useState(false);
 
   useEffect(() => {
-    if (!isRunning) {
-      destroyTerminalSession(containerId);
-      return;
-    }
+    if (!isRunning || !isActive) return;
     const containerEl = terminalElementRef.current;
     if (!containerEl) return;
 
@@ -46,6 +40,7 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
     );
 
     if (session.wrapperEl.parentElement !== containerEl) {
+      containerEl.innerHTML = "";
       containerEl.appendChild(session.wrapperEl);
     }
 
@@ -62,13 +57,10 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
         if (session.term.cols < 30) {
           session.term.resize(80, 24);
         }
-        if (session.controller.getBuffer() === "") {
-          session.controller.redraw();
-        }
       } catch {}
     };
 
-    const fitTimer = setTimeout(safeFit, 20);
+    const fitTimer = setTimeout(safeFit, 25);
 
     const handleContextMenu = (e: MouseEvent) => {
       const selection = session.term.getSelection();
@@ -84,15 +76,45 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
     };
     window.addEventListener("resize", handleResize);
 
+    const resizeObserver = new ResizeObserver(() => {
+      requestAnimationFrame(safeFit);
+    });
+    resizeObserver.observe(containerEl);
+
     return () => {
       clearTimeout(fitTimer);
       containerEl.removeEventListener("contextmenu", handleContextMenu);
       window.removeEventListener("resize", handleResize);
-      if (session.wrapperEl.parentElement === containerEl) {
-        session.wrapperEl.remove();
-      }
+      resizeObserver.disconnect();
     };
-  }, [containerId, containerName, isRunning, isDark]);
+  }, [containerId, containerName, isRunning, isDark, isActive]);
+
+  useEffect(() => {
+    if (!isActive || !isRunning) return;
+    const containerEl = terminalElementRef.current;
+    if (!containerEl) return;
+    const session = getOrCreateTerminalSession(
+      containerId,
+      containerName,
+      isDark,
+    );
+    if (session.wrapperEl.parentElement !== containerEl) {
+      containerEl.innerHTML = "";
+      containerEl.appendChild(session.wrapperEl);
+    }
+    if (!session.ws || session.ws.readyState >= WebSocket.CLOSING) {
+      session.reconnect();
+    }
+    const timer = setTimeout(() => {
+      try {
+        if (containerEl.clientWidth >= 100 && containerEl.clientHeight >= 50) {
+          session.fitAddon.fit();
+        }
+        session.term.focus();
+      } catch {}
+    }, 40);
+    return () => clearTimeout(timer);
+  }, [isActive, isRunning, containerId, containerName, isDark]);
 
   const handleClear = () => {
     const session = getOrCreateTerminalSession(
@@ -100,35 +122,19 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
       containerName,
       isDark,
     );
-    session.controller.clear();
+    session.clear();
   };
 
-  useEffect(() => {
-    if (!rootRef.current) return;
-    const ro = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        setIsCompact(width < 460);
-        if (width >= 100 && height >= 50) {
-          try {
-            const session = getOrCreateTerminalSession(
-              containerId,
-              containerName,
-              isDark,
-            );
-            session.fitAddon.fit();
-            if (session.term.cols < 30) {
-              session.term.resize(80, 24);
-            }
-          } catch {}
-        }
-      }
-    });
-    ro.observe(rootRef.current);
-    return () => ro.disconnect();
-  }, [containerId, containerName, isDark]);
+  const handleReconnect = () => {
+    const session = getOrCreateTerminalSession(
+      containerId,
+      containerName,
+      isDark,
+    );
+    session.reconnect(true);
+  };
 
-  if (!isRunning) {
+  if (!isRunning && state) {
     return (
       <ContainerNotRunning
         state={state}
@@ -140,32 +146,31 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
 
   return (
     <div
-      ref={rootRef}
-      className={`flex flex-col h-full min-h-0 border border-border rounded-lg overflow-hidden shadow-inner ${
+      className={`group relative flex flex-col h-full w-full min-h-0 border border-border rounded-lg overflow-hidden shadow-inner ${
         isDark ? "bg-[#0d1117]" : "bg-white"
       }`}
     >
-      <div className="h-9 px-3 bg-surface-secondary border-b border-border flex items-center justify-between shrink-0">
-        <div className="flex items-center space-x-2 text-2xs font-mono text-muted-foreground truncate min-w-0">
-          <TerminalIcon className="w-3 h-3 text-primary shrink-0" />
-          <span className="truncate">
-            {isCompact ? "PTY" : "Interactive PTY (Docker Exec)"}
-          </span>
-        </div>
-        <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
-          <button
-            onClick={handleClear}
-            className="flex items-center space-x-1 px-1.5 sm:px-2 py-0.5 text-2xs font-mono text-muted-foreground hover:text-foreground rounded bg-surface border border-border transition-colors cursor-pointer"
-            title="Clear console"
-          >
-            <Trash2 className="w-2.5 h-2.5" />
-            {!isCompact && <span>Clear</span>}
-          </button>
-        </div>
+      <div className="absolute top-2 right-2 z-10 flex items-center space-x-1 opacity-40 group-hover:opacity-100 transition-opacity bg-surface/90 backdrop-blur-xs px-1.5 py-0.5 rounded-md border border-border/80 shadow-xs">
+        <button
+          onClick={handleReconnect}
+          className="flex items-center space-x-1 px-1.5 py-0.5 text-2xs font-mono text-muted-foreground hover:text-foreground rounded transition-colors cursor-pointer"
+          title="Reconnect session"
+        >
+          <RefreshCw className="w-2.5 h-2.5" />
+          <span>Reconnect</span>
+        </button>
+        <button
+          onClick={handleClear}
+          className="flex items-center space-x-1 px-1.5 py-0.5 text-2xs font-mono text-muted-foreground hover:text-foreground rounded transition-colors cursor-pointer"
+          title="Clear console"
+        >
+          <Trash2 className="w-2.5 h-2.5" />
+          <span>Clear</span>
+        </button>
       </div>
       <div
         ref={terminalElementRef}
-        className="flex-1 p-2 min-h-0 select-text font-mono overflow-hidden"
+        className="w-full h-full min-h-0 p-2 select-text font-mono overflow-hidden"
       />
     </div>
   );

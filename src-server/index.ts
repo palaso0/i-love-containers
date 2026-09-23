@@ -1,7 +1,7 @@
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
-import { createEngineHandler } from "../vite-engine-plugin";
+import { createEngineHandler, attachPtyWebSocket } from "../vite-engine-plugin";
 
 const home = os.homedir();
 const isWin = process.platform === "win32";
@@ -51,6 +51,8 @@ const server = http.createServer((req, res) => {
     }
   });
 });
+
+attachPtyWebSocket(server);
 
 server.on("error", (err: any) => {
   if (err.code === "EADDRINUSE") {

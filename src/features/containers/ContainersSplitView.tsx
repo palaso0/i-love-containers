@@ -402,9 +402,11 @@ export const ContainersSplitView: React.FC = () => {
                   }
                 >
                   <TerminalTab
+                    key={activeContainer.id}
                     containerId={activeContainer.id}
                     containerName={activeContainer.name}
                     containerState={activeContainer.state}
+                    isActive={containerDetailTab === "terminal"}
                   />
                 </div>
                 <div

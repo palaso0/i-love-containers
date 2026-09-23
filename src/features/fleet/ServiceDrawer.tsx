@@ -219,8 +219,11 @@ export const ServiceDrawer: React.FC<ServiceDrawerProps> = ({
           {activeTab === "logs" && <LogsTab containerId={container.id} />}
           {activeTab === "terminal" && (
             <TerminalTab
+              key={container.id}
               containerId={container.id}
               containerName={container.name}
+              containerState={container.state}
+              isActive={activeTab === "terminal"}
             />
           )}
           {activeTab === "stats" && <StatsTab containerId={container.id} />}
