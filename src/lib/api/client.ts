@@ -2,8 +2,7 @@ export const BACKEND_PORT = 41785;
 
 export function getApiUrl(path: string): string {
   if (typeof window !== "undefined") {
-    const host = window.location.hostname;
-    if (host === "localhost" || host === "127.0.0.1") {
+    if (window.location.protocol === "http:" && window.location.port === "5173") {
       return path;
     }
   }
@@ -16,9 +15,8 @@ export function getTerminalWsUrl(containerId: string, forcePort?: number): strin
   }
   if (typeof window !== "undefined") {
     const loc = window.location;
-    if (loc.hostname === "localhost" || loc.hostname === "127.0.0.1") {
-      const protocol = loc.protocol === "https:" ? "wss:" : "ws:";
-      return `${protocol}//${loc.host}/api/containers/${containerId}/pty`;
+    if (loc.protocol === "http:" && loc.port === "5173") {
+      return `ws://${loc.hostname}:5173/api/containers/${containerId}/pty`;
     }
   }
   return `ws://127.0.0.1:${BACKEND_PORT}/api/containers/${containerId}/pty`;
@@ -27,7 +25,7 @@ export function getTerminalWsUrl(containerId: string, forcePort?: number): strin
 export function getAlternateTerminalWsUrl(containerId: string): string {
   if (typeof window !== "undefined") {
     const loc = window.location;
-    if (loc.hostname === "localhost" || loc.hostname === "127.0.0.1") {
+    if (loc.protocol === "http:" && loc.port === "5173") {
       return `ws://127.0.0.1:${BACKEND_PORT}/api/containers/${containerId}/pty`;
     }
   }
