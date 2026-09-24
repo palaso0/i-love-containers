@@ -27,10 +27,32 @@ export const App: React.FC = () => {
     toggleSidebar,
     goBack,
     goForward,
+    zoomInUi,
+    zoomOutUi,
+    resetZoomUi,
   } = useAppStore();
 
   useEffect(() => {
     const handleGlobalShortcuts = (event: KeyboardEvent) => {
+      // Zoom UI shortcuts (Cmd + / Cmd - / Cmd 0) without Shift
+      if (event.metaKey || event.ctrlKey) {
+        if (!event.shiftKey) {
+          if (event.key === "=" || event.key === "+") {
+            event.preventDefault();
+            zoomInUi();
+            return;
+          } else if (event.key === "-" || event.key === "_") {
+            event.preventDefault();
+            zoomOutUi();
+            return;
+          } else if (event.key === "0") {
+            event.preventDefault();
+            resetZoomUi();
+            return;
+          }
+        }
+      }
+
       const target = event.target as HTMLElement;
       if (
         target.tagName === "INPUT" ||
@@ -136,6 +158,9 @@ export const App: React.FC = () => {
     toggleSidebar,
     goBack,
     goForward,
+    zoomInUi,
+    zoomOutUi,
+    resetZoomUi,
   ]);
 
   if (isInitialLoading) {

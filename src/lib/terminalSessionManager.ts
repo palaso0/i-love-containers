@@ -137,12 +137,6 @@ export function getOrCreateTerminalSession(
               rows,
             }),
           );
-          // Set PS1 so that the prompt displays only the directory basename (\W) instead of full path (\w)
-          setTimeout(() => {
-            if (socket.readyState === WebSocket.OPEN) {
-              socket.send(" [ -n \"$BASH_VERSION\" ] && PS1='\\h:\\W\\$ ' || PS1='\\h:\\W\\$ '\r");
-            }
-          }, 350);
         }
       } catch {}
     };

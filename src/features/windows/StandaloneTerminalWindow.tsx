@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "@xterm/xterm/css/xterm.css";
 import { Terminal as TerminalIcon, Trash2, RefreshCw, ZoomIn, ZoomOut } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { ContainerNotRunning } from "@/components/ContainerNotRunning";
 import { getOrCreateTerminalSession } from "@/lib/terminalSessionManager";
+import { getCleanContainerName } from "@/lib/utils";
 
 interface StandaloneTerminalWindowProps {
   containerId: string;
@@ -13,7 +14,14 @@ interface StandaloneTerminalWindowProps {
 export const StandaloneTerminalWindow: React.FC<
   StandaloneTerminalWindowProps
 > = ({ containerId, containerName }) => {
-  const { theme, containers, language } = useAppStore();
+  const {
+    theme,
+    containers,
+    language,
+    zoomInUi,
+    zoomOutUi,
+    resetZoomUi,
+  } = useAppStore();
   const isDark = theme === "dark";
   const isEs = language === "es";
 
@@ -21,7 +29,103 @@ export const StandaloneTerminalWindow: React.FC<
   const state = currentContainer?.state;
   const isRunning = !currentContainer || state === "running";
 
+  const displayName = currentContainer?.composeService ||
+    getCleanContainerName(currentContainer?.name || containerName, currentContainer?.composeProject);
+
   const terminalElementRef = useRef<HTMLDivElement>(null);
+
+  const handleClear = () => {
+    const session = getOrCreateTerminalSession(
+      containerId,
+      containerName,
+      isDark,
+    );
+    session.clear();
+  };
+
+  const handleReconnect = () => {
+    const session = getOrCreateTerminalSession(
+      containerId,
+      containerName,
+      isDark,
+    );
+    session.reconnect(true);
+  };
+
+  const [terminalFontSize, setTerminalFontSize] = useState<number>(() => {
+    try {
+      const val = localStorage.getItem("ilc_terminal_font_size");
+      if (val) {
+        const parsed = parseFloat(val);
+        if (!isNaN(parsed) && parsed >= 8 && parsed <= 32) return parsed;
+      }
+    } catch {}
+    return 12.5;
+  });
+
+  const handleZoomInText = () => {
+    const session = getOrCreateTerminalSession(
+      containerId,
+      containerName,
+      isDark,
+    );
+    session.zoomIn();
+    setTerminalFontSize(session.fontSize);
+  };
+
+  const handleZoomOutText = () => {
+    const session = getOrCreateTerminalSession(
+      containerId,
+      containerName,
+      isDark,
+    );
+    session.zoomOut();
+    setTerminalFontSize(session.fontSize);
+  };
+
+  const handleResetZoomText = () => {
+    const session = getOrCreateTerminalSession(
+      containerId,
+      containerName,
+      isDark,
+    );
+    session.resetZoom();
+    setTerminalFontSize(session.fontSize);
+  };
+
+  // Keyboard shortcuts:
+  // - Cmd/Ctrl + / - / 0 : Zoom entire window UI
+  // - Shift + Cmd/Ctrl + / - / 0 : Zoom terminal font / text
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey) {
+        if (e.key === "=" || e.key === "+") {
+          e.preventDefault();
+          if (e.shiftKey) {
+            handleZoomInText();
+          } else {
+            zoomInUi();
+          }
+        } else if (e.key === "-" || e.key === "_") {
+          e.preventDefault();
+          if (e.shiftKey) {
+            handleZoomOutText();
+          } else {
+            zoomOutUi();
+          }
+        } else if (e.key === "0") {
+          e.preventDefault();
+          if (e.shiftKey) {
+            handleResetZoomText();
+          } else {
+            resetZoomUi();
+          }
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [containerId, containerName, isDark, zoomInUi, zoomOutUi, resetZoomUi]);
 
   useEffect(() => {
     if (!isRunning) return;
@@ -84,56 +188,11 @@ export const StandaloneTerminalWindow: React.FC<
     };
   }, [containerId, containerName, isRunning, isDark]);
 
-  const handleClear = () => {
-    const session = getOrCreateTerminalSession(
-      containerId,
-      containerName,
-      isDark,
-    );
-    session.clear();
-  };
-
-  const handleReconnect = () => {
-    const session = getOrCreateTerminalSession(
-      containerId,
-      containerName,
-      isDark,
-    );
-    session.reconnect(true);
-  };
-
-  const handleZoomIn = () => {
-    const session = getOrCreateTerminalSession(
-      containerId,
-      containerName,
-      isDark,
-    );
-    session.zoomIn();
-  };
-
-  const handleZoomOut = () => {
-    const session = getOrCreateTerminalSession(
-      containerId,
-      containerName,
-      isDark,
-    );
-    session.zoomOut();
-  };
-
-  const handleResetZoom = () => {
-    const session = getOrCreateTerminalSession(
-      containerId,
-      containerName,
-      isDark,
-    );
-    session.resetZoom();
-  };
-
   if (!isRunning && state) {
     return (
       <ContainerNotRunning
         state={state}
-        containerName={containerName}
+        containerName={displayName || containerName}
         featureName="terminal"
       />
     );
@@ -145,51 +204,51 @@ export const StandaloneTerminalWindow: React.FC<
         isDark ? "bg-[#0d1117]" : "bg-white"
       }`}
     >
-      <div className="h-9 px-3 bg-surface-secondary border-b border-border flex items-center justify-between shrink-0 select-none">
-        <div className="flex items-center space-x-2 text-2xs font-mono text-muted-foreground truncate min-w-0">
-          <TerminalIcon className="w-3.5 h-3.5 text-primary shrink-0" />
-          <span className="truncate font-semibold text-foreground">
-            {containerName}
+      <div className="h-10 px-3 bg-surface-secondary border-b border-border flex items-center justify-between shrink-0 select-none">
+        <div className="flex items-center space-x-2 text-xs font-mono text-muted-foreground truncate min-w-0">
+          <TerminalIcon className="w-4 h-4 text-primary shrink-0" />
+          <span className="truncate font-semibold text-foreground text-xs">
+            {displayName}
           </span>
-          <span className="text-muted-foreground">({containerId.substring(0, 12)})</span>
+          <span className="text-muted-foreground text-2xs">({containerId.substring(0, 12)})</span>
         </div>
         <div className="flex items-center space-x-1.5 shrink-0">
           <button
-            onClick={handleZoomOut}
-            className="p-1 text-muted-foreground hover:text-foreground rounded bg-surface border border-border transition-colors cursor-pointer"
-            title={isEs ? "Alejar (⌘-)" : "Zoom out (⌘-)"}
+            onClick={handleZoomOutText}
+            className="p-1.5 text-muted-foreground hover:text-foreground rounded-md bg-surface border border-border transition-colors cursor-pointer"
+            title={isEs ? "Alejar texto (⇧⌘-)" : "Zoom out text (⇧⌘-)"}
           >
-            <ZoomOut className="w-3 h-3" />
+            <ZoomOut className="w-3.5 h-3.5" />
           </button>
           <button
-            onClick={handleResetZoom}
-            className="px-1.5 py-0.5 text-2xs font-mono text-muted-foreground hover:text-foreground rounded bg-surface border border-border transition-colors cursor-pointer"
-            title={isEs ? "Restablecer zoom (⌘0)" : "Reset zoom (⌘0)"}
+            onClick={handleResetZoomText}
+            className="px-2 py-1 text-xs font-mono text-muted-foreground hover:text-foreground rounded-md bg-surface border border-border transition-colors cursor-pointer"
+            title={isEs ? "Restablecer texto (⇧⌘0)" : "Reset text zoom (⇧⌘0)"}
           >
-            100%
+            {Math.round((terminalFontSize / 12.5) * 100)}%
           </button>
           <button
-            onClick={handleZoomIn}
-            className="p-1 text-muted-foreground hover:text-foreground rounded bg-surface border border-border transition-colors cursor-pointer"
-            title={isEs ? "Acercar (⌘+)" : "Zoom in (⌘+)"}
+            onClick={handleZoomInText}
+            className="p-1.5 text-muted-foreground hover:text-foreground rounded-md bg-surface border border-border transition-colors cursor-pointer"
+            title={isEs ? "Acercar texto (⇧⌘+)" : "Zoom in text (⇧⌘+)"}
           >
-            <ZoomIn className="w-3 h-3" />
+            <ZoomIn className="w-3.5 h-3.5" />
           </button>
-          <div className="h-3 w-[1px] bg-border mx-0.5" />
+          <div className="h-4 w-[1px] bg-border mx-1" />
           <button
             onClick={handleReconnect}
-            className="flex items-center space-x-1 px-2 py-0.5 text-2xs font-mono text-muted-foreground hover:text-foreground rounded bg-surface border border-border transition-colors cursor-pointer"
+            className="flex items-center space-x-1.5 px-2.5 py-1 text-xs font-mono text-muted-foreground hover:text-foreground rounded-md bg-surface border border-border transition-colors cursor-pointer"
             title={isEs ? "Reconectar sesión" : "Reconnect session"}
           >
-            <RefreshCw className="w-2.5 h-2.5" />
+            <RefreshCw className="w-3.5 h-3.5" />
             <span>{isEs ? "Reconectar" : "Reconnect"}</span>
           </button>
           <button
             onClick={handleClear}
-            className="flex items-center space-x-1 px-2 py-0.5 text-2xs font-mono text-muted-foreground hover:text-foreground rounded bg-surface border border-border transition-colors cursor-pointer"
+            className="flex items-center space-x-1.5 px-2.5 py-1 text-xs font-mono text-muted-foreground hover:text-foreground rounded-md bg-surface border border-border transition-colors cursor-pointer"
             title={isEs ? "Limpiar consola" : "Clear console"}
           >
-            <Trash2 className="w-2.5 h-2.5" />
+            <Trash2 className="w-3.5 h-3.5" />
             <span>{isEs ? "Limpiar" : "Clear"}</span>
           </button>
         </div>
@@ -201,3 +260,4 @@ export const StandaloneTerminalWindow: React.FC<
     </div>
   );
 };
+

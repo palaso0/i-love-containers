@@ -36,6 +36,11 @@ interface AppState {
   setAccentColor: (accent: AccentColor) => void;
   language: Language;
   setLanguage: (lang: Language) => void;
+  uiZoom: number;
+  zoomInUi: () => void;
+  zoomOutUi: () => void;
+  resetZoomUi: () => void;
+  setUiZoom: (zoom: number) => void;
   t: (typeof translations)["en"];
   viewMode: "minimal" | "detailed";
   toggleViewMode: () => void;
@@ -186,6 +191,75 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     return saved || "en";
   });
 
+  const [uiZoom, setUiZoomState] = useState<number>(() => {
+    const urlParams =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search)
+        : null;
+    const urlZoom = urlParams?.get("zoom");
+    if (urlZoom) {
+      const parsed = parseFloat(urlZoom);
+      if (!isNaN(parsed) && parsed >= 0.7 && parsed <= 1.8) return parsed;
+    }
+    const saved = localStorage.getItem("ilc-ui-zoom");
+    if (saved) {
+      const parsed = parseFloat(saved);
+      if (!isNaN(parsed) && parsed >= 0.7 && parsed <= 1.8) return parsed;
+    }
+    return 1;
+  });
+
+  const isStandaloneWindow =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).has("window");
+
+  const applyZoomStyle = useCallback(
+    (zoomVal: number) => {
+      const clamped =
+        Math.round(Math.max(0.7, Math.min(1.8, zoomVal)) * 100) / 100;
+      (document.documentElement.style as any).zoom = `${clamped}`;
+      if (!isStandaloneWindow) {
+        localStorage.setItem("ilc-ui-zoom", String(clamped));
+      }
+    },
+    [isStandaloneWindow],
+  );
+
+  const setUiZoom = useCallback(
+    (newZoom: number) => {
+      const clamped =
+        Math.round(Math.max(0.7, Math.min(1.8, newZoom)) * 100) / 100;
+      setUiZoomState(clamped);
+      applyZoomStyle(clamped);
+    },
+    [applyZoomStyle],
+  );
+
+  const zoomInUi = useCallback(() => {
+    setUiZoomState((prev) => {
+      const next = Math.round(Math.min(1.8, prev + 0.1) * 100) / 100;
+      applyZoomStyle(next);
+      return next;
+    });
+  }, [applyZoomStyle]);
+
+  const zoomOutUi = useCallback(() => {
+    setUiZoomState((prev) => {
+      const next = Math.round(Math.max(0.7, prev - 0.1) * 100) / 100;
+      applyZoomStyle(next);
+      return next;
+    });
+  }, [applyZoomStyle]);
+
+  const resetZoomUi = useCallback(() => {
+    setUiZoomState(1);
+    applyZoomStyle(1);
+  }, [applyZoomStyle]);
+
+  useEffect(() => {
+    applyZoomStyle(uiZoom);
+  }, [uiZoom, applyZoomStyle]);
+
   const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem("ilc-language", lang);
@@ -299,7 +373,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       window.removeEventListener("storage", handleStorage);
       delete (window as any).__applyIlcSettings;
     };
-  }, []);
+  }, [applyZoomStyle]);
 
   useEffect(() => {
     const themes: string[] = [
@@ -857,6 +931,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         setAccentColor,
         language,
         setLanguage,
+        uiZoom,
+        zoomInUi,
+        zoomOutUi,
+        resetZoomUi,
+        setUiZoom,
         t: translations[language],
         viewMode,
         toggleViewMode,

@@ -15,6 +15,8 @@ import {
   Laptop,
   Terminal,
   RotateCcw,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
 import { AppTheme, AccentColor, Language } from "@/types";
@@ -47,6 +49,10 @@ export const SettingsView: React.FC = () => {
     setAccentColor,
     language,
     setLanguage,
+    uiZoom,
+    zoomInUi,
+    zoomOutUi,
+    resetZoomUi,
     t,
     selectedHost,
     setSelectedHost,
@@ -194,6 +200,18 @@ export const SettingsView: React.FC = () => {
       action: isEs
         ? "Ir a Estadísticas de contenedor (Stats)"
         : "Jump to container Stats",
+    },
+    {
+      key: `${modKeySymbol}+ / ${modKeySymbol}- / ${modKeySymbol}0`,
+      action: isEs
+        ? "Acercar / Alejar / Restablecer ventana (Zoom de interfaz)"
+        : "Zoom in / Zoom out / Reset window UI",
+    },
+    {
+      key: `Shift+${modKeySymbol}+ / - / 0`,
+      action: isEs
+        ? "Cambiar tamaño de texto en Terminal / Registros"
+        : "Change text font size in Terminal / Logs",
     },
     {
       key: "Esc",
@@ -364,6 +382,48 @@ export const SettingsView: React.FC = () => {
                   </button>
                 );
               })}
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-2 border-t border-border/60">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <div className="text-xs font-semibold text-foreground">
+                {isEs ? "Escalado de Interfaz (Zoom)" : "Interface Zoom"}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {isEs
+                  ? "Aumenta o reduce el tamaño de toda la app (⌘+ / ⌘-)"
+                  : "Scale the whole app interface up or down (⌘+ / ⌘-)"}
+              </p>
+            </div>
+
+            <div className="flex items-center space-x-1.5 bg-surface-secondary/80 p-1 rounded-lg border border-border/60">
+              <button
+                type="button"
+                onClick={zoomOutUi}
+                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface transition-colors cursor-pointer"
+                title={isEs ? "Alejar interfaz (⌘-)" : "Zoom out UI (⌘-)"}
+              >
+                <ZoomOut className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={resetZoomUi}
+                className="px-2 py-0.5 text-xs font-mono rounded-md text-muted-foreground hover:text-foreground hover:bg-surface transition-colors cursor-pointer"
+                title={isEs ? "Restablecer interfaz a 100% (⌘0)" : "Reset UI to 100% (⌘0)"}
+              >
+                {Math.round(uiZoom * 100)}%
+              </button>
+              <button
+                type="button"
+                onClick={zoomInUi}
+                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface transition-colors cursor-pointer"
+                title={isEs ? "Acercar interfaz (⌘+)" : "Zoom in UI (⌘+)"}
+              >
+                <ZoomIn className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         </div>

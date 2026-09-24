@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import * as api from "@/lib/api";
 import { useAppStore } from "@/stores/useAppStore";
+import { sanitizeLogMessage } from "@/lib/utils";
 
 interface LogsTabProps {
   containerId: string;
@@ -80,15 +81,17 @@ export const LogsTab: React.FC<LogsTabProps> = ({ containerId, containerName }) 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey) {
-        if (e.key === "=" || e.key === "+") {
-          e.preventDefault();
-          handleZoomIn();
-        } else if (e.key === "-" || e.key === "_") {
-          e.preventDefault();
-          handleZoomOut();
-        } else if (e.key === "0") {
-          e.preventDefault();
-          handleResetZoom();
+        if (e.shiftKey) {
+          if (e.key === "=" || e.key === "+") {
+            e.preventDefault();
+            handleZoomIn();
+          } else if (e.key === "-" || e.key === "_") {
+            e.preventDefault();
+            handleZoomOut();
+          } else if (e.key === "0") {
+            e.preventDefault();
+            handleResetZoom();
+          }
         }
       }
     };
@@ -189,8 +192,8 @@ export const LogsTab: React.FC<LogsTabProps> = ({ containerId, containerName }) 
       }`}
     >
       <div className="h-10 px-3 bg-surface border-b border-border flex items-center justify-between gap-2 text-xs shrink-0">
-        <div className="relative flex-1 max-w-xs min-w-[90px]">
-          <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 top-2.5" />
+        <div className="relative flex-1 max-w-xs min-w-[90px] flex items-center">
+          <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
@@ -408,7 +411,7 @@ export const LogsTab: React.FC<LogsTabProps> = ({ containerId, containerName }) 
                       : "whitespace-pre shrink-0"
                   } ${isDark ? "text-slate-200" : "text-slate-800"}`}
                 >
-                  {messageContent}
+                  {sanitizeLogMessage(messageContent)}
                 </span>
               </div>
             );

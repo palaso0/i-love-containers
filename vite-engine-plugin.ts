@@ -942,20 +942,36 @@ export function createEngineHandler(options: { cors?: boolean } = {}) {
                   `/containers/${containerId}/logs?stdout=true&stderr=true&tail=100&timestamps=true`
                 );
                 if (raw.status < 300) {
-                  const rawString = typeof raw.data === "string" ? raw.data : JSON.stringify(raw.data || "");
-                  const lines = rawString
+                  let logText = "";
+                  if (raw.rawBuffer && raw.rawBuffer.length > 0) {
+                    const demuxed = demuxDockerStream(raw.rawBuffer);
+                    logText = demuxed.combined || demuxed.stdout || demuxed.stderr;
+                  } else if (typeof raw.data === "string") {
+                    logText = raw.data;
+                  } else {
+                    logText = JSON.stringify(raw.data || "");
+                  }
+
+                  const lines = logText
                     .split("\n")
                     .map((line) => {
+                      // Strip any remaining multiplexed 8-byte headers if present in text
+                      let cleaned = line;
                       if (
-                        line.length >= 8 &&
-                        (line.charCodeAt(0) === 1 || line.charCodeAt(0) === 2) &&
-                        line.charCodeAt(1) === 0 &&
-                        line.charCodeAt(2) === 0 &&
-                        line.charCodeAt(3) === 0
+                        cleaned.length >= 8 &&
+                        (cleaned.charCodeAt(0) === 1 || cleaned.charCodeAt(0) === 2 || cleaned.charCodeAt(0) === 0) &&
+                        cleaned.charCodeAt(1) === 0 &&
+                        cleaned.charCodeAt(2) === 0 &&
+                        cleaned.charCodeAt(3) === 0
                       ) {
-                        return line.slice(8).trim();
+                        cleaned = cleaned.slice(8);
                       }
-                      return line.trim();
+                      // Clean ANSI escape sequences, residual control characters, and Unicode replacement character
+                      return cleaned
+                        .replace(/\u001b\[[0-9;?]*[a-zA-Z]/g, "")
+                        .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, "")
+                        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F\uFFFD]/g, "")
+                        .trim();
                     })
                     .filter(Boolean);
                   res.setHeader("Content-Type", "application/json");

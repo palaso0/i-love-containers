@@ -15,6 +15,7 @@ import {
 
 import { useAppStore } from "@/stores/useAppStore";
 import * as api from "@/lib/api";
+import { sanitizeLogMessage, getCleanContainerName } from "@/lib/utils";
 
 interface LogEntry {
   id: string;
@@ -35,7 +36,7 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
   containerName,
   composeProject,
 }) => {
-  const { theme, language } = useAppStore();
+  const { theme, language, zoomInUi, zoomOutUi, resetZoomUi } = useAppStore();
   const isDark = theme === "dark";
   const isEs = language === "es";
 
@@ -68,7 +69,7 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
-  const handleZoomIn = () => {
+  const handleZoomInText = () => {
     setFontSize((prev) => {
       const next = Math.min(26, prev + 1);
       try {
@@ -78,7 +79,7 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
     });
   };
 
-  const handleZoomOut = () => {
+  const handleZoomOutText = () => {
     setFontSize((prev) => {
       const next = Math.max(9, prev - 1);
       try {
@@ -88,32 +89,47 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
     });
   };
 
-  const handleResetZoom = () => {
+  const handleResetZoomText = () => {
     setFontSize(11);
     try {
       localStorage.setItem("ilc_logs_font_size", "11");
     } catch {}
   };
 
+  // Keyboard shortcuts:
+  // - Cmd/Ctrl + / - / 0 : Zoom entire window UI
+  // - Shift + Cmd/Ctrl + / - / 0 : Zoom log font / text
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey) {
         if (e.key === "=" || e.key === "+") {
           e.preventDefault();
-          handleZoomIn();
+          if (e.shiftKey) {
+            handleZoomInText();
+          } else {
+            zoomInUi();
+          }
         } else if (e.key === "-" || e.key === "_") {
           e.preventDefault();
-          handleZoomOut();
+          if (e.shiftKey) {
+            handleZoomOutText();
+          } else {
+            zoomOutUi();
+          }
         } else if (e.key === "0") {
           e.preventDefault();
-          handleResetZoom();
+          if (e.shiftKey) {
+            handleResetZoomText();
+          } else {
+            resetZoomUi();
+          }
         }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [zoomInUi, zoomOutUi, resetZoomUi]);
 
   const availableServices = Array.from(new Set(logs.map((l) => l.source)));
 
@@ -183,7 +199,7 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
                   timestampMs,
                   source: serviceName,
                   color,
-                  message,
+                  message: sanitizeLogMessage(message),
                 };
               });
             }),
@@ -203,22 +219,7 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
           const rawLogs = await api.fetchContainerLogs(containerId);
           if (!isMounted) return;
 
-          let serviceName = containerName?.replace(/^\//, "") || "container";
-          if (composeProject) {
-            if (serviceName.toLowerCase().startsWith(`${composeProject.toLowerCase()}-`)) {
-              serviceName = serviceName.slice(composeProject.length + 1);
-            } else if (serviceName.toLowerCase().startsWith(`${composeProject.toLowerCase()}_`)) {
-              serviceName = serviceName.slice(composeProject.length + 1);
-            }
-            serviceName = serviceName.replace(/[-_]\d+$/, "");
-          } else {
-            // Also try to detect common project-service-replica patterns even if composeProject wasn't passed in query
-            const parts = serviceName.split(/[-_]/);
-            if (parts.length >= 3 && /^\d+$/.test(parts[parts.length - 1])) {
-              // e.g. "nocodb-web-app-1" -> "web-app"
-              serviceName = parts.slice(1, -1).join("-");
-            }
-          }
+          const serviceName = getCleanContainerName(containerName || "container", composeProject);
           const color = isDark ? "#38bdf8" : "#0284c7";
 
           const parsed = rawLogs.map((line) => {
@@ -238,7 +239,7 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
               timestampMs,
               source: serviceName,
               color,
-              message,
+              message: sanitizeLogMessage(message),
             };
           });
 
@@ -308,32 +309,32 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
     >
       <div
         data-tauri-drag-region
-        className="h-10 px-4 bg-surface border-b border-border flex items-center justify-between font-mono text-2xs shrink-0 gap-3"
+        className="h-11 px-4 bg-surface border-b border-border flex items-center justify-between font-mono text-xs shrink-0 gap-3"
       >
         <div className="flex items-center space-x-2 shrink-0">
-          <span className="w-2 h-2 rounded-full bg-status-running shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
-          <FileText className="w-3.5 h-3.5 text-sky-400" />
-          <span className="font-bold text-foreground">
+          <span className="w-2.5 h-2.5 rounded-full bg-status-running shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
+          <FileText className="w-4 h-4 text-sky-400" />
+          <span className="font-bold text-foreground text-xs">
             {composeProject
               ? `${composeProject} ${isEs ? "(Registros unificados)" : "(Unified Logs)"}`
-              : containerName?.replace(/^\//, "") || (isEs ? "Registros de contenedor" : "Container Logs")}
+              : getCleanContainerName(containerName || "", composeProject) || (isEs ? "Registros de contenedor" : "Container Logs")}
           </span>
           {containerId && (
-            <span className="text-muted-foreground hidden sm:inline">
+            <span className="text-muted-foreground text-2xs hidden sm:inline">
               ({containerId.substring(0, 12)})
             </span>
           )}
         </div>
 
         <div className="flex items-center space-x-2 flex-1 justify-end">
-          <div className="relative max-w-xs w-full">
-            <Search className="w-3 h-3 text-muted-foreground absolute left-2.5 top-2" />
+          <div className="relative max-w-xs w-full flex items-center">
+            <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={isEs ? "Buscar en registros..." : "Search log stream..."}
-              className="w-full pl-7 pr-2.5 py-1 text-2xs bg-surface-secondary border border-border rounded text-foreground focus:outline-none font-mono"
+              className="w-full pl-8 pr-2.5 py-1 text-xs bg-surface-secondary border border-border rounded-md text-foreground focus:outline-none font-mono"
             />
           </div>
 
@@ -348,13 +349,13 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
                   ? "Follow logs (Auto-scroll): ON"
                   : "Follow logs (Auto-scroll): OFF"
             }
-            className={`p-1.5 rounded border transition-colors ${
+            className={`p-1.5 rounded-md border transition-colors ${
               autoScroll
                 ? "bg-primary/10 border-primary/30 text-primary font-semibold"
                 : "bg-surface-secondary border-border text-muted-foreground hover:text-foreground"
             }`}
           >
-            <ChevronsDown className="w-3.5 h-3.5" />
+            <ChevronsDown className="w-4 h-4" />
           </button>
 
           <button
@@ -368,13 +369,13 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
                   ? "Time / Timestamps: ON"
                   : "Time / Timestamps: OFF"
             }
-            className={`p-1.5 rounded border transition-colors ${
+            className={`p-1.5 rounded-md border transition-colors ${
               showTimestamps
                 ? "bg-primary/10 border-primary/30 text-primary font-semibold"
                 : "bg-surface-secondary border-border text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Clock className="w-3.5 h-3.5" />
+            <Clock className="w-4 h-4" />
           </button>
 
           <button
@@ -385,7 +386,7 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
                 localStorage.setItem("ilc_logs_show_service_tags", String(next));
               } catch {}
             }}
-            className={`p-1.5 rounded border transition-colors ${
+            className={`p-1.5 rounded-md border transition-colors ${
               showServiceTags
                 ? "bg-primary/10 border-primary/30 text-primary font-semibold"
                 : "bg-surface-secondary border-border text-muted-foreground hover:text-foreground"
@@ -400,7 +401,7 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
                   : "Tag: OFF"
             }
           >
-            <Tag className="w-3.5 h-3.5" />
+            <Tag className="w-4 h-4" />
           </button>
 
           <button
@@ -414,39 +415,39 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
                   ? "Word wrap: ON (click to scroll horizontally)"
                   : "Word wrap: OFF (horizontal scroll enabled)"
             }
-            className={`p-1.5 rounded border transition-colors ${
+            className={`p-1.5 rounded-md border transition-colors ${
               wrapLines
                 ? "bg-primary/10 border-primary/30 text-primary font-semibold"
                 : "bg-surface-secondary border-border text-muted-foreground hover:text-foreground hover:bg-surface-hover"
             }`}
           >
-            <WrapText className="w-3.5 h-3.5" />
+            <WrapText className="w-4 h-4" />
           </button>
 
           <div className="h-4 w-[1px] bg-border mx-0.5" />
 
           <button
-            onClick={handleZoomOut}
-            className="p-1.5 rounded border border-border bg-surface-secondary text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
-            title={isEs ? "Alejar (⌘-)" : "Zoom out (⌘-)"}
+            onClick={handleZoomOutText}
+            className="p-1.5 rounded-md border border-border bg-surface-secondary text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+            title={isEs ? "Alejar texto (⇧⌘-)" : "Zoom out text (⇧⌘-)"}
           >
-            <ZoomOut className="w-3.5 h-3.5" />
+            <ZoomOut className="w-4 h-4" />
           </button>
 
           <button
-            onClick={handleResetZoom}
-            className="px-2 py-1 text-2xs font-mono rounded border border-border bg-surface-secondary text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
-            title={isEs ? "Restablecer zoom (⌘0)" : "Reset zoom (⌘0)"}
+            onClick={handleResetZoomText}
+            className="px-2 py-1 text-xs font-mono rounded-md border border-border bg-surface-secondary text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+            title={isEs ? "Restablecer texto (⇧⌘0)" : "Reset text zoom (⇧⌘0)"}
           >
             {Math.round((fontSize / 11) * 100)}%
           </button>
 
           <button
-            onClick={handleZoomIn}
-            className="p-1.5 rounded border border-border bg-surface-secondary text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
-            title={isEs ? "Acercar (⌘+)" : "Zoom in (⌘+)"}
+            onClick={handleZoomInText}
+            className="p-1.5 rounded-md border border-border bg-surface-secondary text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+            title={isEs ? "Acercar texto (⇧⌘+)" : "Zoom in text (⇧⌘+)"}
           >
-            <ZoomIn className="w-3.5 h-3.5" />
+            <ZoomIn className="w-4 h-4" />
           </button>
 
           <div className="h-4 w-[1px] bg-border mx-0.5" />
@@ -458,18 +459,18 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
               setClearedAt(now);
               setLogs([]);
             }}
-            className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-surface-secondary"
+            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-secondary"
             title={isEs ? "Limpiar registros" : "Clear logs"}
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-4 h-4" />
           </button>
 
           <button
             onClick={handleDownload}
-            className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-surface-secondary"
+            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-secondary"
             title={isEs ? "Descargar archivo de registro" : "Download log file"}
           >
-            <Download className="w-3.5 h-3.5" />
+            <Download className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -535,7 +536,7 @@ export const StandaloneLogsWindow: React.FC<StandaloneLogsWindowProps> = ({
                 )}
                 {shouldShowTag && (
                   <span
-                    className="font-semibold mr-2 shrink-0 truncate max-w-[140px]"
+                    className="font-semibold mr-2 shrink-0 truncate max-w-[280px]"
                     style={{ color: log.color }}
                     title={log.source}
                   >

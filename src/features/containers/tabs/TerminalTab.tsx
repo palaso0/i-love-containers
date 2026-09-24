@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "@xterm/xterm/css/xterm.css";
 import { Trash2, RefreshCw, ZoomIn, ZoomOut } from "lucide-react";
 import { useAppStore } from "@/stores/useAppStore";
@@ -19,8 +19,9 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
   containerState,
   isActive = true,
 }) => {
-  const { theme, containers } = useAppStore();
+  const { theme, containers, language } = useAppStore();
   const isDark = theme === "dark";
+  const isEs = language === "es";
 
   const currentContainer = containers.find((c) => c.id === containerId);
   const state = containerState ?? currentContainer?.state;
@@ -134,6 +135,17 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
     session.reconnect(true);
   };
 
+  const [terminalFontSize, setTerminalFontSize] = useState<number>(() => {
+    try {
+      const val = localStorage.getItem("ilc_terminal_font_size");
+      if (val) {
+        const parsed = parseFloat(val);
+        if (!isNaN(parsed) && parsed >= 8 && parsed <= 32) return parsed;
+      }
+    } catch {}
+    return 12.5;
+  });
+
   const handleZoomIn = () => {
     const session = getOrCreateTerminalSession(
       containerId,
@@ -141,6 +153,7 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
       isDark,
     );
     session.zoomIn();
+    setTerminalFontSize(session.fontSize);
   };
 
   const handleZoomOut = () => {
@@ -150,6 +163,7 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
       isDark,
     );
     session.zoomOut();
+    setTerminalFontSize(session.fontSize);
   };
 
   const handleResetZoom = () => {
@@ -159,7 +173,30 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
       isDark,
     );
     session.resetZoom();
+    setTerminalFontSize(session.fontSize);
   };
+
+  useEffect(() => {
+    if (!isActive) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey) {
+        if (e.shiftKey) {
+          if (e.key === "=" || e.key === "+") {
+            e.preventDefault();
+            handleZoomIn();
+          } else if (e.key === "-" || e.key === "_") {
+            e.preventDefault();
+            handleZoomOut();
+          } else if (e.key === "0") {
+            e.preventDefault();
+            handleResetZoom();
+          }
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isActive, containerId, containerName, isDark]);
 
   if (!isRunning && state) {
     return (
@@ -173,53 +210,65 @@ export const TerminalTab: React.FC<TerminalTabProps> = ({
 
   return (
     <div
-      className={`group relative flex flex-col h-full w-full min-h-0 border border-border rounded-lg overflow-hidden shadow-inner ${
+      className={`flex flex-col h-full w-full min-h-0 border border-border rounded-lg overflow-hidden shadow-inner ${
         isDark ? "bg-[#0d1117]" : "bg-white"
       }`}
     >
-      <div className="absolute top-2 right-2 z-10 flex items-center space-x-1 opacity-40 group-hover:opacity-100 transition-opacity bg-surface/90 backdrop-blur-xs px-1.5 py-0.5 rounded-md border border-border/80 shadow-xs">
-        <button
-          onClick={handleZoomOut}
-          className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors cursor-pointer"
-          title="Zoom out (⌘-)"
-        >
-          <ZoomOut className="w-3 h-3" />
-        </button>
-        <button
-          onClick={handleResetZoom}
-          className="px-1 text-2xs font-mono text-muted-foreground hover:text-foreground rounded transition-colors cursor-pointer"
-          title="Reset zoom (⌘0)"
-        >
-          100%
-        </button>
-        <button
-          onClick={handleZoomIn}
-          className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors cursor-pointer"
-          title="Zoom in (⌘+)"
-        >
-          <ZoomIn className="w-3 h-3" />
-        </button>
-        <div className="h-3 w-[1px] bg-border mx-0.5" />
-        <button
-          onClick={handleReconnect}
-          className="flex items-center space-x-1 px-1.5 py-0.5 text-2xs font-mono text-muted-foreground hover:text-foreground rounded transition-colors cursor-pointer"
-          title="Reconnect session"
-        >
-          <RefreshCw className="w-2.5 h-2.5" />
-          <span>Reconnect</span>
-        </button>
-        <button
-          onClick={handleClear}
-          className="flex items-center space-x-1 px-1.5 py-0.5 text-2xs font-mono text-muted-foreground hover:text-foreground rounded transition-colors cursor-pointer"
-          title="Clear console"
-        >
-          <Trash2 className="w-2.5 h-2.5" />
-          <span>Clear</span>
-        </button>
+      {/* Slim fixed top bar */}
+      <div className="h-8 px-2.5 bg-surface-secondary/70 border-b border-border flex items-center justify-between shrink-0 select-none">
+        <div className="flex items-center space-x-2 text-2xs font-mono text-muted-foreground truncate">
+          <span className="w-1.5 h-1.5 rounded-full bg-status-running" />
+          <span className="truncate font-medium text-foreground">
+            {containerName}
+          </span>
+          <span className="opacity-60">({containerId.substring(0, 12)})</span>
+        </div>
+
+        <div className="flex items-center space-x-1 shrink-0">
+          <button
+            onClick={handleZoomOut}
+            className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors cursor-pointer"
+            title={isEs ? "Alejar texto (⇧⌘-)" : "Zoom out (⇧⌘-)"}
+          >
+            <ZoomOut className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={handleResetZoom}
+            className="px-1.5 py-0.5 text-2xs font-mono text-muted-foreground hover:text-foreground rounded transition-colors cursor-pointer"
+            title={isEs ? "Restablecer texto (⇧⌘0)" : "Reset zoom (⇧⌘0)"}
+          >
+            {Math.round((terminalFontSize / 12.5) * 100)}%
+          </button>
+          <button
+            onClick={handleZoomIn}
+            className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors cursor-pointer"
+            title={isEs ? "Acercar texto (⇧⌘+)" : "Zoom in (⇧⌘+)"}
+          >
+            <ZoomIn className="w-3.5 h-3.5" />
+          </button>
+          <div className="h-3.5 w-[1px] bg-border mx-1" />
+          <button
+            onClick={handleReconnect}
+            className="flex items-center space-x-1 px-1.5 py-0.5 text-2xs font-mono text-muted-foreground hover:text-foreground rounded transition-colors cursor-pointer"
+            title={isEs ? "Reconectar sesión" : "Reconnect session"}
+          >
+            <RefreshCw className="w-3 h-3" />
+            <span>{isEs ? "Reconectar" : "Reconnect"}</span>
+          </button>
+          <button
+            onClick={handleClear}
+            className="flex items-center space-x-1 px-1.5 py-0.5 text-2xs font-mono text-muted-foreground hover:text-foreground rounded transition-colors cursor-pointer"
+            title={isEs ? "Limpiar consola" : "Clear console"}
+          >
+            <Trash2 className="w-3 h-3" />
+            <span>{isEs ? "Limpiar" : "Clear"}</span>
+          </button>
+        </div>
       </div>
+
       <div
         ref={terminalElementRef}
-        className="w-full h-full min-h-0 p-2 select-text font-mono overflow-hidden"
+        className="flex-1 w-full min-h-0 p-2 select-text font-mono overflow-hidden"
       />
     </div>
   );

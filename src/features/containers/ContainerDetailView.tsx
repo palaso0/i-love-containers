@@ -27,6 +27,7 @@ export const ContainerDetailView: React.FC = () => {
     setSelectedContainerId,
     containerDetailTab,
     setContainerDetailTab,
+    language,
     containers,
     startContainer,
     stopContainer,
@@ -162,13 +163,15 @@ export const ContainerDetailView: React.FC = () => {
                 containerName: container.name,
               });
             }}
-            className="flex items-center space-x-1 px-2.5 py-0.5 rounded-md text-2xs font-mono bg-surface border border-border/70 text-foreground hover:text-primary hover:border-primary/40 transition-colors shadow-xs shrink-0"
-            title="Pop out into real native OS window"
+            className="flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-surface border border-border/70 text-foreground hover:text-primary hover:border-primary/40 transition-colors shadow-xs shrink-0 cursor-pointer text-xs font-medium"
+            title={
+              language === "es"
+                ? `Desacoplar ${tabs.find((t) => t.id === containerDetailTab)?.label} a una ventana independiente`
+                : `Detach ${tabs.find((t) => t.id === containerDetailTab)?.label} into a separate window`
+            }
           >
-            <AppWindow className="w-3 h-3 text-primary" />
-            <span>
-              Pop out ({tabs.find((t) => t.id === containerDetailTab)?.label})
-            </span>
+            <AppWindow className="w-3.5 h-3.5 text-primary shrink-0" />
+            <span>{language === "es" ? "Desacoplar" : "Detach"}</span>
           </button>
         </div>
       </div>

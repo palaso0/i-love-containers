@@ -67,3 +67,40 @@ export function getParentPath(p: string): string | null {
   segments.pop();
   return segments.length === 0 ? "/" : "/" + segments.join("/");
 }
+
+// Strips ANSI escape codes and unprintable control characters (including Docker header bytes or raw terminal control codes like \x00-\x08, \x0B-\x1F, \x7F-\x9F) that show up as square-with-x boxes.
+export function sanitizeLogMessage(str: string): string {
+  if (!str) return "";
+  return str
+    // Strip ANSI escape sequences: \u001b[...m, etc.
+    .replace(/\u001b\[[0-9;?]*[a-zA-Z]/g, "")
+    .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, "")
+    // Strip Docker multiplexed header leftovers (\x01\x00\x00\x00 or \x02\x00\x00\x00) if any
+    .replace(/[\x01\x02]\x00\x00\x00[\s\S]{0,4}/g, "")
+    // Strip unprintable control characters except tab (\x09) and newline (\x0A / \x0D)
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F\uFFFD]/g, "");
+}
+
+export function getCleanContainerName(name: string, project?: string): string {
+  if (!name) return "";
+  let clean = name.replace(/^\//, "");
+  if (project) {
+    const projLower = project.toLowerCase();
+    if (clean.toLowerCase().startsWith(`${projLower}-`)) {
+      clean = clean.slice(project.length + 1);
+    } else if (clean.toLowerCase().startsWith(`${projLower}_`)) {
+      clean = clean.slice(project.length + 1);
+    }
+  } else {
+    // If no project specified, check if it matches project-service-replica
+    const parts = clean.split(/[-_]/);
+    if (parts.length >= 3 && /^\d+$/.test(parts[parts.length - 1])) {
+      clean = parts.slice(1, -1).join("-");
+    }
+  }
+  // Strip trailing replica suffix (-1, _1, etc.)
+  clean = clean.replace(/[-_]\d+$/, "");
+  return clean || name.replace(/^\//, "");
+}
+
+

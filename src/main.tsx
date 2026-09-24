@@ -18,45 +18,81 @@ const composeProject = urlParams.get("project") || undefined;
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
+import { useAppStore } from "@/stores/useAppStore";
+
+const WindowZoomHandler: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const { zoomInUi, zoomOutUi, resetZoomUi } = useAppStore();
+
+  React.useEffect(() => {
+    // Only bind if this is a standalone window that does not handle its own keydown for text vs window
+    if (!windowType) return;
+    if (windowType === "terminal" || windowType === "logs") return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey) {
+        if (e.key === "=" || e.key === "+") {
+          e.preventDefault();
+          zoomInUi();
+        } else if (e.key === "-" || e.key === "_") {
+          e.preventDefault();
+          zoomOutUi();
+        } else if (e.key === "0") {
+          e.preventDefault();
+          resetZoomUi();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [zoomInUi, zoomOutUi, resetZoomUi]);
+
+  return <>{children}</>;
+};
+
 const RootComponent: React.FC = () => {
   return (
     <AppProvider>
-      <ErrorBoundary fallbackTitle="Application Error">
-        {windowType === "terminal" ? (
-          <StandaloneTerminalWindow
-            containerId={containerId}
-            containerName={containerName || "container"}
-          />
-        ) : windowType === "logs" ? (
-          <StandaloneLogsWindow
-            containerId={containerId}
-            containerName={containerName}
-            composeProject={composeProject}
-          />
-        ) : windowType === "files" ? (
-          <StandaloneFilesWindow
-            containerId={containerId}
-            containerName={containerName || "container"}
-          />
-        ) : windowType === "stats" ? (
-          <StandaloneStatsWindow
-            containerId={containerId}
-            containerName={containerName || "container"}
-          />
-        ) : windowType === "inspect" ? (
-          <StandaloneInspectWindow
-            containerId={containerId}
-            containerName={containerName || "container"}
-          />
-        ) : windowType === "overview" ? (
-          <StandaloneOverviewWindow
-            containerId={containerId}
-            containerName={containerName || "container"}
-          />
-        ) : (
-          <App />
-        )}
-      </ErrorBoundary>
+      <WindowZoomHandler>
+        <ErrorBoundary fallbackTitle="Application Error">
+          {windowType === "terminal" ? (
+            <StandaloneTerminalWindow
+              containerId={containerId}
+              containerName={containerName || "container"}
+            />
+          ) : windowType === "logs" ? (
+            <StandaloneLogsWindow
+              containerId={containerId}
+              containerName={containerName}
+              composeProject={composeProject}
+            />
+          ) : windowType === "files" ? (
+            <StandaloneFilesWindow
+              containerId={containerId}
+              containerName={containerName || "container"}
+            />
+          ) : windowType === "stats" ? (
+            <StandaloneStatsWindow
+              containerId={containerId}
+              containerName={containerName || "container"}
+            />
+          ) : windowType === "inspect" ? (
+            <StandaloneInspectWindow
+              containerId={containerId}
+              containerName={containerName || "container"}
+            />
+          ) : windowType === "overview" ? (
+            <StandaloneOverviewWindow
+              containerId={containerId}
+              containerName={containerName || "container"}
+            />
+          ) : (
+            <App />
+          )}
+        </ErrorBoundary>
+      </WindowZoomHandler>
     </AppProvider>
   );
 };

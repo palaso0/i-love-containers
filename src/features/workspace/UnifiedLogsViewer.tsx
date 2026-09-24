@@ -16,6 +16,7 @@ import {
 } from "@/stores/useWorkspaceStore";
 import { useAppStore } from "@/stores/useAppStore";
 import * as api from "@/lib/api";
+import { sanitizeLogMessage } from "@/lib/utils";
 
 interface UnifiedLogsViewerProps {
   session: WorkspaceSession;
@@ -26,7 +27,7 @@ export const UnifiedLogsViewer: React.FC<UnifiedLogsViewerProps> = ({
   session,
   isActive,
 }) => {
-  const { theme, language } = useAppStore();
+  const { theme, language, zoomInUi, zoomOutUi, resetZoomUi } = useAppStore();
   const isDark = theme === "dark";
   const isEs = language === "es";
 
@@ -86,20 +87,32 @@ export const UnifiedLogsViewer: React.FC<UnifiedLogsViewerProps> = ({
       if (e.metaKey || e.ctrlKey) {
         if (e.key === "=" || e.key === "+") {
           e.preventDefault();
-          handleZoomIn();
+          if (e.shiftKey) {
+            handleZoomIn();
+          } else {
+            zoomInUi();
+          }
         } else if (e.key === "-" || e.key === "_") {
           e.preventDefault();
-          handleZoomOut();
+          if (e.shiftKey) {
+            handleZoomOut();
+          } else {
+            zoomOutUi();
+          }
         } else if (e.key === "0") {
           e.preventDefault();
-          handleResetZoom();
+          if (e.shiftKey) {
+            handleResetZoom();
+          } else {
+            resetZoomUi();
+          }
         }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isActive]);
+  }, [isActive, zoomInUi, zoomOutUi, resetZoomUi]);
 
   const logs = session.logs || [];
   const autoScroll = session.autoScroll ?? true;
@@ -165,7 +178,7 @@ export const UnifiedLogsViewer: React.FC<UnifiedLogsViewerProps> = ({
                   timestampMs,
                   source: serviceName,
                   color,
-                  message,
+                  message: sanitizeLogMessage(message),
                 };
               });
             }),
@@ -205,7 +218,7 @@ export const UnifiedLogsViewer: React.FC<UnifiedLogsViewerProps> = ({
               timestampMs,
               source: serviceName,
               color,
-              message,
+              message: sanitizeLogMessage(message),
             });
           });
         }
@@ -272,8 +285,8 @@ export const UnifiedLogsViewer: React.FC<UnifiedLogsViewerProps> = ({
     >
       <div className="h-9 px-3 bg-surface border-b border-border flex items-center justify-between gap-2 shrink-0">
         <div className="flex items-center space-x-2 flex-1">
-          <div className="relative flex-1 max-w-xs">
-            <Search className="w-3 h-3 text-muted-foreground absolute left-2.5 top-2.5" />
+          <div className="relative flex-1 max-w-xs flex items-center">
+            <Search className="w-3 h-3 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}

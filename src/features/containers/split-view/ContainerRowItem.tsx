@@ -10,7 +10,7 @@ import {
 import { ContainerDetail, ContainerState } from "@/types";
 
 import { TechIcon } from "@/components/TechIcon";
-import { formatUptime } from "@/lib/utils";
+import { formatUptime, getCleanContainerName } from "@/lib/utils";
 import { openRealNativeWindow } from "@/lib/nativeWindow";
 import { IndeterminateCheckbox } from "./IndeterminateCheckbox";
 
@@ -144,12 +144,14 @@ export const ContainerRowItem: React.FC<ContainerRowItemProps> = ({
         <button
           onClick={(e) => {
             e.stopPropagation();
+            const cleanName = container.composeService ||
+              getCleanContainerName(container.name, container.composeProject);
             openRealNativeWindow({
               id: `term-${container.id}-${Date.now()}`,
-              title: `${container.name} — Terminal`,
+              title: `${cleanName} — Terminal`,
               type: "terminal",
               containerId: container.id,
-              containerName: container.name,
+              containerName: cleanName,
             });
           }}
           className="p-1 rounded text-muted-foreground hover:text-primary hover:bg-surface transition-colors"

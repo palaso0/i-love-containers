@@ -30,6 +30,8 @@ export async function openRealNativeWindow(options: NativeWindowOptions) {
   if (currentAccent) params.set("accent", currentAccent);
   const currentLang = localStorage.getItem("ilc-language");
   if (currentLang) params.set("lang", currentLang);
+  const currentZoom = localStorage.getItem("ilc-ui-zoom");
+  if (currentZoom) params.set("zoom", currentZoom);
 
   const relativeUrl = `index.html?${params.toString()}`;
   const fullUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;

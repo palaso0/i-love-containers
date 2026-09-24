@@ -26,6 +26,7 @@ import { useAppStore } from "@/stores/useAppStore";
 import { executeContainerCommand, fetchContainerLogs } from "@/lib/api";
 import { getTerminalTheme, formatTerminalPrompt } from "@/lib/terminalTheme";
 import { setupTerminalInput, TerminalController } from "@/lib/terminalInput";
+import { sanitizeLogMessage } from "@/lib/utils";
 
 interface FloatingWindowItemProps {
   windowData: FloatingWindow;
@@ -265,7 +266,7 @@ export const FloatingWindowItem: React.FC<FloatingWindowItemProps> = ({
               new Date().toISOString().substring(0, 19).replace("T", " "),
             source: serviceName,
             color,
-            message,
+            message: sanitizeLogMessage(message),
           });
         });
       } catch (err) {
